@@ -1,10 +1,10 @@
-package com.utp4j.data.bytes;
+package ch.uzh.csg.utp4j.data.bytes;
 
 import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import static com.utp4j.data.UtpPacketUtils.*;
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.*;
 
 public class UtpPacketUtilsTest {
 	

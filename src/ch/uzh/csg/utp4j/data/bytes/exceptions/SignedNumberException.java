@@ -1,4 +1,4 @@
-package com.utp4j.data.bytes.exceptions;
+package ch.uzh.csg.utp4j.data.bytes.exceptions;
 
 /**
  * Exception for the Case a signed number was given. 

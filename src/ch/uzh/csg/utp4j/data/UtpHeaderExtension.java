@@ -1,4 +1,4 @@
-package com.utp4j.data;
+package ch.uzh.csg.utp4j.data;
 
 public interface UtpHeaderExtension {
 

@@ -1,6 +1,8 @@
-package com.utp4j.data;
+package ch.uzh.csg.utp4j.data;
 
-import static com.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
+
+import com.sun.org.apache.bcel.internal.generic.INSTANCEOF;
 
 public class SelectiveAckHeaderExtension implements UtpHeaderExtension {
 
@@ -22,6 +24,27 @@ public class SelectiveAckHeaderExtension implements UtpHeaderExtension {
 	}
 	public void setBitMask(byte[] bitMask) {
 		this.bitMask = bitMask;
+	}
+	
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		} 
+		if (!(obj instanceof SelectiveAckHeaderExtension)) {
+			return false;
+		} else {
+			byte[] mine = toByteArray();
+			byte[] their = toByteArray();
+			if (their.length != mine.length) {
+				return false;
+			}
+			for (int i = 0; i < mine.length; i++) {
+				if (mine[i] != their[i]) {
+					return false;
+				}
+			}
+			return true;
+		}
 	}
 	
 	public byte[] toByteArray() {

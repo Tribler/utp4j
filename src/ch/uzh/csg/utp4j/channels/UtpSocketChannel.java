@@ -1,9 +1,10 @@
-package com.utp4j.channels;
+package ch.uzh.csg.utp4j.channels;
 
-import static com.utp4j.data.bytes.UnsignedTypesUtil.MAX_USHORT;
-import static com.utp4j.channels.UtpSocketState.*;
-import static com.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
-import static com.utp4j.data.bytes.UnsignedTypesUtil.longToUint;
+import static ch.uzh.csg.utp4j.channels.UtpSocketState.*;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_UINT;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_USHORT;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUint;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -18,9 +19,13 @@ import java.nio.channels.WritableByteChannel;
 
 import java.util.Random;
 
-import com.utp4j.data.MicroSecondsTimeStamp;
-import com.utp4j.data.UtpPacket;
-import com.utp4j.data.UtpPacketUtils;
+import sun.org.mozilla.javascript.internal.ast.ReturnStatement;
+
+import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
+import ch.uzh.csg.utp4j.data.UtpPacket;
+import ch.uzh.csg.utp4j.data.UtpPacketUtils;
+import ch.uzh.csg.utp4j.data.bytes.exceptions.ByteOverflowException;
+
 
 public class UtpSocketChannel implements Closeable, ByteChannel, Channel,
 		GatheringByteChannel, ReadableByteChannel, WritableByteChannel {
@@ -31,6 +36,9 @@ public class UtpSocketChannel implements Closeable, ByteChannel, Channel,
 	private MicroSecondsTimeStamp timeStamper = new MicroSecondsTimeStamp();
 	private int sequenceNumber;
 	private short connectionIdReciever;
+	private SocketAddress remoteAddress;
+	
+	private int ackNumber;
 	
 	/**
 	 * Current State of the Socket. {@link UtpSocketState}
@@ -57,20 +65,22 @@ public class UtpSocketChannel implements Closeable, ByteChannel, Channel,
 	public void connect(SocketAddress address) throws IOException {
 		try {
 			
-			getDataGramChannel().connect(address);
+			remoteAddress = address;
 			setupConnectionId();
 			setSequenceNumber(DEF_SEQ_START);
 			
 			UtpPacket synPacket = UtpPacketUtils.createSynPacket();
 			synPacket.setConnectionId(getConnectionIdReciever());
-			synPacket.setTimestamp(longToUint(timestamp()));
-			
-			ByteBuffer buffer = ByteBuffer.allocate(synPacket.getPacketLength());
-			buffer.put(synPacket.toByteArray());
-			getDataGramChannel().write(buffer);
+			synPacket.setTimestamp(timestamp());
+			sendPacket(synPacket);
 			
 			incrementSequenceNumber();
 			setState(CS_SYN_SENT);
+			
+			ByteBuffer ackBuffer = ByteBuffer.allocate(1024);
+//			getDataGramChannel().receive(ackBuffer);
+			
+			
 			
 			
 		} catch (IOException exp) {
@@ -80,6 +90,15 @@ public class UtpSocketChannel implements Closeable, ByteChannel, Channel,
 	
 	private void incrementSequenceNumber() {
 		setSequenceNumber(getSequenceNumber() + 1);
+	}
+	
+	private void sendPacket(UtpPacket packet) throws IOException {
+		if (packet != null) {
+			ByteBuffer buffer = ByteBuffer.allocate(packet.getPacketLength());
+			buffer.put(packet.toByteArray());
+			buffer.flip();
+			getDataGramChannel().send(buffer, getRemoteAdress());
+		}
 	}
 
 	private void setupConnectionId() {
@@ -146,8 +165,18 @@ public class UtpSocketChannel implements Closeable, ByteChannel, Channel,
 		
 	}
 
-	private long timestamp() {
-		return timeStamper.timeStamp();
+	private int timestamp() {
+		int returnStamp;
+		long stamp = timeStamper.utpTimeStamp();
+		try {
+			returnStamp  = longToUint(stamp);
+		} catch (ByteOverflowException exp) {
+			stamp = stamp % MAX_UINT;
+			returnStamp = longToUint(stamp);
+			System.out.println("Exception");
+		}
+		System.out.println(returnStamp);
+		return returnStamp;
 	}
 
 
@@ -173,6 +202,32 @@ public class UtpSocketChannel implements Closeable, ByteChannel, Channel,
 
 	public void setSequenceNumber(int sequenceNumber) {
 		this.sequenceNumber = sequenceNumber;
+	}
+
+	public void setRemoteAddress(SocketAddress adress) {
+		remoteAddress = adress;
+		
+	}
+	
+	private SocketAddress getRemoteAdress() {
+		return remoteAddress;
+	}
+
+	public void setupRandomSeqNumber() {
+		Random rnd = new Random();
+		int max = (int) (MAX_USHORT - 1);
+		long rndInt = rnd.nextInt(max);
+		//TODO: set here rnd seq number
+		longToUshort(rndInt);
+		
+	}
+
+	public int getAckNumber() {
+		return ackNumber;
+	}
+
+	public void setAckNumber(int ackNumber) {
+		this.ackNumber = ackNumber;
 	}
 
 	

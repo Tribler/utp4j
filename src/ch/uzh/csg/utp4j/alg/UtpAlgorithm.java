@@ -1,4 +1,4 @@
-package com.utp4j.alg;
+package ch.uzh.csg.utp4j.alg;
 
 public class UtpAlgorithm {
 

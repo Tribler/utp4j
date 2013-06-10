@@ -1,6 +1,6 @@
-package com.utp4j.data;
+package ch.uzh.csg.utp4j.data;
 
-import static com.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
 
 
 /**
@@ -56,6 +56,8 @@ public class UtpPacketUtils {
 		UtpPacket pkt = new UtpPacket();
 		pkt.setTypeVersion(ST_SYN);
 		pkt.setSequenceNumber(longToUbyte(1));
+		byte[] pl = { 1, 2, 3, 4, 5, 6};
+		pkt.setPayload(pl);
 		return pkt;
 	}
 

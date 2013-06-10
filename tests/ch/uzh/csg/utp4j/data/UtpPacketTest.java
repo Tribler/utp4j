@@ -1,14 +1,16 @@
-package com.utp4j.data;
+package ch.uzh.csg.utp4j.data;
 
 import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import com.utp4j.data.SelectiveAckHeaderExtension;
-import com.utp4j.data.UtpPacket;
-import com.utp4j.data.UtpHeaderExtension;
+import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
+import ch.uzh.csg.utp4j.data.UtpHeaderExtension;
+import ch.uzh.csg.utp4j.data.UtpPacket;
+import ch.uzh.csg.utp4j.data.UtpPacketUtils;
 
-import static com.utp4j.data.bytes.UnsignedTypesUtil.*;
+
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.*;
 
 public class UtpPacketTest {
 
@@ -63,6 +65,15 @@ public class UtpPacketTest {
 		
 
 	}
+	
+	@Test
+	public void testFromByteArray() {
+		UtpPacket pkt = createMaxHeader(UtpPacketUtils.ST_DATA, UtpPacketUtils.NO_EXTENSION);
+		UtpPacket fromArrayPkt = new UtpPacket();
+		fromArrayPkt.setFromByteArray(pkt.toByteArray());
+		
+		assertEquals(pkt, fromArrayPkt);
+	}
 
 	/**
 	 *  Attaching an selective ack to the header with a length of 6 bytes, each's value is 0xFF. 
@@ -86,6 +97,7 @@ public class UtpPacketTest {
 		
 		return 8;
 	}
+	
 	
 	/**
 	 * returns standart header with full of 0xFF fields except of first two bytes which are specified as parameters.

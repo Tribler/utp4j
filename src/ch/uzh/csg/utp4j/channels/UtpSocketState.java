@@ -1,4 +1,4 @@
-package com.utp4j.channels;
+package ch.uzh.csg.utp4j.channels;
 
 /**
  * Possible states which a Utp Socket can be in.

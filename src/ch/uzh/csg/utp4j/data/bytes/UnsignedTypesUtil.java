@@ -1,7 +1,8 @@
-package com.utp4j.data.bytes;
+package ch.uzh.csg.utp4j.data.bytes;
 
-import com.utp4j.data.bytes.exceptions.ByteOverflowException;
-import com.utp4j.data.bytes.exceptions.SignedNumberException;
+
+import ch.uzh.csg.utp4j.data.bytes.exceptions.ByteOverflowException;
+import ch.uzh.csg.utp4j.data.bytes.exceptions.SignedNumberException;
 
 /**
  * 
@@ -53,4 +54,23 @@ public final class UnsignedTypesUtil {
 		return "Cannot convert to unsigned type. " +
 				"Possible values [0, " + max +  "] but got " + actual + ".";
 	}
+	
+	public static short bytesToUshort(byte first, byte second) {
+		short value = (short)( ((first & 0xFF) << 8) | (second & 0xFF) );
+		return value;
+	}
+	
+	public static int bytesToUint(byte first, byte second, byte third, byte fourth) {
+		int firstI = ((int) (first & 0xFF)) << 24;
+		int secondI = ((int) (second & 0xFF)) << 16;
+		int thirdI = ((int) (third & 0xFF)) << 8;
+		int fourthI = ((int) (fourth & 0xFF));
+		
+		return firstI | secondI | thirdI | fourthI;
+
+		
+	}
+	
+
+	
  }

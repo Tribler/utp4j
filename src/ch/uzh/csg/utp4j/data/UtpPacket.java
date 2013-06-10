@@ -1,9 +1,11 @@
-package com.utp4j.data;
+package ch.uzh.csg.utp4j.data;
 
 import java.util.Random;
 
-import static com.utp4j.data.UtpPacketUtils.*;
-import static com.utp4j.data.bytes.UnsignedTypesUtil.*;
+import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
+
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.*;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.*;
 
 
 
@@ -111,7 +113,7 @@ public class UtpPacket {
 	public byte[] toByteArray() {
 		
 		if (!hasExtensions()) {
-			return joinByteArray(getExtensionlessByteArray(), payload);
+			return joinByteArray(getExtensionlessByteArray(), getPayload());
 		}
 		
 
@@ -130,7 +132,7 @@ public class UtpPacket {
 				header[offset++] = extenionBytes[j];
 			}
 		}
-		return joinByteArray(header, payload);
+		return joinByteArray(header, getPayload());
 		
 	}
 
@@ -163,5 +165,64 @@ public class UtpPacket {
 		int plLength = pl != null ? pl.length : 0;
 		return DEF_HEADER_LENGTH + getTotalLengthOfExtensions() + plLength;
 	}
+	
+	public void setFromByteArray(byte[] array) {
+		if (array == null) {
+			return;
+		}
+		
+		typeVersion = array[0];
+		firstExtension = array[1];
+		connectionId = UnsignedTypesUtil.bytesToUshort(array[2], array[3]);
+		timestamp = UnsignedTypesUtil.bytesToUint(array[4], array[5], array[6], array[7]);
+		timestampDifference = UnsignedTypesUtil.bytesToUint(array[8], array[9], array[10], array[11]);
+		windowSize = UnsignedTypesUtil.bytesToUint(array[12], array[13], array[14], array[15]);
+		sequenceNumber = UnsignedTypesUtil.bytesToUshort(array[16], array[17]);
+		ackNumber = UnsignedTypesUtil.bytesToUshort(array[18], array[19]);
+		
+		//TODO: set extensions and payload;
+		
+		
+	}
+	
+	public boolean isSynPkt() {
+		return typeVersion == ST_SYN;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		} 
+		if (!(obj instanceof UtpPacket)) {
+			return false;
+		} else {
+			UtpPacket pkt = (UtpPacket) obj;
+			
+			byte[] their = pkt.toByteArray();
+			byte[] mine = this.toByteArray();
+			
+			if (their.length != mine.length) {
+				return false;
+			}
+			for (int i = 0; i < mine.length; i++) {
+				if (mine[i] != their[i]) {
+					return false;
+				}
+			}
+			
+			return true;
+		}
+		
+	}
+	
+    @Override
+    public int hashCode() {
+      int code = 0;
+		code = typeVersion + 10*firstExtension + 100* connectionId 
+				+ 1000*timestamp + 10000*timestampDifference + 100000*windowSize
+				+ 1000000*sequenceNumber + 10000000*ackNumber + 1000000000*toByteArray().length;
+      return code;
+    }
 	
 }

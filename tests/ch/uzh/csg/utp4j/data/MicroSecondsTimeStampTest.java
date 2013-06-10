@@ -1,8 +1,9 @@
-package com.utp4j.data;
+package ch.uzh.csg.utp4j.data;
 
 import org.junit.Test;
 
-import com.utp4j.data.MicroSecondsTimeStamp;
+import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
+
 
 import static org.junit.Assert.*;
 
