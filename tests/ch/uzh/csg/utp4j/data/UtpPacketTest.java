@@ -1,16 +1,14 @@
 package ch.uzh.csg.utp4j.data;
 
-import static org.junit.Assert.*;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_UBYTE;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_UINT;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_USHORT;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUint;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
-
-import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
-import ch.uzh.csg.utp4j.data.UtpHeaderExtension;
-import ch.uzh.csg.utp4j.data.UtpPacket;
-import ch.uzh.csg.utp4j.data.UtpPacketUtils;
-
-
-import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.*;
 
 public class UtpPacketTest {
 
@@ -27,8 +25,8 @@ public class UtpPacketTest {
 			assertEquals((byte) 0xFF, array[i]);
 		}
 		
-		assertEquals(UtpPacket.DEF_HEADER_LENGTH, header.getPacketLength());
-		assertEquals(UtpPacket.DEF_HEADER_LENGTH, array.length);
+		assertEquals(UtpPacketUtils.DEF_HEADER_LENGTH, header.getPacketLength());
+		assertEquals(UtpPacketUtils.DEF_HEADER_LENGTH, array.length);
 		
 	}
 	
@@ -60,8 +58,8 @@ public class UtpPacketTest {
 			assertEquals((byte) 0xFF, actual[i]);
 		}
 		
-		assertEquals(UtpPacket.DEF_HEADER_LENGTH + extensionLength, header.getPacketLength());
-		assertEquals(UtpPacket.DEF_HEADER_LENGTH + extensionLength, actual.length);
+		assertEquals(UtpPacketUtils.DEF_HEADER_LENGTH + extensionLength, header.getPacketLength());
+		assertEquals(UtpPacketUtils.DEF_HEADER_LENGTH + extensionLength, actual.length);
 		
 
 	}

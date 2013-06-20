@@ -2,6 +2,8 @@ package ch.uzh.csg.utp4j.data;
 
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
 
+import java.net.DatagramPacket;
+
 
 /**
  * Helper methods for uTP Headers.
@@ -19,7 +21,11 @@ public class UtpPacketUtils {
 	
 	public static final byte NO_EXTENSION = longToUbyte(0);
 	public static final byte SELECTIVE_ACK = longToUbyte(1);
-
+	
+	public static final int MAX_UTP_PACKET_LENGTH = 1500;
+	public static final int MAX_UDP_HEADER_LENGTH = 48;
+	public static final int DEF_HEADER_LENGTH = 20;
+	
 	public static byte[] joinByteArray(byte[] array1, byte[] array2) {
 		
 		int length1 = array1 == null ? 0 : array1.length;
@@ -53,6 +59,7 @@ public class UtpPacketUtils {
 	 * @return {@link UtpPacket}
 	 */
 	public static UtpPacket createSynPacket() {
+		
 		UtpPacket pkt = new UtpPacket();
 		pkt.setTypeVersion(ST_SYN);
 		pkt.setSequenceNumber(longToUbyte(1));
@@ -60,6 +67,38 @@ public class UtpPacketUtils {
 		pkt.setPayload(pl);
 		return pkt;
 	}
-
+	
+	public static UtpPacket createUtpPacket(DatagramPacket dgpkt) {
+		
+		UtpPacket pkt = new UtpPacket();
+		byte[] pktb = dgpkt.getData();
+		pkt.setFromByteArray(pktb);
+		return pkt;
+	}
+	
+	public static boolean isSynPkt(UtpPacket packet) {
+		
+		if (packet == null) {
+			return false;
+		}
+		
+		return packet.getTypeVersion() == ST_SYN;
+		
+	}
+	
+	public static boolean isSynPkt(DatagramPacket packet) {
+		
+		if (packet == null) {
+			return false;
+		}
+		
+		byte[] data = packet.getData();
+		
+		if (data != null && data.length >= DEF_HEADER_LENGTH) {
+			return data[0] == ST_SYN;
+		}
+		
+		return false;
+	}
 
 }

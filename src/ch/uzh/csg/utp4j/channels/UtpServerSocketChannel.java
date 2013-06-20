@@ -1,71 +1,52 @@
 package ch.uzh.csg.utp4j.channels;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.DatagramChannel;
 
-import ch.uzh.csg.utp4j.data.UtpPacket;
+import ch.uzh.csg.utp4j.channels.impl.UtpPacketRecievable;
+import ch.uzh.csg.utp4j.channels.impl.UtpRecieveRunnable;
+import ch.uzh.csg.utp4j.channels.impl.UtpServerSocketChannelImpl;
 
-public class UtpServerSocketChannel {
+public abstract class UtpServerSocketChannel {
 	
-	private DatagramChannel dgChannel;
-	private UtpServerSocketListenRunnable listenRunnable;
+	private DatagramSocket socket;
+	protected boolean blocking = true;
 
 
 
-	public static UtpServerSocketChannel open() throws IOException {
-		UtpServerSocketChannel sChannel = new UtpServerSocketChannel();
-		sChannel.setListenRunnable(new UtpServerSocketListenRunnable(true, sChannel));
-		
-		try {
-			DatagramChannel chan = DatagramChannel.open();
-			chan.configureBlocking(true);
-			sChannel.setDgChannel(chan);
-		} catch (IOException exp) {
-			throw new IOException("Could not open UtpServerSocketChannel: " + exp.getMessage());
-		}
-		
+	public static UtpServerSocketChannel open() {
+		UtpServerSocketChannelImpl sChannel = new UtpServerSocketChannelImpl();	
 		return sChannel;
 	}
 	
 	
+	protected abstract UtpSocketChannel acceptImpl() throws IOException;
 	
 	public UtpSocketChannel accept() throws IOException {
-		Thread runner = new Thread(listenRunnable);
-		runner.start();
-		return null;
-		
+		return acceptImpl();		
 	}
 	
-
-
-
+	
 	public void bind(InetSocketAddress addr) throws IOException {
 		try {
-			dgChannel.bind(addr);
+			setSocket(new DatagramSocket(addr));
+			UtpServerSocketChannelImpl me = (UtpServerSocketChannelImpl) this;
+			me.setListenRunnable(new UtpRecieveRunnable(this.getSocket(), me));
 		} catch (IOException exp) {
 			throw new IOException("Could not open UtpServerSocketChannel: " + exp.getMessage());
 		}
 	}
 
-	public DatagramChannel getDgChannel() {
-		return dgChannel;
+
+	public DatagramSocket getSocket() {
+		return socket;
 	}
 
-	public void setDgChannel(DatagramChannel dgChannel) {
-		this.dgChannel = dgChannel;
-	}
 
-	
-	public UtpServerSocketListenRunnable getListenRunnable() {
-		return listenRunnable;
+	protected void setSocket(DatagramSocket socket) {
+		this.socket = socket;
 	}
 	
-	
-	
-	public void setListenRunnable(UtpServerSocketListenRunnable listenRunnable) {
-		this.listenRunnable = listenRunnable;
-	}
+
 }

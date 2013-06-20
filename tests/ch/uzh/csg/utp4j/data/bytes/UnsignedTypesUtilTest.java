@@ -1,14 +1,20 @@
 package ch.uzh.csg.utp4j.data.bytes;
 
-import static org.junit.Assert.*;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_UBYTE;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_UINT;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_USHORT;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.bytesToUint;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.bytesToUshort;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUint;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
-import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 import ch.uzh.csg.utp4j.data.bytes.exceptions.ByteOverflowException;
 import ch.uzh.csg.utp4j.data.bytes.exceptions.SignedNumberException;
-
-import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.*;
 
 public class UnsignedTypesUtilTest {
 

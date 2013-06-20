@@ -2,8 +2,6 @@ package ch.uzh.csg.utp4j.data;
 
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
 
-import com.sun.org.apache.bcel.internal.generic.INSTANCEOF;
-
 public class SelectiveAckHeaderExtension implements UtpHeaderExtension {
 
 	private byte nextExtension;

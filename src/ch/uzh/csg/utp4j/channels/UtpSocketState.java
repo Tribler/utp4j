@@ -6,13 +6,24 @@ package ch.uzh.csg.utp4j.channels;
  *
  */
 public enum UtpSocketState {
+	
 		/**
 		 * Indicates that a syn packet has been send.
 		 */
-		CS_SYN_SENT,
+		SYN_SENT,
 		
 		/**
 		 * Indicates that a connection has been established.
 		 */
-		CS_CONNECTED,
+		CONNECTED,
+		
+		/**
+		 * Indicates that no connection is established.
+		 */
+		CLOSED,
+		
+		/**
+		 * Indicates that a SYN has been recieved but could not acked.
+		 */
+		SYN_ACKING_FAILED,
 }

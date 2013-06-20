@@ -1,10 +1,14 @@
 package ch.uzh.csg.utp4j.data.bytes;
 
-import static org.junit.Assert.*;
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.ST_DATA;
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.ST_FIN;
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.ST_RESET;
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.ST_STATE;
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.ST_SYN;
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.joinByteArray;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
-
-import static ch.uzh.csg.utp4j.data.UtpPacketUtils.*;
 
 public class UtpPacketUtilsTest {
 	

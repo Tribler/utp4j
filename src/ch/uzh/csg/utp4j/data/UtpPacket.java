@@ -1,11 +1,8 @@
 package ch.uzh.csg.utp4j.data;
 
-import java.util.Random;
-
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.DEF_HEADER_LENGTH;
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.joinByteArray;
 import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
-
-import static ch.uzh.csg.utp4j.data.UtpPacketUtils.*;
-import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.*;
 
 
 
@@ -27,7 +24,6 @@ public class UtpPacket {
 	private UtpHeaderExtension[] extensions;
 	private byte[] payload;
 	
-	public static int DEF_HEADER_LENGTH = 20;
 	
 	public byte[] getPayload() {
 		return payload;
@@ -185,9 +181,6 @@ public class UtpPacket {
 		
 	}
 	
-	public boolean isSynPkt() {
-		return typeVersion == ST_SYN;
-	}
 	
 	@Override
 	public boolean equals(Object obj) {

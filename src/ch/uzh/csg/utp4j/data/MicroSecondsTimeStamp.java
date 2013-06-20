@@ -8,6 +8,8 @@ public class MicroSecondsTimeStamp {
 	private static long startNs = System.nanoTime();
 	
 	public long utpTimeStamp() {
+		//TODO: if performance issues, try bitwise & operator since constant MAX_UINT equals 0xFFFFFF
+		// (see http://en.wikipedia.org/wiki/Modulo_operation#Performance_issues )
 		return timeStamp() % UnsignedTypesUtil.MAX_UINT;
 	}
 	

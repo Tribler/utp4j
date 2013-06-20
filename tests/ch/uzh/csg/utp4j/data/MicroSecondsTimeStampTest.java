@@ -1,11 +1,8 @@
 package ch.uzh.csg.utp4j.data;
 
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
-
-import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
-
-
-import static org.junit.Assert.*;
 
 public class MicroSecondsTimeStampTest {
 
