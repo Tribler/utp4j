@@ -68,11 +68,11 @@ public class UtpPacketUtils {
 		return pkt;
 	}
 	
-	public static UtpPacket createUtpPacket(DatagramPacket dgpkt) {
+	public static UtpPacket extractUtpPacket(DatagramPacket dgpkt) {
 		
 		UtpPacket pkt = new UtpPacket();
 		byte[] pktb = dgpkt.getData();
-		pkt.setFromByteArray(pktb);
+		pkt.setFromByteArray(pktb, dgpkt.getLength(), dgpkt.getOffset());
 		return pkt;
 	}
 	

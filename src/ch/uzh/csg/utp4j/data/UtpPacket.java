@@ -162,7 +162,7 @@ public class UtpPacket {
 		return DEF_HEADER_LENGTH + getTotalLengthOfExtensions() + plLength;
 	}
 	
-	public void setFromByteArray(byte[] array) {
+	public void setFromByteArray(byte[] array, int length, int offset) {
 		if (array == null) {
 			return;
 		}
@@ -175,9 +175,11 @@ public class UtpPacket {
 		windowSize = UnsignedTypesUtil.bytesToUint(array[12], array[13], array[14], array[15]);
 		sequenceNumber = UnsignedTypesUtil.bytesToUshort(array[16], array[17]);
 		ackNumber = UnsignedTypesUtil.bytesToUshort(array[18], array[19]);
+
 		
-		//TODO: set extensions and payload;
-		
+		int utpOffset = offset + 20;
+		payload = new byte[length - utpOffset];
+		System.arraycopy(array, utpOffset, payload, 0, length - utpOffset);
 		
 	}
 	

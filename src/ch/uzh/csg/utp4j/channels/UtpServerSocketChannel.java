@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 
-import ch.uzh.csg.utp4j.channels.impl.UtpPacketRecievable;
-import ch.uzh.csg.utp4j.channels.impl.UtpRecieveRunnable;
 import ch.uzh.csg.utp4j.channels.impl.UtpServerSocketChannelImpl;
+import ch.uzh.csg.utp4j.channels.impl.recieve.UtpPacketRecievable;
+import ch.uzh.csg.utp4j.channels.impl.recieve.UtpRecieveRunnable;
 
 public abstract class UtpServerSocketChannel {
 	

@@ -1,4 +1,4 @@
-package ch.uzh.csg.utp4j.channels.impl;
+package ch.uzh.csg.utp4j.channels.impl.recieve;
 
 
 import static ch.uzh.csg.utp4j.data.UtpPacketUtils.MAX_UDP_HEADER_LENGTH;
@@ -11,11 +11,12 @@ import java.net.DatagramSocket;
 
 
 
-public class UtpRecieveRunnable implements Runnable {
+public class UtpRecieveRunnable extends Thread implements Runnable {
 
 
 	private DatagramSocket socket;
 	private UtpPacketRecievable queueable;
+	private boolean graceFullInterrupt = false;
 	
 
 	public UtpRecieveRunnable(DatagramSocket socket, UtpPacketRecievable queueable) {
@@ -23,22 +24,27 @@ public class UtpRecieveRunnable implements Runnable {
 		this.queueable = queueable;
 	}
 		
-
+	public void graceFullInterrupt() {
+		super.interrupt();
+		graceFullInterrupt = true;
+		socket.close();
+	}
+	
+	private boolean continueThread() {
+		return !graceFullInterrupt;
+	}
+	
 	@Override
 	public void run() {
-		while(true) {
-			
+		while(continueThread()) {
 			byte[] buffer = new byte[MAX_UDP_HEADER_LENGTH + MAX_UTP_PACKET_LENGTH];
 			DatagramPacket dgpkt = new DatagramPacket(buffer, buffer.length);
 			try {
-				System.out.println("runnable listening");
 				socket.receive(dgpkt);
-				System.out.println("runnable rec. packet");
 				queueable.recievePacket(dgpkt);
 
 			} catch (IOException exp) {
-				System.out.println("break");
-
+				//TODO: what to do here?
 				break;
 			}
 		}

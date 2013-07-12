@@ -68,7 +68,7 @@ public class UtpPacketTest {
 	public void testFromByteArray() {
 		UtpPacket pkt = createMaxHeader(UtpPacketUtils.ST_DATA, UtpPacketUtils.NO_EXTENSION);
 		UtpPacket fromArrayPkt = new UtpPacket();
-		fromArrayPkt.setFromByteArray(pkt.toByteArray());
+		fromArrayPkt.setFromByteArray(pkt.toByteArray(), 20, 0);
 		
 		assertEquals(pkt, fromArrayPkt);
 	}

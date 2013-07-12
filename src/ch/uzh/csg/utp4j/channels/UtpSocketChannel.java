@@ -27,19 +27,18 @@ import ch.uzh.csg.utp4j.data.UtpPacketUtils;
 import ch.uzh.csg.utp4j.data.bytes.exceptions.ByteOverflowException;
 
 
-public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channel,
-		GatheringByteChannel, ReadableByteChannel, WritableByteChannel {
+public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channel, ReadableByteChannel, WritableByteChannel {
 	
 
 	
-	private int currentPayloadLength;
-	private short connectionIdSending;
-	private MicroSecondsTimeStamp timeStamper = new MicroSecondsTimeStamp();
+
+	private long connectionIdSending;
+	protected MicroSecondsTimeStamp timeStamper = new MicroSecondsTimeStamp();
 	private int sequenceNumber;
-	private short connectionIdRecieving;
+	private long connectionIdRecieving;
 	private SocketAddress remoteAddress;
 	private int ackNumber;
-	
+	protected boolean isBlocking;
 	private DatagramSocket dgSocket;
 	
 	
@@ -75,17 +74,29 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 			setSequenceNumber(DEF_SEQ_START);
 			
 			UtpPacket synPacket = UtpPacketUtils.createSynPacket();
-			synPacket.setConnectionId(getConnectionIdRecieving());
-			synPacket.setTimestamp(timestamp());
+			synPacket.setConnectionId(longToUshort(getConnectionIdRecieving()));
+			synPacket.setTimestamp(timeStamper.utpTimeStamp());
 			sendPacket(synPacket);
-			incrementSequenceNumber();
 			setState(SYN_SENT);
-
+			printState("Syn Send ");
+			incrementSequenceNumber();
 		} catch (IOException exp) {
+			setSequenceNumber(DEF_SEQ_START);
+			setRemoteAddress(null);
+			abortImpl();
+			setState(CLOSED);
 			throw new IOException("Could not conenct to remote adress: " + exp.getMessage());
 		}
 	}
 	
+	protected void printState(String msg) {
+		String state = "Connection id Sending: " + connectionIdSending + " Conn Id Rec " + connectionIdRecieving +
+					   " seq Nr. " + sequenceNumber + " ack nr. " + ackNumber;
+		System.out.println(msg + state);
+		
+	}
+
+	protected abstract void abortImpl();
 	protected abstract void connectImpl();
 	
 	protected void incrementSequenceNumber() {
@@ -105,36 +116,26 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 		Random rnd = new Random();
 		int max = (int) (MAX_USHORT - 1);
 		long rndInt = rnd.nextInt(max);
-		setConnectionIdRecieving(longToUshort(rndInt));
-		setConnectionIdsending(longToUshort(rndInt + 1));
+		setConnectionIdRecieving(rndInt);
+		setConnectionIdsending(rndInt + 1);
 		
 	}
 	
+	protected abstract int writeImpl(ByteBuffer src) throws IOException;
+	
+	
 	@Override
 	public int write(ByteBuffer src) throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
+		return writeImpl(src);
 	}
 
 	@Override
 	public int read(ByteBuffer dst) throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
+		return readImpl(dst);
 	}
 
-	@Override
-	public long write(ByteBuffer[] srcs, int offset, int length)
-			throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
 
-	@Override
-	public long write(ByteBuffer[] srcs) throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
+	protected abstract int readImpl(ByteBuffer dst) throws IOException;
 
 	@Override
 	public boolean isOpen() {
@@ -148,47 +149,30 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 		
 	}
 	
-	public short getConnectionIdsending() {
+	public long getConnectionIdsending() {
 		return connectionIdSending;
 	}
 	
 
-	public void setConnectionIdsending(short connectionIdSending) {
+	public void setConnectionIdsending(long connectionIdSending) {
 		this.connectionIdSending = connectionIdSending;
 		
 	}
 
-	protected int timestamp() {
-		int returnStamp;
-		long stamp = timeStamper.utpTimeStamp();
-		try {
-			returnStamp  = longToUint(stamp);
-		} catch (ByteOverflowException exp) {
-			stamp = stamp % MAX_UINT;
-			returnStamp = longToUint(stamp);
-			System.out.println("Exception");
-		}
-		return returnStamp;
-	}
-	
-	protected int calculateTimestampDifference(int othertimestamp) {
-		int nowTime = timestamp();
-		long nowTimeL = (long) (nowTime & 0x00000000FFFFFFFF);
-		long otherTimeL = (long) (othertimestamp & 0x00000000FFFFFFFF);
-		long differenceL = nowTimeL - otherTimeL;
-		return (int) (differenceL & 0xFFFFFFFF);
-	}
 	
 	protected UtpPacket createAckPacket(UtpPacket pkt) {
 		UtpPacket ackPacket = new UtpPacket();
 		ackPacket.setSequenceNumber(longToUshort(getSequenceNumber()));
 		incrementSequenceNumber();
-		ackPacket.setAckNumber(longToUshort(getAckNumber()));
-		int timedifference = calculateTimestampDifference(pkt.getTimestamp());
+		ackPacket.setAckNumber(pkt.getSequenceNumber());
+		System.out.println("Acking " + (ackPacket.getAckNumber() & 0xFFFF));
+		// TODO: SELECTIVE ACK if (!expectedSeq ? selective ack : ack)
+		
+		int timedifference = timeStamper.UtpDifference(pkt.getTimestamp());
 		
 		ackPacket.setTimestampDifference(longToUint(timedifference));
-		ackPacket.setTimestamp(timestamp());
-		ackPacket.setConnectionId(getConnectionIdsending());
+		ackPacket.setTimestamp(timeStamper.utpTimeStamp());
+		ackPacket.setConnectionId(longToUshort(getConnectionIdsending()));
 		
 		return ackPacket;		
 	}
@@ -198,17 +182,17 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 		pkt.setSequenceNumber(longToUshort(getSequenceNumber()));
 		incrementSequenceNumber();
 		pkt.setAckNumber(longToUshort(getAckNumber()));
-		pkt.setConnectionId(getConnectionIdsending());
-		pkt.setTimestamp(timestamp());
+		pkt.setConnectionId(longToUshort(getConnectionIdsending()));
+		pkt.setTimestamp(timeStamper.utpTimeStamp());
 		return pkt;
 	}
 
 
-	public short getConnectionIdRecieving() {
+	public long getConnectionIdRecieving() {
 		return connectionIdRecieving;
 	}
 
-	public void setConnectionIdRecieving(short connectionIdRecieving) {
+	public void setConnectionIdRecieving(long connectionIdRecieving) {
 		this.connectionIdRecieving = connectionIdRecieving;
 	}
 
@@ -236,7 +220,6 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 		return remoteAddress;
 	}
 
-
 	public int getAckNumber() {
 		return ackNumber;
 	}
@@ -260,5 +243,4 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 		return getState() == UtpSocketState.CONNECTED;
 	}
 
-	
 }
