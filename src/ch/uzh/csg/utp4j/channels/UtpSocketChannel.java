@@ -78,7 +78,7 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 			synPacket.setTimestamp(timeStamper.utpTimeStamp());
 			sendPacket(synPacket);
 			setState(SYN_SENT);
-			printState("Syn Send ");
+			printState("[Syn send] ");
 			incrementSequenceNumber();
 		} catch (IOException exp) {
 			setSequenceNumber(DEF_SEQ_START);
@@ -90,8 +90,8 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 	}
 	
 	protected void printState(String msg) {
-		String state = "Connection id Sending: " + connectionIdSending + " Conn Id Rec " + connectionIdRecieving +
-					   " seq Nr. " + sequenceNumber + " ack nr. " + ackNumber;
+		String state = "[ConnID Sending: " + connectionIdSending + "] [ConnID Recv: " + connectionIdRecieving +
+					   "] [SeqNr. " + sequenceNumber + "] [AckNr: " + ackNumber + "]";
 		System.out.println(msg + state);
 		
 	}
@@ -165,7 +165,7 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 		ackPacket.setSequenceNumber(longToUshort(getSequenceNumber()));
 		incrementSequenceNumber();
 		ackPacket.setAckNumber(pkt.getSequenceNumber());
-		System.out.println("Acking " + (ackPacket.getAckNumber() & 0xFFFF));
+//		System.out.println("Acking " + (ackPacket.getAckNumber() & 0xFFFF));
 		// TODO: SELECTIVE ACK if (!expectedSeq ? selective ack : ack)
 		
 		int timedifference = timeStamper.UtpDifference(pkt.getTimestamp());
