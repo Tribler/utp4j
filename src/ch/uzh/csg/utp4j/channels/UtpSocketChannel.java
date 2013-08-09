@@ -1,8 +1,7 @@
 package ch.uzh.csg.utp4j.channels;
 
-import static ch.uzh.csg.utp4j.channels.UtpSocketState.SYN_SENT;
 import static ch.uzh.csg.utp4j.channels.UtpSocketState.CLOSED;
-import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_UINT;
+import static ch.uzh.csg.utp4j.channels.UtpSocketState.SYN_SENT;
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_USHORT;
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUint;
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
@@ -15,7 +14,6 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.Channel;
-import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.Random;
@@ -24,7 +22,7 @@ import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.UtpPacket;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
-import ch.uzh.csg.utp4j.data.bytes.exceptions.ByteOverflowException;
+import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
 
 public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channel, ReadableByteChannel, WritableByteChannel {
@@ -45,7 +43,7 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 	/**
 	 * Current State of the Socket. {@link UtpSocketState}
 	 */
-	private UtpSocketState state = null;
+	protected UtpSocketState state = null;
 
 	/**
 	 * Sequencing begin.
@@ -99,8 +97,13 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 	protected abstract void abortImpl();
 	protected abstract void connectImpl();
 	
+	
 	protected void incrementSequenceNumber() {
-		setSequenceNumber(getSequenceNumber() + 1);
+		int seqNumber = getSequenceNumber() + 1;
+		if (seqNumber > MAX_USHORT) {
+			seqNumber = 1;
+		}
+		setSequenceNumber(seqNumber);
 	}
 	
 	protected void sendPacket(UtpPacket packet) throws IOException {
@@ -145,9 +148,11 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 
 	@Override
 	public void close() throws IOException {
-		// TODO Auto-generated method stub
+		closeImpl();
 		
 	}
+	
+	protected abstract void closeImpl();
 	
 	public long getConnectionIdsending() {
 		return connectionIdSending;
@@ -160,22 +165,19 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 	}
 
 	
-	protected UtpPacket createAckPacket(UtpPacket pkt) {
+	protected UtpPacket createAckPacket(UtpPacket pkt, int timedifference) {
 		UtpPacket ackPacket = new UtpPacket();
-		ackPacket.setSequenceNumber(longToUshort(getSequenceNumber()));
-		incrementSequenceNumber();
-		ackPacket.setAckNumber(pkt.getSequenceNumber());
-//		System.out.println("Acking " + (ackPacket.getAckNumber() & 0xFFFF));
-		// TODO: SELECTIVE ACK if (!expectedSeq ? selective ack : ack)
+		setAckNrFromPacketSqNr(pkt);
+		ackPacket.setAckNumber(longToUshort(getAckNumber()));
 		
-		int timedifference = timeStamper.UtpDifference(pkt.getTimestamp());
-		
-		ackPacket.setTimestampDifference(longToUint(timedifference));
+		ackPacket.setTimestampDifference(timedifference);
 		ackPacket.setTimestamp(timeStamper.utpTimeStamp());
 		ackPacket.setConnectionId(longToUshort(getConnectionIdsending()));
-		
+		ackPacket.setTypeVersion(UtpPacketUtils.ST_STATE);
 		return ackPacket;		
 	}
+	
+	protected abstract void setAckNrFromPacketSqNr(UtpPacket utpPacket);
 	
 	protected UtpPacket createDataPacket() {
 		UtpPacket pkt = new UtpPacket();
@@ -242,5 +244,9 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 	public boolean isConnected() {
 		return getState() == UtpSocketState.CONNECTED;
 	}
+
+	public abstract boolean isReading();
+	public abstract boolean isWriting();
+
 
 }

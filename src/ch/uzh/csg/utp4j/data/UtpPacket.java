@@ -4,8 +4,6 @@ import static ch.uzh.csg.utp4j.data.UtpPacketUtils.DEF_HEADER_LENGTH;
 import static ch.uzh.csg.utp4j.data.UtpPacketUtils.joinByteArray;
 import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
-
-
 /**
  * uTP Package
  * @author Ivan Iljkic (i.iljkic@gmail.com)
@@ -175,15 +173,35 @@ public class UtpPacket {
 		windowSize = UnsignedTypesUtil.bytesToUint(array[12], array[13], array[14], array[15]);
 		sequenceNumber = UnsignedTypesUtil.bytesToUshort(array[16], array[17]);
 		ackNumber = UnsignedTypesUtil.bytesToUshort(array[18], array[19]);
-
 		
-		int utpOffset = offset + 20;
+		int utpOffset = offset + UtpPacketUtils.DEF_HEADER_LENGTH;
+		if (firstExtension != 0) {
+			utpOffset += loadExtensions(array, length, offset);
+		}
+		
 		payload = new byte[length - utpOffset];
 		System.arraycopy(array, utpOffset, payload, 0, length - utpOffset);
 		
 	}
 	
 	
+	private int loadExtensions(byte[] array, int length, int offset) {
+		byte firstExtension = array[1];
+		UtpHeaderExtension extension = UtpHeaderExtension.resolve(firstExtension);
+		int extensionLength = array[21] & 0xFF;
+		byte[] bitmask = new byte[extensionLength];
+		System.arraycopy(array, 22, bitmask, 0, extensionLength-2);
+
+		extension.setNextExtension(array[20]);
+		extension.setBitMask(bitmask);
+
+		UtpHeaderExtension[] extensions = {extension};
+		setExtensions(extensions);
+		return extension.getLength();
+	}
+
+
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null) {

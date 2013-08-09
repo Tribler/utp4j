@@ -1,15 +1,24 @@
 package ch.uzh.csg.utp4j.data;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
 
-public interface UtpHeaderExtension {
+public abstract class UtpHeaderExtension {
+	
+	public static UtpHeaderExtension resolve(byte b) {
+		if (b == longToUbyte(1)) {
+			return new SelectiveAckHeaderExtension();
+		} else {
+			return null;
+		}
+	}
 
-	public byte getNextExtension();
-	public void setNextExtension(byte nextExtension) ;
+	public abstract byte getNextExtension();
+	public abstract void setNextExtension(byte nextExtension) ;
 	
-	public byte getLength();
+	public abstract byte getLength();
 	
-	public byte[] getBitMask();
-	public void setBitMask(byte[] bitMask);
+	public abstract byte[] getBitMask();
+	public abstract void setBitMask(byte[] bitMask);
 	
-	public byte[] toByteArray();
+	public abstract byte[] toByteArray();
 
 }

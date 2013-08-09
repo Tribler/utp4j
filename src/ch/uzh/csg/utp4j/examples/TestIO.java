@@ -1,10 +1,8 @@
 package ch.uzh.csg.utp4j.examples;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.security.AllPermission;
+import java.util.Arrays;
 
 import ch.uzh.csg.utp4j.channels.UtpServerSocketChannel;
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
@@ -26,21 +24,26 @@ public class TestIO {
 		UtpSocketChannel chanel = UtpSocketChannel.open();
 		chanel.connect(new InetSocketAddress("localhost", 13345));
 		
-		ByteBuffer buffer = ByteBuffer.allocate(1000);
-		byte[] array = { 1, 1, 1, 1, 1, 1, 1,  2, 1, 1, 1, 1, 1, 1,  3, 1, 1, 1, 1, 1, 1,  4, 1, 1, 1, 1, 1, 1,  
-				4, 1, 1, 1, 1, 1, 1,  5, 1, 1, 1, 1, 1, 1,  6, 1, 1, 1, 1, 1, 1,  7, 1, 1, 1, 1, 1, 1 ,  2, 1, 1, 1, 1, 1, 1,  
-				3, 1, 1, 1, 1, 1, 1,  4, 1, 1, 1, 1, 1, 1,  2, 1, 1, 1, 1, 1, 1,  3, 1, 1, 1, 1, 1, 1,  4, 1, 1, 1, 1, 1, 1,
-				3, 1, 1, 1, 1, 1, 1,  4, 1, 1, 1, 1, 1, 1,  2, 1, 1, 1, 1, 1, 1,  3, 1, 1, 1, 1, 1, 1,  4, 1, 1, 1, 1, 1, 1,
-				3, 1, 1, 1, 1, 1, 1,  4, 1, 1, 1, 1, 1, 1,  2, 1, 1, 1, 1, 1, 1,  3, 1, 1, 1, 1, 1, 1,  4, 1, 1, 1, 1, 1, 1,
-				3, 1, 1, 1, 1, 1, 1,  4, 1, 1, 1, 1, 1, 1,  2, 1, 1, 1, 1, 1, 1,  3, 1, 1, 1, 1, 1, 1,  4, 1, 1, 1, 1, 1, 1,
-				3, 1, 1, 1, 1, 1, 1,  4, 1, 1, 1, 1, 1, 1,  2, 1, 1, 1, 1, 1, 1,  3, 1, 1, 1, 1, 1, 1,  4, 1, 1, 1, 1, 1, 1,};
+		ByteBuffer buffer = ByteBuffer.allocate(10000);
+		byte[] array = createArray();
 		buffer.put(array);
-		Thread.sleep(1000);
+		while(!chanel.isConnected()) { }
 		
 		chanel.write(buffer);
-
+		Thread.sleep(2000);
+		chanel.close();
 	}
 	
+	private static byte[] createArray() {
+		byte[] array = new byte[10000];
+		
+		for (int i = 0; i < 10000; i++) {
+			array[i] = (byte)(i%127);
+		}
+		
+		return array;
+	}
+
 	private static class Listening extends Thread {
 		
 		UtpServerSocketChannel server;
@@ -51,12 +54,15 @@ public class TestIO {
 		
 		public void run() {
 			try {
-				while(true) {
-					UtpSocketChannel channel = server.accept();
-					ByteBuffer buff = ByteBuffer.allocate(1000);
-					channel.read(buff);
-				}
-			} catch (IOException e) {
+				UtpSocketChannel channel = server.accept();
+				ByteBuffer buff = ByteBuffer.allocate(10000);
+				channel.read(buff);
+				Thread.sleep(2000);
+				System.out.println(Arrays.toString(buff.array()));
+				channel.close();
+				server.close();
+				System.out.println("OUT");
+			} catch (IOException | InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}

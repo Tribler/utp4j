@@ -2,10 +2,23 @@ package ch.uzh.csg.utp4j.data;
 
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
 
-public class SelectiveAckHeaderExtension implements UtpHeaderExtension {
+public class SelectiveAckHeaderExtension extends UtpHeaderExtension {
 
 	private byte nextExtension;
 	private byte[] bitMask;
+	
+	/* Bit mappings */
+	public static byte[] BITMAP = { longToUbyte(1),  longToUbyte(2), longToUbyte(4), longToUbyte(8), 
+							  		longToUbyte(16), longToUbyte(32), longToUbyte(64), longToUbyte(128)};
+	
+	public static boolean isBitMarked(byte bitmask, int number) {
+		if (number < 2 || number > 9 ) {
+			return false;
+		} else {
+			boolean returnvalue = (BITMAP[number - 2] & bitmask) == BITMAP[number - 2];
+			return returnvalue;
+		}
+	}
 	
 	public byte getNextExtension() {
 		return nextExtension;

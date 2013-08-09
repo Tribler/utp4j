@@ -25,5 +25,10 @@ public enum UtpSocketState {
 		/**
 		 * Indicates that a SYN has been recieved but could not acked.
 		 */
-		SYN_ACKING_FAILED,
+		SYN_ACKING_FAILED, 
+		
+		/**
+		 * Indicates that the fin Packet has been send.
+		 */
+		FIN_SEND,
 }

@@ -5,7 +5,6 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpServerSocketChannelImpl;
-import ch.uzh.csg.utp4j.channels.impl.recieve.UtpPacketRecievable;
 import ch.uzh.csg.utp4j.channels.impl.recieve.UtpRecieveRunnable;
 
 public abstract class UtpServerSocketChannel {
@@ -48,5 +47,6 @@ public abstract class UtpServerSocketChannel {
 		this.socket = socket;
 	}
 	
+	public abstract void close();
 
 }

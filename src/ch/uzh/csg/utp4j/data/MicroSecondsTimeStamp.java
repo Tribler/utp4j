@@ -20,17 +20,24 @@ public class MicroSecondsTimeStamp {
 		} catch (ByteOverflowException exp) {
 			stamp = stamp % MAX_UINT;
 			returnStamp = longToUint(stamp);
-			System.out.println("Exception in timestamp");
 		}
 		return returnStamp;
 	}
 	
-	public int UtpDifference(int othertimestamp) {
-		int nowTime = utpTimeStamp();
-		long nowTimeL = (long) (nowTime & 0x00000000FFFFFFFF);
-		long otherTimeL = (long) (othertimestamp & 0x00000000FFFFFFFF);
+	public int utpDifference(int othertimestamp) {
+		return utpDifference(utpTimeStamp(), othertimestamp);
+	}
+	
+	public int utpDifference(int thisTimeStamp, int othertimestamp) {
+		int nowTime = thisTimeStamp;
+		long nowTimeL = (long) (nowTime & 0xFFFFFFFF);
+		long otherTimeL = (long) (othertimestamp & 0xFFFFFFFF);
 		long differenceL = nowTimeL - otherTimeL;
-		return (int) (differenceL & 0xFFFFFFFF);
+		// TODO: POSSIBLE BUG NEGATIVE DIFFERENCE
+		if (differenceL < 0) {
+			differenceL += MAX_UINT;
+		}
+		return longToUint(differenceL);
 	}
 	
 

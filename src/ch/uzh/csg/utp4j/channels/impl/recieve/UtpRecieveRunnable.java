@@ -48,7 +48,7 @@ public class UtpRecieveRunnable extends Thread implements Runnable {
 				break;
 			}
 		}
-
+		System.out.println("RECIEVER OUT");
 		
 	}
 

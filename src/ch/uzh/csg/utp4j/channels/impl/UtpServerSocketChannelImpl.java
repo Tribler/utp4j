@@ -100,4 +100,11 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
 				&& channel.getState() != UtpSocketState.SYN_ACKING_FAILED;
 	}
 
+
+	@Override
+	public void close() {
+		synQueue.clear();
+		listenRunnable.graceFullInterrupt();
+	}
+
 }

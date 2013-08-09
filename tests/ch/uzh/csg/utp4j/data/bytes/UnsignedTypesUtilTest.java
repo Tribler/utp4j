@@ -1,5 +1,6 @@
 package ch.uzh.csg.utp4j.data.bytes;
 
+import static ch.uzh.csg.utp4j.data.bytes.BinaryToStringTestHelper.toBinaryString;
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_UBYTE;
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_UINT;
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_USHORT;
@@ -35,12 +36,12 @@ public class UnsignedTypesUtilTest {
 	@Test 
 	public void testToUbyte() {
 		String uByteMaxString = toBinaryString(longToUbyte(MAX_UBYTE));
-		assertEquals("00000000000000000000000011111111", uByteMaxString);
+		assertEquals("11111111", uByteMaxString);
 		
 		String uByteMinString = toBinaryString(longToUbyte(0L));
-		assertEquals("00000000000000000000000000000000", uByteMinString);
+		assertEquals("00000000", uByteMinString);
 
-		String inbetweenExpected = "00000000000000000000000001111100";
+		String inbetweenExpected = "01111100";
 		String uByteBetweenString = toBinaryString(longToUbyte(124));
 		assertEquals(inbetweenExpected, uByteBetweenString);
 		
@@ -64,12 +65,12 @@ public class UnsignedTypesUtilTest {
 	@Test
 	public void testToUShort() {
 		String uShortMaxString = toBinaryString(longToUshort(MAX_USHORT));
-		assertEquals("00000000000000001111111111111111", uShortMaxString);
+		assertEquals("1111111111111111", uShortMaxString);
 		
 		String uShortMinString = toBinaryString(longToUshort(0L));
-		assertEquals("00000000000000000000000000000000", uShortMinString);
+		assertEquals("0000000000000000", uShortMinString);
 
-		String inBetweenExpected = "00000000000000000001111111111111";
+		String inBetweenExpected = "0001111111111111";
 		String uShortInBetweenString = toBinaryString(longToUshort(8191L));
 		assertEquals(inBetweenExpected, uShortInBetweenString);
 		
@@ -125,7 +126,7 @@ public class UnsignedTypesUtilTest {
 		byte two = longToUbyte(0);
 		short result = bytesToUshort(one, two);
 		String resultString = toBinaryString(result);
-		assertEquals("00000000000000001111111100000000", resultString);
+		assertEquals("1111111100000000", resultString);
 	}
 	
 	@Test
@@ -139,38 +140,6 @@ public class UnsignedTypesUtilTest {
 		assertEquals("11111111000000001111111100000000", resultString);
 	}
 	
-	/**
-	 * Helper. Returns a String of the binary representation of the given value. 
-	 * @param value to convert the value
-	 * @return String binary representation. 
-	 */
-	private static String toBinaryString(int value) {
-		String result = Integer.toBinaryString(value);
-		
-		StringBuilder buf = new StringBuilder();
-		for (int i = 0; (i + result.length()) < 32; i++) {
-			buf.append("0");
-		}
-		buf.append(result);
-		return buf.toString();
-	}
-	
-	/**
-	 * Helper. Returns a String of the binary representation of the given value. 
-	 * @param value to convert the value
-	 * @return String binary representation. 
-	 */
-	private static String toBinaryString(byte value) {
-		return toBinaryString((value & 0xFF));
-	}
-	
-	/**
-	 * Helper. Returns a String of the binary representation of the given value. 
-	 * @param value to convert the value
-	 * @return String binary representation. 
-	 */
-	private static String toBinaryString(short value) {
-		return toBinaryString((value & 0xFFFF));
-	}
+
 	
 }

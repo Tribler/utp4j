@@ -1,5 +1,12 @@
 package ch.uzh.csg.utp4j.channels.impl;
 
+import static ch.uzh.csg.utp4j.channels.UtpSocketState.CLOSED;
+import static ch.uzh.csg.utp4j.channels.UtpSocketState.CONNECTED;
+import static ch.uzh.csg.utp4j.channels.UtpSocketState.SYN_ACKING_FAILED;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_USHORT;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUint;
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
@@ -13,22 +20,18 @@ import ch.uzh.csg.utp4j.channels.impl.read.UtpReadingRunnable;
 import ch.uzh.csg.utp4j.channels.impl.recieve.UtpPacketRecievable;
 import ch.uzh.csg.utp4j.channels.impl.recieve.UtpRecieveRunnable;
 import ch.uzh.csg.utp4j.channels.impl.write.UtpWritingRunnable;
+import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
+import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
+import ch.uzh.csg.utp4j.data.UtpHeaderExtension;
 import ch.uzh.csg.utp4j.data.UtpPacket;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
-
-import static ch.uzh.csg.utp4j.channels.UtpSocketState.CLOSED;
-import static ch.uzh.csg.utp4j.channels.UtpSocketState.CONNECTED;
-import static ch.uzh.csg.utp4j.channels.UtpSocketState.SYN_ACKING_FAILED;
-
-import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_USHORT;
-import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
-import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUint;
+import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
 
 
 public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketRecievable {
 	
-	private volatile Queue<UdpPacketTimeStampPair> queue = new ConcurrentLinkedQueue<UdpPacketTimeStampPair>();
+	private volatile Queue<UtpTimestampedPacketDTO> queue = new ConcurrentLinkedQueue<UtpTimestampedPacketDTO>();
 	
 	private UtpRecieveRunnable reciever;
 	private UtpWritingRunnable writer;
@@ -42,7 +45,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		} else if (getState() == UtpSocketState.SYN_SENT) {
 			handleSynSendAck(udpPacket);
 		} else if (acceptDataPackets()) { //TODO: HERE TRUE REMOVAL
-				handlePacket(udpPacket);
+			handlePacket(udpPacket);
 				
 		}
 	}
@@ -62,10 +65,17 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	}
 
 	private void handlePacket(DatagramPacket udpPacket) {
-		
-		queue.add(new UdpPacketTimeStampPair(udpPacket, timeStamper.timeStamp()));
+		UtpPacket utpPacket = UtpPacketUtils.extractUtpPacket(udpPacket);
+		queue.add(new UtpTimestampedPacketDTO(udpPacket, utpPacket, timeStamper.timeStamp(), timeStamper.utpTimeStamp()));
 
 	}
+
+
+	public void ackPacket(UtpPacket utpPacket, int timestampDifference) throws IOException {
+		UtpPacket ackPacket = createAckPacket(utpPacket, timestampDifference);
+		sendPacket(ackPacket);		
+	}
+
 
 	public void setupRandomSeqNumber() {
 		Random rnd = new Random();
@@ -76,6 +86,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	}
 	
 	private void handleIncommingConnectionRequest(DatagramPacket udpPacket) {
+		int timeStamp = timeStamper.utpTimeStamp();
 		if (getState() != CLOSED) {
 			ChannelStateException exp = new ChannelStateException("Recieved Syn Packet but Channel is already connected");
 			exp.setState(getState());
@@ -86,12 +97,11 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		UtpPacket utpPacket = UtpPacketUtils.extractUtpPacket(udpPacket);
 		setRemoteAddress(udpPacket.getSocketAddress());
 		setConnectionIdsFromPacket(utpPacket);
-			
 		setupRandomSeqNumber();
 		setAckNrFromPacketSqNr(utpPacket);
 		printState("[Syn recieved] ");
-			
-		UtpPacket ackPacket = createAckPacket(utpPacket);
+		int timestampDifference = timeStamper.utpDifference(timeStamp, utpPacket.getTimestamp());
+		UtpPacket ackPacket = createAckPacket(utpPacket, timestampDifference);
 		try {
 			sendPacket(ackPacket);			
 			setState(CONNECTED);
@@ -101,12 +111,11 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
  			setConnectionIdRecieving((short) 0);
  			setAckNumber(0);
  			setState(SYN_ACKING_FAILED);
- 			System.out.println("ACKING FAILED");
  		}
 		
 	}
 
-	private void setAckNrFromPacketSqNr(UtpPacket utpPacket) {
+	protected void setAckNrFromPacketSqNr(UtpPacket utpPacket) {
 		short ackNumberS = utpPacket.getSequenceNumber();
 		setAckNumber(ackNumberS & 0xFFFF);
 	}
@@ -137,7 +146,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 
 	@Override
 	protected int writeImpl(ByteBuffer src) throws IOException {
-		writer = new UtpWritingRunnable(this, src);
+		writer = new UtpWritingRunnable(this, src, timeStamper);
 		if (!isBlocking) {
 			writer.start();			
 		} else {
@@ -149,17 +158,23 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		return writer.getBytesSend();
 	}
 
-	public Queue<UdpPacketTimeStampPair> getDataGramQueue() {
+	public Queue<UtpTimestampedPacketDTO> getDataGramQueue() {
 		return queue;
 	}
 	
 	public UtpPacket getNextDataPacket() {
 		return createDataPacket();
 	}
+	
+	public UtpPacket getFinPacket() {
+		UtpPacket fin = createDataPacket();
+		fin.setTypeVersion(UtpPacketUtils.ST_FIN);
+		return fin;
+	}
 
 	@Override
 	protected int readImpl(ByteBuffer dst) throws IOException {
-		reader = new UtpReadingRunnable(this, dst);
+		reader = new UtpReadingRunnable(this, dst, timeStamper);
 		if (!isBlocking) {
 			reader.start();
 		} else {
@@ -171,9 +186,76 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		return reader.getBytesRead();
 	}
 
-	public void ackPacket(UtpPacket utpPacket) throws IOException {
-				UtpPacket ackPacket = createAckPacket(utpPacket);
-				sendPacket(ackPacket);				
+	public void selectiveAckPacket(UtpPacket utpPacket, SelectiveAckHeaderExtension headerExtension, int timestampDifference) throws IOException {
+		UtpPacket sack = createSelectiveAckPacket(utpPacket, headerExtension, timestampDifference);
+		sendPacket(sack);
+		
 	}
 
+	private UtpPacket createSelectiveAckPacket(UtpPacket utpPacket,
+			SelectiveAckHeaderExtension headerExtension, int timestampDifference) {
+		UtpPacket ackPacket = new UtpPacket();
+		ackPacket.setAckNumber(longToUshort(getAckNumber()));
+		// TODO: BUGFIX NEGATIVE TIME DIFFERENCE
+		ackPacket.setTimestampDifference(timestampDifference);
+		ackPacket.setTimestamp(timeStamper.utpTimeStamp());
+		ackPacket.setConnectionId(longToUshort(getConnectionIdsending()));
+		
+		ackPacket.setFirstExtension(UtpPacketUtils.SELECTIVE_ACK);
+		UtpHeaderExtension[] extensions = { headerExtension };
+		ackPacket.setExtensions(extensions);
+		ackPacket.setTypeVersion(UtpPacketUtils.ST_STATE);
+		
+		return ackPacket;		
+	}
+	
+	public UtpSocketState getState() {
+		return state;
+	}
+	
+	public void setState(UtpSocketState state) {
+		this.state = state;
+	}
+	
+	public void setTimetamper(MicroSecondsTimeStamp stamp) {
+		this.timeStamper = stamp;
+	}
+
+	public void finalizeConnection(UtpPacket fin) throws IOException {
+		sendPacket(fin);
+		setState(UtpSocketState.FIN_SEND);
+		
+	}
+
+	@Override
+	protected void closeImpl() {
+		if (reciever != null) {
+			reciever.graceFullInterrupt();			
+		}
+	}
+
+	@Override
+	public boolean isReading() {
+		return (reader != null ? reader.isRunning() : false);
+	}
+
+	@Override
+	public boolean isWriting() {
+		return (writer != null ? writer.isRunning() : false);
+
+	}
+
+	public void ackAlreadyAcked(UtpPacket utpPacket, int timestampDifference) throws IOException {
+		UtpPacket ackPacket = new UtpPacket();
+		ackPacket.setAckNumber(utpPacket.getSequenceNumber());
+		
+		ackPacket.setTimestampDifference(timestampDifference);
+		ackPacket.setTimestamp(timeStamper.utpTimeStamp());
+		ackPacket.setConnectionId(longToUshort(getConnectionIdsending()));
+		ackPacket.setTypeVersion(UtpPacketUtils.ST_STATE);
+		sendPacket(ackPacket);	
+		
+	}
+	
+	
 }
