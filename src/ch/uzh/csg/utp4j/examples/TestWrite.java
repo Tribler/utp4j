@@ -16,18 +16,19 @@ public class TestWrite {
 	 * @throws InterruptedException 
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
-		UtpSocketChannel chanel = UtpSocketChannel.open();
-		chanel.connect(new InetSocketAddress("127.0.0.1", 13344));
 		
 		ByteBuffer buffer = ByteBuffer.allocate(150000000);
 		RandomAccessFile file     = new RandomAccessFile("testData/sc S01E01.avi", "rw");
 		FileChannel  fileChannel = file.getChannel();
 		int bytesRead = 0;
+		System.out.println("start reading from file");
 		do {
 			bytesRead = fileChannel.read(buffer);
 		} while(bytesRead != -1);
-		
+		System.out.println("file read");
 
+		UtpSocketChannel chanel = UtpSocketChannel.open();
+		chanel.connect(new InetSocketAddress("192.168.1.40", 13344));
 		while(!chanel.isConnected()) { }
 		
 		chanel.write(buffer);

@@ -1,7 +1,10 @@
 package ch.uzh.csg.utp4j.channels.impl.read;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.Queue;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
@@ -72,6 +75,18 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 
 		}
 		isRunning = false;
+		
+		try {
+			buffer.flip();
+			File outFile = new File("testData/c_sc S01E01.avi");
+			FileChannel fchannel = new FileOutputStream(outFile).getChannel();
+			fchannel.write(buffer);
+			fchannel.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		System.out.println("Buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
 		System.out.println("PAYLOAD LENGHT " + payloadLength);
 		System.out.println("READER OUT");

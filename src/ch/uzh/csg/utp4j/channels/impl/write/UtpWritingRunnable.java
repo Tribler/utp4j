@@ -86,7 +86,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 				finSend = true;
 			}
 			durchgang++;
-			if (durchgang % 15 == 0) {
+			if (durchgang % 1000 == 0) {
 				System.out.println("buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
 			}
 		}
@@ -96,18 +96,6 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 		}
 		isRunning = false;
 		System.out.println("WRITER OUT");
-		buffer.flip();
-		
-		try {
-			File outFile = new File("testData/c_sc S01E01.avi");
-			FileChannel fchannel = new FileOutputStream(outFile).getChannel();
-			fchannel.write(buffer);
-			fchannel.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
 	}
 	
 	private void checkForAcks() {

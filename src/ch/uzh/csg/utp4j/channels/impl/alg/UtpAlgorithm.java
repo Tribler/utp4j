@@ -66,6 +66,8 @@ public class UtpAlgorithm {
 	 */
 	public static final int MIN_SKIP_PACKET_BEFORE_RESEND = 3;
 	
+	private int durchgang = 0;
+	
 	
 	/**
 	 * TWEAKING SECTION END
@@ -127,7 +129,7 @@ public class UtpAlgorithm {
 	}
 		
 	private void updateAdvertisedWindowSize(int advertisedWindo) {
-		this.advertisedWindowSize = advertisedWindo;
+//		this.advertisedWindowSize = advertisedWindo;
 		
 	}
 
@@ -224,6 +226,10 @@ public class UtpAlgorithm {
 		if (burstFull) {
 			currentBurstSend = 0;
 		}
+		if (durchgang % 1000 == 0) {
+			System.out.println("MAX:CURR " + maximumWindow + " " + currentWindow);
+		}
+		durchgang++;
 		return SEND_IN_BURST ? (!burstFull && canSend) : canSend;
 	}
 	
