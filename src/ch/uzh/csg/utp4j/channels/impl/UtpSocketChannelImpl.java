@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
 import ch.uzh.csg.utp4j.channels.UtpSocketState;
+import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
 import ch.uzh.csg.utp4j.channels.impl.read.UtpReadingRunnable;
 import ch.uzh.csg.utp4j.channels.impl.recieve.UtpPacketRecievable;
 import ch.uzh.csg.utp4j.channels.impl.recieve.UtpRecieveRunnable;
@@ -71,8 +72,8 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	}
 
 
-	public void ackPacket(UtpPacket utpPacket, int timestampDifference) throws IOException {
-		UtpPacket ackPacket = createAckPacket(utpPacket, timestampDifference);
+	public void ackPacket(UtpPacket utpPacket, int timestampDifference, long windowSize) throws IOException {
+		UtpPacket ackPacket = createAckPacket(utpPacket, timestampDifference, windowSize);
 		sendPacket(ackPacket);		
 	}
 
@@ -101,7 +102,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		setAckNrFromPacketSqNr(utpPacket);
 		printState("[Syn recieved] ");
 		int timestampDifference = timeStamper.utpDifference(timeStamp, utpPacket.getTimestamp());
-		UtpPacket ackPacket = createAckPacket(utpPacket, timestampDifference);
+		UtpPacket ackPacket = createAckPacket(utpPacket, timestampDifference, UtpAlgorithm.MAX_PACKET_SIZE*1000);
 		try {
 			sendPacket(ackPacket);			
 			setState(CONNECTED);
@@ -186,14 +187,14 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		return reader.getBytesRead();
 	}
 
-	public void selectiveAckPacket(UtpPacket utpPacket, SelectiveAckHeaderExtension headerExtension, int timestampDifference) throws IOException {
-		UtpPacket sack = createSelectiveAckPacket(utpPacket, headerExtension, timestampDifference);
+	public void selectiveAckPacket(UtpPacket utpPacket, SelectiveAckHeaderExtension headerExtension, int timestampDifference, long advertisedWindow) throws IOException {
+		UtpPacket sack = createSelectiveAckPacket(utpPacket, headerExtension, timestampDifference, advertisedWindow);
 		sendPacket(sack);
 		
 	}
 
 	private UtpPacket createSelectiveAckPacket(UtpPacket utpPacket,
-			SelectiveAckHeaderExtension headerExtension, int timestampDifference) {
+			SelectiveAckHeaderExtension headerExtension, int timestampDifference, long advertisedWindow) {
 		UtpPacket ackPacket = new UtpPacket();
 		ackPacket.setAckNumber(longToUshort(getAckNumber()));
 		// TODO: BUGFIX NEGATIVE TIME DIFFERENCE
@@ -245,7 +246,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 
 	}
 
-	public void ackAlreadyAcked(UtpPacket utpPacket, int timestampDifference) throws IOException {
+	public void ackAlreadyAcked(UtpPacket utpPacket, int timestampDifference, long windowSize) throws IOException {
 		UtpPacket ackPacket = new UtpPacket();
 		ackPacket.setAckNumber(utpPacket.getSequenceNumber());
 		
@@ -253,6 +254,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		ackPacket.setTimestamp(timeStamper.utpTimeStamp());
 		ackPacket.setConnectionId(longToUshort(getConnectionIdsending()));
 		ackPacket.setTypeVersion(UtpPacketUtils.ST_STATE);
+		ackPacket.setWindowSize(longToUint(windowSize));
 		sendPacket(ackPacket);	
 		
 	}

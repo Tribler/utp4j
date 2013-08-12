@@ -165,7 +165,7 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 	}
 
 	
-	protected UtpPacket createAckPacket(UtpPacket pkt, int timedifference) {
+	protected UtpPacket createAckPacket(UtpPacket pkt, int timedifference, long advertisedWindow) {
 		UtpPacket ackPacket = new UtpPacket();
 		setAckNrFromPacketSqNr(pkt);
 		ackPacket.setAckNumber(longToUshort(getAckNumber()));
@@ -174,6 +174,7 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 		ackPacket.setTimestamp(timeStamper.utpTimeStamp());
 		ackPacket.setConnectionId(longToUshort(getConnectionIdsending()));
 		ackPacket.setTypeVersion(UtpPacketUtils.ST_STATE);
+		ackPacket.setWindowSize(longToUint(advertisedWindow));
 		return ackPacket;		
 	}
 	

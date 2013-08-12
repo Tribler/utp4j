@@ -13,11 +13,10 @@ public class UtpTimestampedPacketDTO {
 	private UtpPacket utpPacket;
 	private int utpTimeStamp;
 	private int ackedAfterMeCounter = 0;
-	
 	private boolean isPacketAcked = false;
-
-	private long ackTimeStamp = 0;
-	private boolean markedToResend;
+	private boolean reduceWindow;
+	
+	boolean resendBecauseSkipped;
 	
 	public UtpTimestampedPacketDTO(DatagramPacket p, UtpPacket u, Long s, int utpStamp) {
 		this.timestamp = s;
@@ -32,6 +31,10 @@ public class UtpTimestampedPacketDTO {
 	
 	public Long stamp() {
 		return timestamp;
+	}
+	
+	public void setStamp(long stamp) {
+		this.timestamp = stamp;
 	}
 	
 	public UtpPacket utpPacket() {
@@ -50,14 +53,6 @@ public class UtpTimestampedPacketDTO {
 		this.isPacketAcked = isPacketAcked;
 	}
 	
-	public long getAckTimeStamp() {
-		return ackTimeStamp;
-	}
-	
-	public void setAckTimeStamp(long ackTimeStamp) {
-		this.ackTimeStamp = ackTimeStamp;
-	}
-
 	public int getAckedAfterMeCounter() {
 		return ackedAfterMeCounter;
 	}
@@ -70,11 +65,20 @@ public class UtpTimestampedPacketDTO {
 		ackedAfterMeCounter++;
 	}
 
-	public boolean alreadyMarkedToResend() {
-		return markedToResend;
+	public boolean reduceWindow() {
+		return reduceWindow;
 	}
 	
-	public void markToResend(boolean val) {
-		markedToResend = val;
+	public void setReduceWindow(boolean val) {
+		reduceWindow = val;
 	}
+
+	public boolean alreadyResendBecauseSkipped() {
+		return resendBecauseSkipped;
+	}
+	
+	public void setResendBecauseSkipped(boolean value) {
+		resendBecauseSkipped = value;
+	}
+
 }

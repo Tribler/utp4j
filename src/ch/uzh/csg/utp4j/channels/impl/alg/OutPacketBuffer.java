@@ -5,13 +5,30 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
+import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
 
 public class OutPacketBuffer {
 	
-	private static final int MAX_SKIP_PACKET_BEFORE_RESEND = 3;
-	private ArrayList<UtpTimestampedPacketDTO> buffer = new ArrayList<UtpTimestampedPacketDTO>();
+	private static int size = 1000;
+	private ArrayList<UtpTimestampedPacketDTO> buffer = new ArrayList<UtpTimestampedPacketDTO>(size);
 	private int bytesOnFly = 0;
+	private long timeOutMicroSec;
+	
+	public long getTimeOutMicroSec() {
+		return timeOutMicroSec;
+	}
+
+
+	public void setTimeOutMicroSec(long timeOutMicroSec) {
+		this.timeOutMicroSec = timeOutMicroSec;
+	}
+
+	private MicroSecondsTimeStamp timeStamper;
+	
+	public OutPacketBuffer(MicroSecondsTimeStamp stamper) {
+		timeStamper = stamper;
+	}
 	
 
 	public void bufferPacket(UtpTimestampedPacketDTO pkt) {
@@ -22,78 +39,102 @@ public class OutPacketBuffer {
 		bytesOnFly += UtpPacketUtils.DEF_HEADER_LENGTH;
 	}
 
+
 	public boolean isEmpty() {
 		return buffer.isEmpty();
 	}
 
 	public boolean markPacketAcked(int seqNrToAck, long timestamp) {
 		boolean returnValue = false;
-		for (UtpTimestampedPacketDTO pkt : buffer) {
+		UtpTimestampedPacketDTO pkt =  findPacket(seqNrToAck);
+		if (pkt != null) {
 			if ((pkt.utpPacket().getSequenceNumber() & 0xFFFF) == seqNrToAck) {
-				if (!pkt.isPacketAcked()) {
-					pkt.setAckTimeStamp(timestamp);
-					pkt.setPacketAcked(true);
-					System.out.println("ACK angekommen seqNr: " + seqNrToAck);
-					returnValue = true;
-					break;
-				}
+				pkt.setPacketAcked(true);
+				returnValue = true;
 			}
+		} else {
+			returnValue = false;
 		}
-		removeAcked();
+ 		
 		return returnValue;
 	}
 
-	private void removeAcked() {
-		ArrayList<UtpTimestampedPacketDTO> toRemove = new ArrayList<UtpTimestampedPacketDTO>();
+	private UtpTimestampedPacketDTO findPacket(int seqNrToAck) {
+		for (UtpTimestampedPacketDTO pkt : buffer) {
+			if ((pkt.utpPacket().getSequenceNumber() & 0xFFFF) == seqNrToAck) {
+				return pkt;
+			}
+		}
+		return null;
+	}
+
+
+
+	public void removeAcked() {
+		ArrayList<UtpTimestampedPacketDTO> toRemove = new ArrayList<UtpTimestampedPacketDTO>(size);
 		for (UtpTimestampedPacketDTO pkt : buffer) {
 			if (pkt.isPacketAcked()) {
-				toRemove.add(pkt);
+				bytesOnFly -= UtpPacketUtils.DEF_HEADER_LENGTH;
 				if (pkt.utpPacket().getPayload() != null) {
 					bytesOnFly -= pkt.utpPacket().getPayload().length;
 				}
-				bytesOnFly -= UtpPacketUtils.DEF_HEADER_LENGTH;
-			} 
+				toRemove.add(pkt);
+			} else {
+				break;
+			}
 		}
 		buffer.removeAll(toRemove);
 	}
 
 	public Queue<UtpTimestampedPacketDTO> getPacketsToResend() {
-		Queue<UtpTimestampedPacketDTO> queue = new LinkedList<UtpTimestampedPacketDTO>();
-		
-		UtpTimestampedPacketDTO firstUnacked = null;
+		Queue<UtpTimestampedPacketDTO> unacked = new LinkedList<UtpTimestampedPacketDTO>();
 		for (UtpTimestampedPacketDTO pkt : buffer) {
 			if (!pkt.isPacketAcked()) {
-				firstUnacked = pkt;
-				break;
-			} 	
-		}
-		if (firstUnacked != null) {
-			UtpTimestampedPacketDTO x1 = firstUnacked;
-			int totalRange = 0;
-			for (UtpTimestampedPacketDTO pkt : buffer) {
-				int range = 0;
-				if (pkt != x1) {
-
-					range = (pkt.utpPacket().getSequenceNumber() & 0xFFFF) 
-							- (x1.utpPacket().getSequenceNumber() & 0xFFFF);
-					if (range > 1) {
-						totalRange = range -1;
-					}
-					x1 = pkt;
-					
-				}
-				if (totalRange > MAX_SKIP_PACKET_BEFORE_RESEND) {
-					System.out.println("toResend: " + (firstUnacked.utpPacket().getSequenceNumber() & 0xFFFF));
-					queue.add(firstUnacked);
-					break;
+				unacked.add(pkt);
+			} else {
+				for (UtpTimestampedPacketDTO unackedPkt : unacked) {
+					unackedPkt.incrementAckedAfterMe();
 				}
 			}
 		}
-		return queue;
+		Queue<UtpTimestampedPacketDTO> toReturn = new LinkedList<UtpTimestampedPacketDTO>();
+		for (UtpTimestampedPacketDTO unackedPkt : unacked) {
+			if (resendRequired(unackedPkt)) {
+				toReturn.add(unackedPkt);
+				if (!unackedPkt.reduceWindow()) {
+					unackedPkt.setReduceWindow(true);
+				}
+			}
+			unackedPkt.setAckedAfterMeCounter(0);
+		}
+		
+		return toReturn;
+
 	}
+
+	private boolean resendRequired(UtpTimestampedPacketDTO unackedPkt) {
+		boolean resend = false;
+		if (unackedPkt.getAckedAfterMeCounter() >= UtpAlgorithm.MIN_SKIP_PACKET_BEFORE_RESEND) {
+			if (!unackedPkt.alreadyResendBecauseSkipped()) {
+				resend = true;
+				unackedPkt.setResendBecauseSkipped(true);
+			}
+		}
+		resend = resend || isTimedOut(unackedPkt);
+		return resend;
+	}
+
 
 	public int getBytesOnfly() {
 		return bytesOnFly;
+	}
+	
+	private boolean isTimedOut(UtpTimestampedPacketDTO utpTimestampedPacketDTO) {
+		long currentTimestamp = timeStamper.timeStamp();
+		long delta = currentTimestamp - utpTimestampedPacketDTO.stamp();
+		if ((delta > timeOutMicroSec)) {
+		}
+		return delta > timeOutMicroSec;
 	}
 
 }

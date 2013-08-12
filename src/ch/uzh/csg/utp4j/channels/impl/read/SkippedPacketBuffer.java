@@ -124,6 +124,10 @@ public class SkippedPacketBuffer {
 		
 		
 	}
+
+	public int getFreeSize() {
+		return size-elementCount;
+	}
 	
 
 }

@@ -17,46 +17,54 @@ public class UtpAlgorithm {
 	/**
 	 * TWEAKING SECTION
 	 */
+	
+	public static int MINIMUM_TIMEOUT_MILLIS = 100;
+	
 	/**
 	 * Packet size modus
 	 */
-	private PacketSizeModus packetSizeModus = PacketSizeModus.DYNAMIC_LINEAR;
+	public PacketSizeModus packetSizeModus = PacketSizeModus.CONSTANT_1472;
 	
 	/**
 	 * maximum packet size
 	 * should be dynamically set once path mtu discovery implemented. 
 	 */
 	
-	private static int MAX_PACKET_SIZE = 1472;
+	public static int MAX_PACKET_SIZE = 1472;
 	
 	/**
 	 * minimum packet size. 
 	 */
-	private static int MIN_PACKET_SIZE = 150;
+	public static int MIN_PACKET_SIZE = 150;
 	
 	/**
 	 * Minimum path MTU
 	 */
-	private static int MINIMUM_MTU = 576;
+	public static int MINIMUM_MTU = 576;
 	/**
 	 * Maximal window increase per RTT - increase to allow uTP throttle up faster.
 	 */
-	private static int MAX_CWND_INCREASE_PACKETS_PER_RTT = 18500;
+	public static int MAX_CWND_INCREASE_PACKETS_PER_RTT = 3000;
 	
 	/**
 	 * maximal buffering delay
 	 */
-	private static int C_CONTROL_TARGET_MS = 1000000;
+	public static int C_CONTROL_TARGET_MS = 1000000;
 	
 	/**
 	 * activate burst sending
 	 */
-	private static boolean SEND_IN_BURST = false;
+	public static boolean SEND_IN_BURST = false;
 	
 	/**
 	 * Reduce burst sending artificially
 	 */
-	private static int MAX_BURST_SEND = 5;
+	public static int MAX_BURST_SEND = 5;
+	
+	/**
+	 * Minimum number of acks past seqNr=x to trigger a resend of seqNr=x;
+	 */
+	public static final int MIN_SKIP_PACKET_BEFORE_RESEND = 3;
 	
 	
 	/**
@@ -69,7 +77,7 @@ public class UtpAlgorithm {
 	private int currentWindow = 0;
 	private int maxWindow = MAX_CWND_INCREASE_PACKETS_PER_RTT;
 	private MinimumDelay minDelay = new MinimumDelay();
-	private OutPacketBuffer buffer = new OutPacketBuffer();
+	private OutPacketBuffer buffer;
 	private MicroSecondsTimeStamp timeStamper;
 	private int currentAckPosition = 0;
 	private int currentBurstSend = 0;
@@ -77,17 +85,26 @@ public class UtpAlgorithm {
 	private int lastSequenceWithSelectiveAck;
 
 	private byte[] lastSelectiveAckBitMask;
+
+	private long timeOutMicroSec = MINIMUM_TIMEOUT_MILLIS * 1000;
+
+	private int advertisedWindowSize;
 	
+	public UtpAlgorithm(MicroSecondsTimeStamp timestamper) {
+		timeStamper = timestamper;
+		buffer = new OutPacketBuffer(timestamper);
+	}
 
 
 	public void ackRecieved(UtpTimestampedPacketDTO pair) {
 		int seqNrToAck = pair.utpPacket().getAckNumber() & 0xFFFF;
 		long timestamp = timeStamper.timeStamp();
+		int advertisedWindo = pair.utpPacket().getWindowSize() & 0xFFFFFFFF;
+		updateAdvertisedWindowSize(advertisedWindo);
 		if (buffer.markPacketAcked(seqNrToAck, timestamp)) {
 			updateTimeoutCounter(timestamp);
 			updateWindow(pair.utpPacket(), timestamp);
-
-		}
+		} 
 		int originalAck = seqNrToAck;
 		if (pair.utpPacket().getExtensions() != null) {
 			SelectiveAckHeaderExtension selAck = findSelectiveAckExtension(pair.utpPacket());
@@ -99,18 +116,21 @@ public class UtpAlgorithm {
 				for (int j = 2; j < 9; j++) {
 					if (SelectiveAckHeaderExtension.isBitMarked(bitMask[i], j)) {
 						timestamp = timeStamper.timeStamp();
-						if (buffer.markPacketAcked(i*8 + j + seqNrToAck, timestamp)) {
-							updateTimeoutCounter(timestamp);
-							updateWindow(pair.utpPacket(), timestamp);
-						}
+						buffer.markPacketAcked(i*8 + j + seqNrToAck, timestamp);							
 					}
 				}
 			}
 			lastSelectiveAckBitMask = bitMask;
 			lastSequenceWithSelectiveAck = seqNrToAck;
 		}
+		
 	}
 		
+	private void updateAdvertisedWindowSize(int advertisedWindo) {
+		this.advertisedWindowSize = advertisedWindo;
+		
+	}
+
 	private void updateBitMask(byte[] bitMask) {
 		for (int i = 0; i < lastSelectiveAckBitMask.length; i++) {
 			bitMask[i] = (byte) ((bitMask[i] ^ lastSelectiveAckBitMask[i]) & 0xFF);
@@ -141,9 +161,12 @@ public class UtpAlgorithm {
 		if (maxWindow < 0) {
 			maxWindow = MAX_PACKET_SIZE;
 		}
-		if (maxWindow > 100000) {
-			maxWindow = 100000;
+		if (maxWindow > 2000000) {
+			maxWindow = 2000000;
 		}
+		buffer.setTimeOutMicroSec(timeOutMicroSec);
+//		System.out.println("difference: " + difference + " our delay: " + ourDelay + " offtarget: " + offTarget);
+//		System.out.println("windowfactor: " + windowFactor + " delayFactor: " + delayFactor + " gain: " + gain);
 	}
 
 
@@ -156,12 +179,20 @@ public class UtpAlgorithm {
 		Queue<UtpTimestampedPacketDTO> toResend = buffer.getPacketsToResend();
 		for (UtpTimestampedPacketDTO utpTimestampedPacketDTO : toResend) {
 			queue.add(utpTimestampedPacketDTO.dataGram());
+			utpTimestampedPacketDTO.setStamp(timeStamper.timeStamp());
+			
+			if (utpTimestampedPacketDTO.reduceWindow()) {
+				maxWindow *= 0.5;
+				utpTimestampedPacketDTO.setReduceWindow(false);
+			} else {
+				utpTimestampedPacketDTO.setReduceWindow(true);
+			}
+
 		}
-		for (int i = 0; i < queue.size(); i++) {
-			maxWindow *= 0.5;
-		}
+
 		return queue;
 	}
+
 
 	private SelectiveAckHeaderExtension findSelectiveAckExtension(
 			UtpPacket utpPacket) {
@@ -178,7 +209,8 @@ public class UtpAlgorithm {
 	
 	public boolean canSendNextPacket() {
 		checkTimeouts();
-		boolean canSend = maxWindow >= currentWindow;
+		int maximumWindow = (advertisedWindowSize < maxWindow) ? advertisedWindowSize : maxWindow;
+		boolean canSend = maximumWindow >= currentWindow;
 		boolean burstFull = false;
 		
 		if (canSend) {
@@ -192,7 +224,6 @@ public class UtpAlgorithm {
 		if (burstFull) {
 			currentBurstSend = 0;
 		}
-		System.out.println("MAX:CURR " + maxWindow + " : " + currentWindow);
 		return SEND_IN_BURST ? (!burstFull && canSend) : canSend;
 	}
 	
@@ -296,6 +327,11 @@ public class UtpAlgorithm {
 	 */
 	public static String toBinaryString(byte value) {
 		return toBinaryString((value & 0xFF), 8);
+	}
+
+	public void removeAcked() {
+		buffer.removeAcked();	
+		currentWindow = buffer.getBytesOnfly();
 	}
 	
 }

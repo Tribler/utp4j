@@ -17,7 +17,7 @@ public class TestWrite {
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
 		UtpSocketChannel chanel = UtpSocketChannel.open();
-		chanel.connect(new InetSocketAddress("127.0.0.1", 13345));
+		chanel.connect(new InetSocketAddress("127.0.0.1", 13344));
 		
 		ByteBuffer buffer = ByteBuffer.allocate(150000000);
 		RandomAccessFile file     = new RandomAccessFile("testData/sc S01E01.avi", "rw");
@@ -32,8 +32,6 @@ public class TestWrite {
 		
 		chanel.write(buffer);
 		Thread.sleep(2000);
-		while(chanel.isWriting()) {}
-		chanel.close();
 
 	}
 

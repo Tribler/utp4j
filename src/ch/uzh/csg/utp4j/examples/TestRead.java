@@ -18,13 +18,11 @@ public class TestRead {
 	public static void main(String[] args) throws IOException, InterruptedException {
 		ByteBuffer buffer = ByteBuffer.allocate(150000000);
 		UtpServerSocketChannel server = UtpServerSocketChannel.open();
-		server.bind(new InetSocketAddress(13345));
+		server.bind(new InetSocketAddress(13344));
 		UtpSocketChannel channel = server.accept();
 		channel.read(buffer);
 		Thread.sleep(5000);
-		while(channel.isReading()) {}
-		channel.close();
-		server.close();
+
 
 	}
 

@@ -6,6 +6,8 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
+
 @RunWith(org.mockito.runners.MockitoJUnitRunner.class)
 public class UtpAlgorithmTest {
 
@@ -20,7 +22,9 @@ public class UtpAlgorithmTest {
 		
 		/* when delay is 50ms, then packetsize = 
 		 * (delay/max_delay)*(max_packet-min_packet)+min_packet */
-		UtpAlgorithm alg = new UtpAlgorithm();
+		MicroSecondsTimeStamp stamper = new MicroSecondsTimeStamp();
+		UtpAlgorithm alg = new UtpAlgorithm(stamper);
+		alg.packetSizeModus = PacketSizeModus.DYNAMIC_LINEAR;
 		alg.setMinDelay(mockMinDelay);
 		assertEquals(811, alg.sizeOfNextPacket());
 		
@@ -45,4 +49,12 @@ public class UtpAlgorithmTest {
 		assertEquals(547, alg.sizeOfNextPacket());
 		
 	}
+	
+	@Test
+	public void testSelectiveAck() {
+		
+	}
+	
+
+	
 }
