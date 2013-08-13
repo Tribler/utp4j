@@ -137,4 +137,13 @@ public class OutPacketBuffer {
 		return delta > timeOutMicroSec;
 	}
 
+
+	public String getSequenceOfLeft() {
+		String returnString = "";
+		for (UtpTimestampedPacketDTO el : buffer) {
+			returnString += " " + (el.utpPacket().getSequenceNumber() & 0xFFFF);
+		}
+		return returnString;
+	}
+
 }

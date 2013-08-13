@@ -54,7 +54,7 @@ public class UtpAlgorithm {
 	/**
 	 * activate burst sending
 	 */
-	public static boolean SEND_IN_BURST = false;
+	public static boolean SEND_IN_BURST = true;
 	
 	/**
 	 * Reduce burst sending artificially
@@ -129,7 +129,7 @@ public class UtpAlgorithm {
 	}
 		
 	private void updateAdvertisedWindowSize(int advertisedWindo) {
-//		this.advertisedWindowSize = advertisedWindo;
+		this.advertisedWindowSize = advertisedWindo;
 		
 	}
 
@@ -163,12 +163,13 @@ public class UtpAlgorithm {
 		if (maxWindow < 0) {
 			maxWindow = MAX_PACKET_SIZE;
 		}
-		if (maxWindow > 2000000) {
-			maxWindow = 2000000;
-		}
+//		if (maxWindow > 2000000) {
+//			maxWindow = 2000000;
+//		}
 		buffer.setTimeOutMicroSec(timeOutMicroSec);
-//		System.out.println("difference: " + difference + " our delay: " + ourDelay + " offtarget: " + offTarget);
+//		System.out.println("---\ndifference: " + difference + " our delay: " + ourDelay + " offtarget: " + offTarget);
 //		System.out.println("windowfactor: " + windowFactor + " delayFactor: " + delayFactor + " gain: " + gain);
+//		System.out.println("max Window: " + maxWindow + " " + " advertised Window: " + advertisedWindowSize + "\n---");
 	}
 
 
@@ -226,10 +227,6 @@ public class UtpAlgorithm {
 		if (burstFull) {
 			currentBurstSend = 0;
 		}
-		if (durchgang % 1000 == 0) {
-			System.out.println("MAX:CURR " + maximumWindow + " " + currentWindow);
-		}
-		durchgang++;
 		return SEND_IN_BURST ? (!burstFull && canSend) : canSend;
 	}
 	
@@ -338,6 +335,11 @@ public class UtpAlgorithm {
 	public void removeAcked() {
 		buffer.removeAcked();	
 		currentWindow = buffer.getBytesOnfly();
+	}
+
+
+	public String getLeftElements() {
+		return buffer.getSequenceOfLeft();
 	}
 	
 }

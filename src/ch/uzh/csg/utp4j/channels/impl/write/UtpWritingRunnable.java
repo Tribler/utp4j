@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.rmi.dgc.DGC;
 import java.util.Queue;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
@@ -142,6 +141,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 	}
 	
 	private boolean allPacketsAckedSendAndAcked() {
+
 		return finSend && algorithm.areAllPacketsAcked() && !buffer.hasRemaining();
 	}
 
