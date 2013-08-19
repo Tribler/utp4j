@@ -132,8 +132,6 @@ public class OutPacketBuffer {
 	private boolean isTimedOut(UtpTimestampedPacketDTO utpTimestampedPacketDTO) {
 		long currentTimestamp = timeStamper.timeStamp();
 		long delta = currentTimestamp - utpTimestampedPacketDTO.stamp();
-		if ((delta > timeOutMicroSec)) {
-		}
 		return delta > timeOutMicroSec;
 	}
 
@@ -144,6 +142,19 @@ public class OutPacketBuffer {
 			returnString += " " + (el.utpPacket().getSequenceNumber() & 0xFFFF);
 		}
 		return returnString;
+	}
+
+
+	public long getOldestTimeStamp() {
+		if (!buffer.isEmpty()) {
+			long timeStamp = Long.MAX_VALUE;
+			for (UtpTimestampedPacketDTO pkt : buffer) {
+				if (pkt.stamp() < timeStamp) {
+					timeStamp = pkt.stamp();
+				}
+			}
+			return timeStamp;
+		} else return 0L;
 	}
 
 }

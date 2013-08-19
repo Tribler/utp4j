@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
@@ -52,27 +53,23 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 
 		isRunning = true;
 		while(continueReading()) {
-			Queue<UtpTimestampedPacketDTO> queue = channel.getDataGramQueue();
-			while(!queue.isEmpty()) {
-				try {
-					UtpTimestampedPacketDTO timestampedPair = queue.poll();
-					if (timestampedPair != null) {
-						if (isFinPacket(timestampedPair)) {
-							finRecieved = true;
-						}
-						if (isPacketExpected(timestampedPair.utpPacket())) {
-							handleExpectedPacket(timestampedPair);								
-						} else {
-							handleUnexpectedPacket(timestampedPair);
-						}						
+			BlockingQueue<UtpTimestampedPacketDTO> queue = channel.getDataGramQueue();
+			try {
+				UtpTimestampedPacketDTO timestampedPair = queue.take();
+				if (timestampedPair != null) {
+					if (isFinPacket(timestampedPair)) {
+						finRecieved = true;
 					}
-					
-				} catch (IOException exp) {
-					exp.printStackTrace();
+					if (isPacketExpected(timestampedPair.utpPacket())) {
+						handleExpectedPacket(timestampedPair);								
+					} else {
+						handleUnexpectedPacket(timestampedPair);
+					}						
 				}
-
+					
+			} catch (IOException | InterruptedException exp) {
+				exp.printStackTrace();
 			}
-
 		}
 		isRunning = false;
 		

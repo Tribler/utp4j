@@ -12,7 +12,10 @@ import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
 import ch.uzh.csg.utp4j.channels.UtpSocketState;
@@ -32,11 +35,12 @@ import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
 public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketRecievable {
 	
-	private volatile Queue<UtpTimestampedPacketDTO> queue = new ConcurrentLinkedQueue<UtpTimestampedPacketDTO>();
+	private volatile BlockingQueue<UtpTimestampedPacketDTO> queue = new LinkedBlockingQueue<UtpTimestampedPacketDTO>();
 	
 	private UtpRecieveRunnable reciever;
 	private UtpWritingRunnable writer;
 	private UtpReadingRunnable reader;
+	private Object sendLock = new Object();
 	
 	
 	@Override
@@ -67,7 +71,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 
 	private void handlePacket(DatagramPacket udpPacket) {
 		UtpPacket utpPacket = UtpPacketUtils.extractUtpPacket(udpPacket);
-		queue.add(new UtpTimestampedPacketDTO(udpPacket, utpPacket, timeStamper.timeStamp(), timeStamper.utpTimeStamp()));
+		queue.offer(new UtpTimestampedPacketDTO(udpPacket, utpPacket, timeStamper.timeStamp(), timeStamper.utpTimeStamp()));
 
 	}
 
@@ -159,7 +163,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		return writer.getBytesSend();
 	}
 
-	public Queue<UtpTimestampedPacketDTO> getDataGramQueue() {
+	public BlockingQueue<UtpTimestampedPacketDTO> getDataGramQueue() {
 		return queue;
 	}
 	
@@ -256,6 +260,14 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		ackPacket.setTypeVersion(UtpPacketUtils.ST_STATE);
 		ackPacket.setWindowSize(longToUint(windowSize));
 		sendPacket(ackPacket);	
+		
+	}
+
+	@Override
+	public void sendPacket(DatagramPacket pkt) throws IOException {
+		synchronized (sendLock) {
+			getDgSocket().send(pkt);
+		}
 		
 	}
 	

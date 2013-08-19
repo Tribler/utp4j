@@ -38,6 +38,7 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
 		do {
 			packet = synQueue.poll();	
 			if (packet != null) {
+				System.out.println("SERVER HAS PKT");
 				utpChannel = (UtpSocketChannelImpl) UtpSocketChannel.open();
 				utpChannel.setDgSocket(getSocket());
 				utpChannel.recievePacket(packet);

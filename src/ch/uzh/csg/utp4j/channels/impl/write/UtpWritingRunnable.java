@@ -7,6 +7,9 @@ import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
@@ -43,12 +46,17 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 		buffer.flip();
 		int durchgang = 0;
 		while(continueSending()) {
-			checkForAcks();
+			try {
+				checkForAcks();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			Queue<DatagramPacket> packetsToResend = algorithm.getPacketsToResend();
 			for (DatagramPacket datagramPacket : packetsToResend) {
 				try {
 					datagramPacket.setSocketAddress(channel.getRemoteAdress());
-					channel.getDgSocket().send(datagramPacket);					
+					channel.sendPacket(datagramPacket);	
 				} catch (IOException exp) {
 					exp.printStackTrace();
 					graceFullInterrupt = true;
@@ -57,7 +65,6 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 					break;
 				}
 			}
-			checkForAcks();
 			while (algorithm.canSendNextPacket() && !exceptionOccured && !graceFullInterrupt && buffer.hasRemaining()) {
 				int packetSize = algorithm.sizeOfNextPacket();
 				try {
@@ -97,16 +104,35 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 		System.out.println("WRITER OUT");
 	}
 	
-	private void checkForAcks() {
-		Queue<UtpTimestampedPacketDTO> queue = channel.getDataGramQueue();
-		while(!queue.isEmpty()) {
-			UtpTimestampedPacketDTO pair = queue.poll();
-			algorithm.ackRecieved(pair);
+	private void checkForAcks() throws InterruptedException {
+		BlockingQueue<UtpTimestampedPacketDTO> queue = channel.getDataGramQueue();
+		if (queue.peek() == null) {
+			processAcks(queue);
+		} else {
+			waitAndProcessAcks(queue);
 		}
-		algorithm.removeAcked();
-		
+	}
+	
+	private void waitAndProcessAcks(BlockingQueue<UtpTimestampedPacketDTO> queue) throws InterruptedException {
+		BlockingQueue<UtpTimestampedPacketDTO> tempQueue = new LinkedBlockingQueue<UtpTimestampedPacketDTO>();
+		long timeOut = algorithm.getMsToNextTimeOut();
+		UtpTimestampedPacketDTO temp = queue.poll(timeOut, TimeUnit.MILLISECONDS);
+		if (temp != null) {
+			tempQueue.offer(temp);
+			while(queue.peek() != null) {
+				tempQueue.offer(queue.take());
+			}
+			processAcks(tempQueue);
+		}
 	}
 
+	private void processAcks(BlockingQueue<UtpTimestampedPacketDTO> queue) throws InterruptedException {
+		while(queue.peek() != null) {
+			UtpTimestampedPacketDTO pair = queue.take();
+			algorithm.ackRecieved(pair);
+		}
+		algorithm.removeAcked();		
+	}
 
 	private void sendNextPacket(int packetSize) throws IOException {
 		if (buffer.remaining() < packetSize) {
@@ -119,7 +145,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 		byte[] utpPacketBytes = utpPacket.toByteArray();
 		DatagramPacket udpPacket = new DatagramPacket(utpPacketBytes, utpPacketBytes.length, channel.getRemoteAdress());
 		algorithm.markPacketOnfly(utpPacket, udpPacket);
-		channel.getDgSocket().send(udpPacket);		
+		channel.sendPacket(udpPacket);		
 		
 	}
 

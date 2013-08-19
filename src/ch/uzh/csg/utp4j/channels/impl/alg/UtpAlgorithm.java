@@ -91,6 +91,8 @@ public class UtpAlgorithm {
 	private long timeOutMicroSec = MINIMUM_TIMEOUT_MILLIS * 1000;
 
 	private int advertisedWindowSize;
+
+	private long smallestTimeStamp;
 	
 	public UtpAlgorithm(MicroSecondsTimeStamp timestamper) {
 		timeStamper = timestamper;
@@ -182,7 +184,8 @@ public class UtpAlgorithm {
 		Queue<UtpTimestampedPacketDTO> toResend = buffer.getPacketsToResend();
 		for (UtpTimestampedPacketDTO utpTimestampedPacketDTO : toResend) {
 			queue.add(utpTimestampedPacketDTO.dataGram());
-			utpTimestampedPacketDTO.setStamp(timeStamper.timeStamp());
+			long timeStamp = timeStamper.timeStamp();
+			utpTimestampedPacketDTO.setStamp(timeStamp);
 			
 			if (utpTimestampedPacketDTO.reduceWindow()) {
 				maxWindow *= 0.5;
@@ -340,6 +343,18 @@ public class UtpAlgorithm {
 
 	public String getLeftElements() {
 		return buffer.getSequenceOfLeft();
+	}
+
+
+	public long getMsToNextTimeOut() {
+		long oldestTimeStamp = buffer.getOldestTimeStamp();
+		long nextTimeOut = oldestTimeStamp + timeOutMicroSec;
+		long timeOutInMicroSeconds = nextTimeOut - timeStamper.timeStamp();
+		if (timeOutInMicroSeconds < 0L || oldestTimeStamp == 0L) {
+			return 0L;
+		} else {
+			return timeOutInMicroSeconds/1000 + 1;
+		}
 	}
 	
 }

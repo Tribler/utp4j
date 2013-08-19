@@ -111,9 +111,11 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 			byte[] utpPacketBytes = packet.toByteArray();
 			int length = packet.getPacketLength();
 			DatagramPacket pkt = new DatagramPacket(utpPacketBytes, length, getRemoteAdress());
-			getDgSocket().send(pkt);
+			sendPacket(pkt);
 		}
 	}
+
+	protected abstract void sendPacket(DatagramPacket pkt) throws IOException;
 
 	private void setupConnectionId() {
 		Random rnd = new Random();
