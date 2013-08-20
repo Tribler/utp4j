@@ -1,5 +1,8 @@
 package ch.uzh.csg.utp4j.channels.impl.alg;
 
+import java.net.DatagramPacket;
+import java.net.SocketAddress;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -7,6 +10,7 @@ import java.util.Queue;
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
+import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
 public class OutPacketBuffer {
 	
@@ -45,27 +49,42 @@ public class OutPacketBuffer {
 	}
 
 	public boolean markPacketAcked(int seqNrToAck, long timestamp) {
-		boolean returnValue = false;
+		boolean updateWindow = false;
 		UtpTimestampedPacketDTO pkt =  findPacket(seqNrToAck);
 		if (pkt != null) {
 			if ((pkt.utpPacket().getSequenceNumber() & 0xFFFF) == seqNrToAck) {
 				pkt.setPacketAcked(true);
-				returnValue = true;
+				updateWindow = true;
+			} else {
+				System.err.println("ERROR FOUND WRONG SEQ NR: " + seqNrToAck + " but returned " + (pkt.utpPacket().getSequenceNumber() & 0xFFFF));
 			}
-		} else {
-			returnValue = false;
-		}
- 		
-		return returnValue;
+		} 
+		return updateWindow;
 	}
 
 	private UtpTimestampedPacketDTO findPacket(int seqNrToAck) {
-		for (UtpTimestampedPacketDTO pkt : buffer) {
-			if ((pkt.utpPacket().getSequenceNumber() & 0xFFFF) == seqNrToAck) {
-				return pkt;
+		
+		if (!buffer.isEmpty()) {
+			int firstSeqNr = buffer.get(0).utpPacket().getSequenceNumber() & 0xFFFF;
+			int index = seqNrToAck - firstSeqNr;
+			if (index < 0) {
+				// overflow in seq nr
+				index += UnsignedTypesUtil.MAX_USHORT;
 			}
+			if (index >= buffer.size()) {
+				return null;
+			}
+			return buffer.get(index);
 		}
+		
 		return null;
+		
+//		for (UtpTimestampedPacketDTO pkt : buffer) {
+//			if ((pkt.utpPacket().getSequenceNumber() & 0xFFFF) == seqNrToAck) {
+//				return pkt;
+//			}
+//		}
+//		return null;
 	}
 
 
@@ -86,7 +105,7 @@ public class OutPacketBuffer {
 		buffer.removeAll(toRemove);
 	}
 
-	public Queue<UtpTimestampedPacketDTO> getPacketsToResend() {
+	public Queue<UtpTimestampedPacketDTO> getPacketsToResend() throws SocketException {
 		Queue<UtpTimestampedPacketDTO> unacked = new LinkedList<UtpTimestampedPacketDTO>();
 		for (UtpTimestampedPacketDTO pkt : buffer) {
 			if (!pkt.isPacketAcked()) {
@@ -101,6 +120,7 @@ public class OutPacketBuffer {
 		for (UtpTimestampedPacketDTO unackedPkt : unacked) {
 			if (resendRequired(unackedPkt)) {
 				toReturn.add(unackedPkt);
+				updateResendTimeStamps(unackedPkt);
 				if (!unackedPkt.reduceWindow()) {
 					unackedPkt.setReduceWindow(true);
 				}
@@ -111,6 +131,16 @@ public class OutPacketBuffer {
 		return toReturn;
 
 	}
+
+	private void updateResendTimeStamps(UtpTimestampedPacketDTO unackedPkt) throws SocketException {
+		unackedPkt.utpPacket().setTimestamp(timeStamper.utpTimeStamp());
+		SocketAddress addr = unackedPkt.dataGram().getSocketAddress();
+		byte[] newBytes = unackedPkt.utpPacket().toByteArray();
+		unackedPkt.setDgPacket(new DatagramPacket(newBytes, newBytes.length, addr));
+		long timeStamp = timeStamper.timeStamp();
+		unackedPkt.setStamp(timeStamp);
+	}
+
 
 	private boolean resendRequired(UtpTimestampedPacketDTO unackedPkt) {
 		boolean resend = false;
@@ -132,6 +162,9 @@ public class OutPacketBuffer {
 	private boolean isTimedOut(UtpTimestampedPacketDTO utpTimestampedPacketDTO) {
 		long currentTimestamp = timeStamper.timeStamp();
 		long delta = currentTimestamp - utpTimestampedPacketDTO.stamp();
+		if (delta > timeOutMicroSec) {
+			System.out.println("timed out so resending: " + (utpTimestampedPacketDTO.utpPacket().getSequenceNumber() & 0xFFFF));
+		}
 		return delta > timeOutMicroSec;
 	}
 
@@ -145,11 +178,11 @@ public class OutPacketBuffer {
 	}
 
 
-	public long getOldestTimeStamp() {
+	public long getOldestUnackedTimestamp() {
 		if (!buffer.isEmpty()) {
 			long timeStamp = Long.MAX_VALUE;
 			for (UtpTimestampedPacketDTO pkt : buffer) {
-				if (pkt.stamp() < timeStamp) {
+				if (pkt.stamp() < timeStamp && !pkt.isPacketAcked()) {
 					timeStamp = pkt.stamp();
 				}
 			}

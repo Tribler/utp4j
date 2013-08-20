@@ -1,11 +1,13 @@
 package ch.uzh.csg.utp4j.channels.impl.alg;
 
 import java.net.DatagramPacket;
+import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.Queue;
 
 
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
+import ch.uzh.csg.utp4j.channels.impl.log.UtpDataLogger;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
 import ch.uzh.csg.utp4j.data.UtpHeaderExtension;
@@ -92,7 +94,7 @@ public class UtpAlgorithm {
 
 	private int advertisedWindowSize;
 
-	private long smallestTimeStamp;
+	private UtpDataLogger logger = new UtpDataLogger();
 	
 	public UtpAlgorithm(MicroSecondsTimeStamp timestamper) {
 		timeStamper = timestamper;
@@ -105,6 +107,7 @@ public class UtpAlgorithm {
 		long timestamp = timeStamper.timeStamp();
 		int advertisedWindo = pair.utpPacket().getWindowSize() & 0xFFFFFFFF;
 		updateAdvertisedWindowSize(advertisedWindo);
+		logger.ackRecieved(seqNrToAck);
 		if (buffer.markPacketAcked(seqNrToAck, timestamp)) {
 			updateTimeoutCounter(timestamp);
 			updateWindow(pair.utpPacket(), timestamp);
@@ -120,13 +123,16 @@ public class UtpAlgorithm {
 				for (int j = 2; j < 9; j++) {
 					if (SelectiveAckHeaderExtension.isBitMarked(bitMask[i], j)) {
 						timestamp = timeStamper.timeStamp();
-						buffer.markPacketAcked(i*8 + j + seqNrToAck, timestamp);							
+						int sackSeqNr = i*8 + j + seqNrToAck;
+						logger.sAck(sackSeqNr);
+						buffer.markPacketAcked(sackSeqNr, timestamp);							
 					}
 				}
 			}
 			lastSelectiveAckBitMask = bitMask;
 			lastSequenceWithSelectiveAck = seqNrToAck;
 		}
+		logger.next();
 		
 	}
 		
@@ -153,18 +159,26 @@ public class UtpAlgorithm {
 	
 	private void updateWindow(UtpPacket utpPacket, long timestamp) {
 		currentWindow = buffer.getBytesOnfly();
+		logger.currentWindow(currentWindow);
 		long difference = utpPacket.getTimestampDifference() & 0xFFFFFFFF;
+		logger.difference(difference);
 		updateMinDelay(difference, timestamp);
 		long ourDelay = difference - minDelay.getMinDelay();
+		logger.minDelay(minDelay.getMinDelay());
+		logger.ourDelay(ourDelay);
 		long offTarget = C_CONTROL_TARGET_MS - ourDelay;
+		logger.offTarget(offTarget);
 		double delayFactor = ((double) offTarget) / ((double) C_CONTROL_TARGET_MS);
-
+		logger.delayFactor(delayFactor);
 		double windowFactor = ((double) currentWindow) / ((double) maxWindow);
+		logger.windowFactor(windowFactor);
 		int gain = (int) (MAX_CWND_INCREASE_PACKETS_PER_RTT * delayFactor * windowFactor);
+		logger.gain(gain);
 		maxWindow += gain;
 		if (maxWindow < 0) {
 			maxWindow = MAX_PACKET_SIZE;
 		}
+		logger.maxWindow(maxWindow);
 //		if (maxWindow > 2000000) {
 //			maxWindow = 2000000;
 //		}
@@ -179,14 +193,11 @@ public class UtpAlgorithm {
 		minDelay.updateMinDelay(difference, timestamp);
 	}
 
-	public Queue<DatagramPacket> getPacketsToResend() {
+	public Queue<DatagramPacket> getPacketsToResend() throws SocketException {
 		Queue<DatagramPacket> queue = new LinkedList<DatagramPacket>();
 		Queue<UtpTimestampedPacketDTO> toResend = buffer.getPacketsToResend();
 		for (UtpTimestampedPacketDTO utpTimestampedPacketDTO : toResend) {
-			queue.add(utpTimestampedPacketDTO.dataGram());
-			long timeStamp = timeStamper.timeStamp();
-			utpTimestampedPacketDTO.setStamp(timeStamp);
-			
+			queue.add(utpTimestampedPacketDTO.dataGram());			
 			if (utpTimestampedPacketDTO.reduceWindow()) {
 				maxWindow *= 0.5;
 				utpTimestampedPacketDTO.setReduceWindow(false);
@@ -346,15 +357,26 @@ public class UtpAlgorithm {
 	}
 
 
-	public long getMsToNextTimeOut() {
-		long oldestTimeStamp = buffer.getOldestTimeStamp();
+	public long getMicrosToNextTimeOut() {
+		long oldestTimeStamp = buffer.getOldestUnackedTimestamp();
 		long nextTimeOut = oldestTimeStamp + timeOutMicroSec;
 		long timeOutInMicroSeconds = nextTimeOut - timeStamper.timeStamp();
-		if (timeOutInMicroSeconds < 0L || oldestTimeStamp == 0L) {
+		if (timeOutInMicroSeconds < 0) {
+			System.out.println("HAVE TIMED OUT PACKETS");
+		}
+		if (oldestTimeStamp == 0) {
+			System.out.println("buffer empty...");
+		}
+		if (timeOutInMicroSeconds < 0 || oldestTimeStamp == 0) {
 			return 0L;
 		} else {
-			return timeOutInMicroSeconds/1000 + 1;
+			return timeOutInMicroSeconds + 1;
 		}
+	}
+
+
+	public void end() {
+		logger.end();
 	}
 	
 }

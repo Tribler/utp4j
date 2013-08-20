@@ -28,6 +28,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	private MicroSecondsTimeStamp timestamp;
 	private boolean finRecieved;
 	private long payloadLength = 0;
+	private long finRecievedTimestamp;
 	
 	public UtpReadingRunnable(UtpSocketChannelImpl channel, ByteBuffer buff, MicroSecondsTimeStamp timestamp) {
 		this.channel = channel;
@@ -59,6 +60,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 				if (timestampedPair != null) {
 					if (isFinPacket(timestampedPair)) {
 						finRecieved = true;
+						finRecievedTimestamp = timestamp.timeStamp();
 					}
 					if (isPacketExpected(timestampedPair.utpPacket())) {
 						handleExpectedPacket(timestampedPair);								
@@ -165,9 +167,13 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	}
 
 	private boolean continueReading() {
-		return !graceFullInterrupt && !exceptionOccured && (!finRecieved || (finRecieved && hasSkippedPackets()));
+		return !graceFullInterrupt && !exceptionOccured && (!finRecieved || (finRecieved && hasSkippedPackets() && !timeAwaitedAfterFin()));
 	}
 	
+	private boolean timeAwaitedAfterFin() {
+		return (timestamp.timeStamp() - finRecievedTimestamp) > 2000*1000;
+	}
+
 	public boolean isRunning() {
 		return isRunning;
 	}

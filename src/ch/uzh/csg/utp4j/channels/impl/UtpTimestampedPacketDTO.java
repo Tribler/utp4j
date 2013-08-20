@@ -29,6 +29,10 @@ public class UtpTimestampedPacketDTO {
 		return packet;
 	}
 	
+	public void setDgPacket(DatagramPacket p) {
+		this.packet = p;
+	}
+	
 	public Long stamp() {
 		return timestamp;
 	}

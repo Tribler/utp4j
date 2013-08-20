@@ -52,19 +52,20 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			Queue<DatagramPacket> packetsToResend = algorithm.getPacketsToResend();
-			for (DatagramPacket datagramPacket : packetsToResend) {
-				try {
+			try {
+				Queue<DatagramPacket> packetsToResend = algorithm.getPacketsToResend();
+				for (DatagramPacket datagramPacket : packetsToResend) {
 					datagramPacket.setSocketAddress(channel.getRemoteAdress());
 					channel.sendPacket(datagramPacket);	
-				} catch (IOException exp) {
-					exp.printStackTrace();
-					graceFullInterrupt = true;
-					possibleExp = exp;
-					exceptionOccured = true;
-					break;
 				}
+			} catch (IOException exp) {
+				exp.printStackTrace();
+				graceFullInterrupt = true;
+				possibleExp = exp;
+				exceptionOccured = true;
+				break;
 			}
+
 			while (algorithm.canSendNextPacket() && !exceptionOccured && !graceFullInterrupt && buffer.hasRemaining()) {
 				int packetSize = algorithm.sizeOfNextPacket();
 				try {
@@ -101,12 +102,13 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 			exceptionOccured(possibleExp);
 		}
 		isRunning = false;
+		algorithm.end();
 		System.out.println("WRITER OUT");
 	}
 	
 	private void checkForAcks() throws InterruptedException {
 		BlockingQueue<UtpTimestampedPacketDTO> queue = channel.getDataGramQueue();
-		if (queue.peek() == null) {
+		if (queue.peek() != null) {
 			processAcks(queue);
 		} else {
 			waitAndProcessAcks(queue);
@@ -115,8 +117,8 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 	
 	private void waitAndProcessAcks(BlockingQueue<UtpTimestampedPacketDTO> queue) throws InterruptedException {
 		BlockingQueue<UtpTimestampedPacketDTO> tempQueue = new LinkedBlockingQueue<UtpTimestampedPacketDTO>();
-		long timeOut = algorithm.getMsToNextTimeOut();
-		UtpTimestampedPacketDTO temp = queue.poll(timeOut, TimeUnit.MILLISECONDS);
+		long timeOut = algorithm.getMicrosToNextTimeOut();
+		UtpTimestampedPacketDTO temp = queue.poll(timeOut, TimeUnit.MICROSECONDS);
 		if (temp != null) {
 			tempQueue.offer(temp);
 			while(queue.peek() != null) {

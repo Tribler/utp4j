@@ -3,6 +3,7 @@ package ch.uzh.csg.utp4j.channels.impl.alg;
 import static org.junit.Assert.*;
 
 
+import java.net.SocketException;
 import java.util.Queue;
 
 import org.junit.Test;
@@ -24,7 +25,7 @@ public class OutPacketBufferTest {
 	private static int PAYLOAD_LENGTH = 1300;
 
 	@Test
-	public void test() {
+	public void test() throws SocketException {
 		MicroSecondsTimeStamp stamper = mock(MicroSecondsTimeStamp.class);
 		when(stamper.timeStamp()).thenReturn(2L);
 		OutPacketBuffer buffer = new OutPacketBuffer(stamper);
