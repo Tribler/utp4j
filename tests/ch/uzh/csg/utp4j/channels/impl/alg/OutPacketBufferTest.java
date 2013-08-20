@@ -3,6 +3,9 @@ package ch.uzh.csg.utp4j.channels.impl.alg;
 import static org.junit.Assert.*;
 
 
+import java.net.DatagramPacket;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.util.Queue;
 
@@ -105,11 +108,14 @@ public class OutPacketBufferTest {
 	}
 	
 	
-	private UtpTimestampedPacketDTO createPacket(int sequenceNumber) {
+	private UtpTimestampedPacketDTO createPacket(int sequenceNumber) throws SocketException {
 		UtpPacket pkt = new UtpPacket();
 		pkt.setSequenceNumber(longToUshort(sequenceNumber));
 		pkt.setPayload(new byte[PAYLOAD_LENGTH]);
-		UtpTimestampedPacketDTO toReturn = new UtpTimestampedPacketDTO(null, pkt, 1L, 0);
+		byte[] array = { (byte) 1 };
+		SocketAddress addr = new InetSocketAddress(111);
+		DatagramPacket mockDgPkt = new DatagramPacket(array, 1, addr);
+		UtpTimestampedPacketDTO toReturn = new UtpTimestampedPacketDTO(mockDgPkt, pkt, 1L, 0);
 		
 		return toReturn;
 	}

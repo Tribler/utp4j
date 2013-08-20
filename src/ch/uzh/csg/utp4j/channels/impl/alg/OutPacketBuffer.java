@@ -48,18 +48,21 @@ public class OutPacketBuffer {
 		return buffer.isEmpty();
 	}
 
-	public boolean markPacketAcked(int seqNrToAck, long timestamp) {
-		boolean updateWindow = false;
+	public int markPacketAcked(int seqNrToAck, long timestamp) {
+		int bytesJustAcked = -1;
 		UtpTimestampedPacketDTO pkt =  findPacket(seqNrToAck);
 		if (pkt != null) {
 			if ((pkt.utpPacket().getSequenceNumber() & 0xFFFF) == seqNrToAck) {
+				if (!pkt.isPacketAcked()) {
+					int payloadLength = pkt.utpPacket().getPayload() == null ? 0 : pkt.utpPacket().getPayload().length;
+					bytesJustAcked = payloadLength + UtpPacketUtils.DEF_HEADER_LENGTH;					
+				}
 				pkt.setPacketAcked(true);
-				updateWindow = true;
 			} else {
 				System.err.println("ERROR FOUND WRONG SEQ NR: " + seqNrToAck + " but returned " + (pkt.utpPacket().getSequenceNumber() & 0xFFFF));
 			}
 		} 
-		return updateWindow;
+		return bytesJustAcked;
 	}
 
 	private UtpTimestampedPacketDTO findPacket(int seqNrToAck) {
@@ -121,9 +124,6 @@ public class OutPacketBuffer {
 			if (resendRequired(unackedPkt)) {
 				toReturn.add(unackedPkt);
 				updateResendTimeStamps(unackedPkt);
-				if (!unackedPkt.reduceWindow()) {
-					unackedPkt.setReduceWindow(true);
-				}
 			}
 			unackedPkt.setAckedAfterMeCounter(0);
 		}
@@ -143,15 +143,23 @@ public class OutPacketBuffer {
 
 
 	private boolean resendRequired(UtpTimestampedPacketDTO unackedPkt) {
-		boolean resend = false;
+		boolean fastResend = false;
 		if (unackedPkt.getAckedAfterMeCounter() >= UtpAlgorithm.MIN_SKIP_PACKET_BEFORE_RESEND) {
 			if (!unackedPkt.alreadyResendBecauseSkipped()) {
-				resend = true;
+				fastResend = true;
 				unackedPkt.setResendBecauseSkipped(true);
 			}
 		}
-		resend = resend || isTimedOut(unackedPkt);
-		return resend;
+		boolean timedOut = isTimedOut(unackedPkt);
+		
+		if (!timedOut && fastResend) {
+			unackedPkt.setReduceWindow(false);
+		}
+		if (timedOut && !unackedPkt.reduceWindow()) {
+			unackedPkt.setReduceWindow(true);
+		}
+		
+		return fastResend || timedOut;
 	}
 
 
@@ -162,9 +170,9 @@ public class OutPacketBuffer {
 	private boolean isTimedOut(UtpTimestampedPacketDTO utpTimestampedPacketDTO) {
 		long currentTimestamp = timeStamper.timeStamp();
 		long delta = currentTimestamp - utpTimestampedPacketDTO.stamp();
-		if (delta > timeOutMicroSec) {
-			System.out.println("timed out so resending: " + (utpTimestampedPacketDTO.utpPacket().getSequenceNumber() & 0xFFFF));
-		}
+//		if (delta > timeOutMicroSec) {
+//			System.out.println("timed out so resending: " + (utpTimestampedPacketDTO.utpPacket().getSequenceNumber() & 0xFFFF));
+//		}
 		return delta > timeOutMicroSec;
 	}
 

@@ -171,7 +171,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	}
 	
 	private boolean timeAwaitedAfterFin() {
-		return (timestamp.timeStamp() - finRecievedTimestamp) > 2000*1000;
+		return (timestamp.timeStamp() - finRecievedTimestamp) > 5000*1000;
 	}
 
 	public boolean isRunning() {

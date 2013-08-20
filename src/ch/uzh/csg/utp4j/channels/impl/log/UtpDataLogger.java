@@ -22,7 +22,10 @@ public class UtpDataLogger {
 	private int ackRecieved;
 	private Object sAck;
 	private int maxWindow;
+	private long minimumTimeStamp;
+	private long timeStamp;
 
+	
 	public void currentWindow(int currentWindow) {
 		this.currentWindow = currentWindow;
 	}
@@ -76,19 +79,26 @@ public class UtpDataLogger {
 		
 	}
 
+	public UtpDataLogger() {
+		log.add("TimeMillis;AckRecieved;CurrentWidow;Difference;MinDelay;OurDelay;OffTarget;DelayFactor;WindowFactor;Gain;MaxWindow;SACK\n");
+		minimumTimeStamp = 0;
+	}
 	public void next() {
-		String logEntry = "[Ack: " + ackRecieved + "]\t";
-		logEntry += "[CurrWindow: " + currentWindow + "]\t";
-		logEntry += "[Diff: " + difference + "]\t";
-		logEntry += "[MinDelay: " + minDelay + "]\t";
-		logEntry += "[OurDelay: " + ourDelay + "]\t";
-		logEntry += "[OffTarget: " + offTarget + "]\t";
-		logEntry += "[DelayFactor: "  + delayFactor + "]\t";
-		logEntry += "[WindowFactor: "  + windowFactor + "]\t";
-		logEntry += "[Gain: "  + gain + "]\t";
-		logEntry += "[MaxWindow: "  + maxWindow + "]\n";
+		String logEntry = "" + (timeStamp - minimumTimeStamp) + ";";
+		logEntry += "" + ackRecieved + ";";
+		logEntry += "" + currentWindow + ";";
+		logEntry += "" + difference + ";";
+		logEntry += "" + minDelay + ";";
+		logEntry += "" + ourDelay + ";";
+		logEntry += "" + offTarget + ";";
+		logEntry += "" +  + delayFactor + ";";
+		logEntry += "" +  + windowFactor + ";";
+		logEntry += "" +  + gain + ";";
+		logEntry += "" +  + maxWindow;
 		if (sAck != null) {
-			logEntry += "[Sack: " + sAck + "]";
+			logEntry += ";(" + sAck + ")\n";
+		} else {
+			logEntry += "\n";
 		}
 		log.add(logEntry);
 		sAck = null;		
@@ -102,7 +112,7 @@ public class UtpDataLogger {
 	public void end() {
 		RandomAccessFile aFile;
 		try {
-			aFile = new RandomAccessFile("testData/log.txt", "rw");
+			aFile = new RandomAccessFile("testData/log.csv", "rw");
 			FileChannel inChannel = aFile.getChannel();
 			ByteBuffer bbuffer = ByteBuffer.allocate(examineBytes());
 			for (String str : log) {
@@ -129,6 +139,14 @@ public class UtpDataLogger {
 			bytesLength += str.getBytes().length;
 		}
 		return bytesLength + 100;
+	}
+
+	public void milliSecTimeStamp(long logTimeStampMillisec) {
+		if (minimumTimeStamp == 0) {
+			minimumTimeStamp = logTimeStampMillisec;
+		}
+		timeStamp = logTimeStampMillisec;
+		
 	}
 
 
