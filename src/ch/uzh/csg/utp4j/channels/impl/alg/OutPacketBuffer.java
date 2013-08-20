@@ -198,4 +198,13 @@ public class OutPacketBuffer {
 		} else return 0L;
 	}
 
+
+	public long getSendTimeStamp(int seqNrToAck) {
+		UtpTimestampedPacketDTO pkt = findPacket(seqNrToAck);
+		if (pkt != null) {
+			return pkt.stamp();
+		}
+		return -1;
+	}
+
 }

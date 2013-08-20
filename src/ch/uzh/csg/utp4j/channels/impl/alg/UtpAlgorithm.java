@@ -20,7 +20,7 @@ public class UtpAlgorithm {
 	 * TWEAKING SECTION
 	 */
 	
-	public static int MINIMUM_TIMEOUT_MILLIS = 400;
+	public static int MINIMUM_TIMEOUT_MILLIS = 500;
 	
 	/**
 	 * Packet size modus
@@ -84,7 +84,9 @@ public class UtpAlgorithm {
 	private int currentAckPosition = 0;
 	private int currentBurstSend = 0;
 
-	private long timeOutMicroSec = MINIMUM_TIMEOUT_MILLIS * 1000;
+	private long rtt = MINIMUM_TIMEOUT_MILLIS;
+	private long rttVar = 0;
+	
 
 	private int advertisedWindowSize;
 
@@ -92,7 +94,6 @@ public class UtpAlgorithm {
 
 	private long lastTimeWindowReduced;
 
-	private long rtt = MINIMUM_TIMEOUT_MILLIS * 1000;
 	
 	public UtpAlgorithm(MicroSecondsTimeStamp timestamper) {
 		timeStamper = timestamper;
@@ -108,7 +109,7 @@ public class UtpAlgorithm {
 		logger.ackRecieved(seqNrToAck);
 		int packetSizeJustAcked = buffer.markPacketAcked(seqNrToAck, timestamp);
 		if (packetSizeJustAcked > 0) {
-			updateTimeoutCounter(timestamp);
+			updateRtt(timestamp, seqNrToAck);
 			updateWindow(pair.utpPacket(), timestamp, packetSizeJustAcked);
 		} 
 
@@ -124,7 +125,7 @@ public class UtpAlgorithm {
 						buffer.markPacketAcked(sackSeqNr, timestamp);	
 						packetSizeJustAcked = buffer.markPacketAcked(seqNrToAck, timestamp);
 						if (packetSizeJustAcked > 0) {
-							updateTimeoutCounter(timestamp);
+							updateRtt(timestamp, sackSeqNr);
 							updateWindow(pair.utpPacket(), timestamp, packetSizeJustAcked);
 						} 
 					}
@@ -135,6 +136,20 @@ public class UtpAlgorithm {
 		
 	}
 		
+	private void updateRtt(long timestamp, int seqNrToAck) {
+		long sendTimeStamp = buffer.getSendTimeStamp(seqNrToAck);	
+		if (sendTimeStamp != -1) {
+			long packetRtt = (timestamp-sendTimeStamp)/1000;;
+			long delta = rtt - packetRtt;
+			rttVar += (Math.abs(delta) - rttVar)/4;
+			rtt += (packetRtt - rtt)/8;
+			logger.pktRtt(packetRtt);
+			logger.rttVar(rttVar);
+			logger.rtt(rtt);
+		}
+	}
+
+
 	private void updateAdvertisedWindowSize(int advertisedWindo) {
 		this.advertisedWindowSize = advertisedWindo;
 		
@@ -145,9 +160,6 @@ public class UtpAlgorithm {
 		// TODO: check if packets timed out
 	}
 
-	private void updateTimeoutCounter(long timestamp) {
-		// TODO: keep track of supposed rtt
-	}
 	
 	private void updateWindow(UtpPacket utpPacket, long timestamp, int packetSizeJustAcked) {
 		long logTimeStampMillisec = timeStamper.timeStamp()/1000;
@@ -173,7 +185,12 @@ public class UtpAlgorithm {
 			maxWindow = MAX_PACKET_SIZE;
 		}
 		logger.maxWindow(maxWindow);
-		buffer.setTimeOutMicroSec(timeOutMicroSec);
+		buffer.setTimeOutMicroSec(getTimeOutMicros());
+	}
+
+
+	private long getTimeOutMicros() {
+		return rtt*1000;
 	}
 
 
@@ -360,7 +377,7 @@ public class UtpAlgorithm {
 
 	public long getMicrosToNextTimeOut() {
 		long oldestTimeStamp = buffer.getOldestUnackedTimestamp();
-		long nextTimeOut = oldestTimeStamp + timeOutMicroSec;
+		long nextTimeOut = oldestTimeStamp + getTimeOutMicros();
 		long timeOutInMicroSeconds = nextTimeOut - timeStamper.timeStamp();
 		if (timeOutInMicroSeconds < 0 || oldestTimeStamp == 0) {
 			return 0L;

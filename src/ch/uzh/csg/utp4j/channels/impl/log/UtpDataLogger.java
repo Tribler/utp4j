@@ -24,6 +24,9 @@ public class UtpDataLogger {
 	private int maxWindow;
 	private long minimumTimeStamp;
 	private long timeStamp;
+	private long packetRtt;
+	private long rttVar;
+	private long rtt;
 
 	
 	public void currentWindow(int currentWindow) {
@@ -80,7 +83,8 @@ public class UtpDataLogger {
 	}
 
 	public UtpDataLogger() {
-		log.add("TimeMillis;AckRecieved;CurrentWidow;Difference;MinDelay;OurDelay;OffTarget;DelayFactor;WindowFactor;Gain;MaxWindow;SACK\n");
+		log.add("TimeMillis;AckRecieved;CurrentWidow_Bytes;Difference_Micros;MinDelay_Micros;OurDelay_Micros;OffTarget_Micros;" +
+				"DelayFactor;WindowFactor;Gain_Bytes;PacketRtt_Millis;RttVar_Millis;Rtt_Millis;MaxWindow_Bytes;SACK\n");
 		minimumTimeStamp = 0;
 	}
 	public void next() {
@@ -94,6 +98,9 @@ public class UtpDataLogger {
 		logEntry += "" +  + delayFactor + ";";
 		logEntry += "" +  + windowFactor + ";";
 		logEntry += "" +  + gain + ";";
+		logEntry += "" +  + packetRtt + ";";
+		logEntry += "" +  + rttVar + ";";
+		logEntry += "" +  + rtt + ";";
 		logEntry += "" +  + maxWindow;
 		if (sAck != null) {
 			logEntry += ";(" + sAck + ")\n";
@@ -146,6 +153,21 @@ public class UtpDataLogger {
 			minimumTimeStamp = logTimeStampMillisec;
 		}
 		timeStamp = logTimeStampMillisec;
+		
+	}
+
+	public void pktRtt(long packetRtt) {
+		this.packetRtt = packetRtt;
+		
+	}
+
+	public void rttVar(long rttVar) {
+		this.rttVar = rttVar;
+		
+	}
+
+	public void rtt(long rtt) {
+		this.rtt = rtt;
 		
 	}
 
