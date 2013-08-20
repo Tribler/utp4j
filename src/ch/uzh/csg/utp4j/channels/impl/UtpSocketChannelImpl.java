@@ -201,10 +201,10 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 			SelectiveAckHeaderExtension headerExtension, int timestampDifference, long advertisedWindow) {
 		UtpPacket ackPacket = new UtpPacket();
 		ackPacket.setAckNumber(longToUshort(getAckNumber()));
-		// TODO: BUGFIX NEGATIVE TIME DIFFERENCE
 		ackPacket.setTimestampDifference(timestampDifference);
 		ackPacket.setTimestamp(timeStamper.utpTimeStamp());
 		ackPacket.setConnectionId(longToUshort(getConnectionIdsending()));
+		ackPacket.setWindowSize(longToUint(advertisedWindow));
 		
 		ackPacket.setFirstExtension(UtpPacketUtils.SELECTIVE_ACK);
 		UtpHeaderExtension[] extensions = { headerExtension };

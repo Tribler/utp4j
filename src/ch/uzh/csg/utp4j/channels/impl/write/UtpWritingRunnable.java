@@ -118,6 +118,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 	private void waitAndProcessAcks(BlockingQueue<UtpTimestampedPacketDTO> queue) throws InterruptedException {
 		BlockingQueue<UtpTimestampedPacketDTO> tempQueue = new LinkedBlockingQueue<UtpTimestampedPacketDTO>();
 		long timeOut = algorithm.getMicrosToNextTimeOut();
+		timeOut /= 4;
 		UtpTimestampedPacketDTO temp = queue.poll(timeOut, TimeUnit.MICROSECONDS);
 		if (temp != null) {
 			tempQueue.offer(temp);
@@ -132,8 +133,8 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 		while(queue.peek() != null) {
 			UtpTimestampedPacketDTO pair = queue.take();
 			algorithm.ackRecieved(pair);
+			algorithm.removeAcked();		
 		}
-		algorithm.removeAcked();		
 	}
 
 	private void sendNextPacket(int packetSize) throws IOException {

@@ -63,7 +63,7 @@ public class UtpAlgorithm {
 	/**
 	 * Reduce burst sending artificially
 	 */
-	public static int MAX_BURST_SEND = 5;
+	public static int MAX_BURST_SEND = 2;
 	
 	/**
 	 * Minimum number of acks past seqNr=x to trigger a resend of seqNr=x;
@@ -86,7 +86,7 @@ public class UtpAlgorithm {
 	private int currentAckPosition = 0;
 	private int currentBurstSend = 0;
 
-	private long rtt = MINIMUM_TIMEOUT_MILLIS;
+	private long rtt = MINIMUM_TIMEOUT_MILLIS*2;
 	private long rttVar = 0;
 	
 
@@ -179,7 +179,7 @@ public class UtpAlgorithm {
 		logger.offTarget(offTarget);
 		double delayFactor = ((double) offTarget) / ((double) C_CONTROL_TARGET_MS);
 		logger.delayFactor(delayFactor);
-		double windowFactor = ((double) packetSizeJustAcked) / ((double) maxWindow);
+		double windowFactor = (Math.min((double)packetSizeJustAcked, (double)maxWindow)) / (Math.max((double)maxWindow, (double)packetSizeJustAcked));
 		logger.windowFactor(windowFactor);
 		int gain = (int) (MAX_CWND_INCREASE_PACKETS_PER_RTT * delayFactor * windowFactor);
 		logger.gain(gain);
@@ -194,7 +194,8 @@ public class UtpAlgorithm {
 
 
 	private long getTimeOutMicros() {
-		return rtt*1000;
+		return Math.max(rtt*1000 + rttVar * 4 * 1000, MINIMUM_TIMEOUT_MILLIS*1000);
+//		return rtt*1000 + rttVar * 4 * 1000;
 	}
 
 
@@ -228,7 +229,7 @@ public class UtpAlgorithm {
 		
 		long now = timeStamper.timeStamp();
 		long delta = now - lastTimeWindowReduced;
-		return delta > rtt;
+		return delta > rtt*1000;
 		
 	}
 
@@ -393,6 +394,10 @@ public class UtpAlgorithm {
 
 	public void end() {
 		logger.end();
+	}
+	
+	public void resetBurst() {
+		currentBurstSend = 0;
 	}
 	
 }
