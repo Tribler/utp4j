@@ -29,7 +29,7 @@ public class TestWrite {
 
 		UtpSocketChannel chanel = UtpSocketChannel.open();
 //		chanel.connect(new InetSocketAddress("192.168.1.40", 13344));
-		chanel.connect(new InetSocketAddress("localhost", 13344));
+		chanel.connect(new InetSocketAddress("192.168.1.44", 13344));
 		while(!chanel.isConnected()) { }
 		
 		chanel.write(buffer);

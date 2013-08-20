@@ -1,7 +1,6 @@
 package ch.uzh.csg.utp4j.channels.impl.read;
 
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_USHORT;
-import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -11,8 +10,8 @@ import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
 
 public class SkippedPacketBuffer {
 
-	private int size = 1000;
-	private UtpTimestampedPacketDTO[] buffer = new UtpTimestampedPacketDTO[size];
+	private static final int SIZE = 1000;
+	private UtpTimestampedPacketDTO[] buffer = new UtpTimestampedPacketDTO[SIZE];
 	private int expectedSequenceNumber = 0;
 	private int elementCount = 0;
 	
@@ -52,7 +51,7 @@ public class SkippedPacketBuffer {
 
 	private void fillBitMask(byte[] bitMask) {
 		int bitMaskIndex = 0;
-		for (int i = 1; i < size; i++) {
+		for (int i = 1; i < SIZE; i++) {
 			int bitMapIndex = (i - 1) % 8;
 			boolean hasRecieved = buffer[i] != null;
 			
@@ -67,17 +66,19 @@ public class SkippedPacketBuffer {
 		}
 	}
 
+	// 31 bit -> 4
+	// 32 bit -> 4
+	// 33 bit -> 8
+	// 63 bit -> 8
+	// 65 bit -> 12
 	private int calculateHeaderLength() {
 		int size = getRange();
-		float quotient = (float) (size/32.00);
-		int length = (int) Math.ceil(quotient);
-		return length*4;
-		
+		return (((size - 1) / 32 ) + 1) * 4;
 	}
 
 	private int getRange() {
 		int range = 0;
-		for (int i = 0; i < size; i++) {
+		for (int i = 0; i < SIZE; i++) {
 			if (buffer[i] != null) {
 				range = i;
 			}
@@ -92,7 +93,7 @@ public class SkippedPacketBuffer {
 
 	public Queue<UtpTimestampedPacketDTO> getAllUntillNextMissing() {
 		Queue<UtpTimestampedPacketDTO> queue = new LinkedList<UtpTimestampedPacketDTO>();
-		for (int i = 1; i < size; i++) {
+		for (int i = 1; i < SIZE; i++) {
 			if (buffer[i] != null) {
 				queue.add(buffer[i]);
 				buffer[i] = null;
@@ -113,7 +114,7 @@ public class SkippedPacketBuffer {
 		}
 		setExpectedSequenceNumber(expectedSequenceNumber);
 		UtpTimestampedPacketDTO[] oldBuffer = buffer;
-		buffer = new UtpTimestampedPacketDTO[size];
+		buffer = new UtpTimestampedPacketDTO[SIZE];
 		elementCount = 0;
 		for (UtpTimestampedPacketDTO utpTimestampedPacket : oldBuffer) {
 			if (utpTimestampedPacket != null) {
@@ -126,7 +127,7 @@ public class SkippedPacketBuffer {
 	}
 
 	public int getFreeSize() {
-		return size-elementCount;
+		return SIZE-elementCount;
 	}
 	
 

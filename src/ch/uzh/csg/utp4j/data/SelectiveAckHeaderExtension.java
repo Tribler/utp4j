@@ -2,14 +2,15 @@ package ch.uzh.csg.utp4j.data;
 
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
 
+import java.util.Arrays;
+
 public class SelectiveAckHeaderExtension extends UtpHeaderExtension {
 
 	private byte nextExtension;
 	private byte[] bitMask;
 	
 	/* Bit mappings */
-	public static byte[] BITMAP = { longToUbyte(1),  longToUbyte(2), longToUbyte(4), longToUbyte(8), 
-							  		longToUbyte(16), longToUbyte(32), longToUbyte(64), longToUbyte(128)};
+	public static byte[] BITMAP = { 1, 2, 4, 8, 16, 32, 64, (byte) 128};
 	
 	public static boolean isBitMarked(byte bitmask, int number) {
 		if (number < 2 || number > 9 ) {
@@ -43,22 +44,13 @@ public class SelectiveAckHeaderExtension extends UtpHeaderExtension {
 		} 
 		if (!(obj instanceof SelectiveAckHeaderExtension)) {
 			return false;
-		} else {
-			byte[] mine = toByteArray();
-			byte[] their = toByteArray();
-			if (their.length != mine.length) {
-				return false;
-			}
-			for (int i = 0; i < mine.length; i++) {
-				if (mine[i] != their[i]) {
-					return false;
-				}
-			}
-			return true;
-		}
+		} 
+		SelectiveAckHeaderExtension s = (SelectiveAckHeaderExtension) obj;
+		return Arrays.equals(toByteArray(), s.toByteArray());
 	}
 	
 	public byte[] toByteArray() {
+		//TODO: not create a new byte array
 		byte[] array = new byte[2 + bitMask.length];
 		array[0] = nextExtension;
 		array[1] = longToUbyte(bitMask.length);
@@ -67,6 +59,4 @@ public class SelectiveAckHeaderExtension extends UtpHeaderExtension {
 		}
 		return array;
 	}
-
-	
 }

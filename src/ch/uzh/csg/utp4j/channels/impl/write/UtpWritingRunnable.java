@@ -1,11 +1,8 @@
 package ch.uzh.csg.utp4j.channels.impl.write;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -24,7 +21,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 	private UtpSocketChannelImpl channel;
 	private boolean isRunning = false;
 	private UtpAlgorithm algorithm;
-	IOException possibleException = null;
+	private IOException possibleException = null;
 	private boolean finSend;
 	private MicroSecondsTimeStamp timeStamper;
 	
@@ -47,12 +44,10 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 		int durchgang = 0;
 		while(continueSending()) {
 			try {
-				checkForAcks();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			try {
+				if(!checkForAcks()) {
+					graceFullInterrupt = true;
+					break;
+				}
 				Queue<DatagramPacket> packetsToResend = algorithm.getPacketsToResend();
 				for (DatagramPacket datagramPacket : packetsToResend) {
 					datagramPacket.setSocketAddress(channel.getRemoteAdress());
@@ -69,7 +64,8 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 			while (algorithm.canSendNextPacket() && !exceptionOccured && !graceFullInterrupt && buffer.hasRemaining()) {
 				int packetSize = algorithm.sizeOfNextPacket();
 				try {
-					sendNextPacket(packetSize);
+					DatagramPacket udpPacket = sendNextPacket(packetSize);
+					channel.sendPacket(udpPacket);	
 				} catch (IOException exp) {
 					exp.printStackTrace();
 					graceFullInterrupt = true;
@@ -93,7 +89,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 				finSend = true;
 			}
 			durchgang++;
-			if (durchgang % 1000 == 0) {
+			if (durchgang % 100 == 0) {
 				System.out.println("buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
 			}
 		}
@@ -106,38 +102,42 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 		System.out.println("WRITER OUT");
 	}
 	
-	private void checkForAcks() throws InterruptedException {
+	private boolean checkForAcks() {
 		BlockingQueue<UtpTimestampedPacketDTO> queue = channel.getDataGramQueue();
+		try {
 		if (queue.peek() != null) {
 			processAcks(queue);
 		} else {
 			waitAndProcessAcks(queue);
 		}
+		} catch (InterruptedException ie) {
+			return false;
+		}
+		return true;
 	}
 	
 	private void waitAndProcessAcks(BlockingQueue<UtpTimestampedPacketDTO> queue) throws InterruptedException {
-		BlockingQueue<UtpTimestampedPacketDTO> tempQueue = new LinkedBlockingQueue<UtpTimestampedPacketDTO>();
 		long timeOut = algorithm.getMicrosToNextTimeOut();
 		timeOut /= 4;
 		UtpTimestampedPacketDTO temp = queue.poll(timeOut, TimeUnit.MICROSECONDS);
 		if (temp != null) {
-			tempQueue.offer(temp);
-			while(queue.peek() != null) {
-				tempQueue.offer(queue.take());
+			algorithm.ackRecieved(temp);
+			algorithm.removeAcked();
+			if (queue.peek() != null) {
+				processAcks(queue);
 			}
-			processAcks(tempQueue);
 		}
 	}
 
 	private void processAcks(BlockingQueue<UtpTimestampedPacketDTO> queue) throws InterruptedException {
-		while(queue.peek() != null) {
-			UtpTimestampedPacketDTO pair = queue.take();
+		UtpTimestampedPacketDTO pair;
+		while((pair = queue.poll()) != null) {
 			algorithm.ackRecieved(pair);
 			algorithm.removeAcked();		
 		}
 	}
 
-	private void sendNextPacket(int packetSize) throws IOException {
+	private DatagramPacket sendNextPacket(int packetSize) throws IOException {
 		if (buffer.remaining() < packetSize) {
 			packetSize = buffer.remaining();
 		}
@@ -148,8 +148,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 		byte[] utpPacketBytes = utpPacket.toByteArray();
 		DatagramPacket udpPacket = new DatagramPacket(utpPacketBytes, utpPacketBytes.length, channel.getRemoteAdress());
 		algorithm.markPacketOnfly(utpPacket, udpPacket);
-		channel.sendPacket(udpPacket);		
-		
+		return udpPacket;	
 	}
 
 
