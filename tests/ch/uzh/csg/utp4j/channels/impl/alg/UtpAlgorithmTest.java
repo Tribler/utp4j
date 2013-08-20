@@ -3,6 +3,8 @@ package ch.uzh.csg.utp4j.channels.impl.alg;
 import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
 
+import java.net.InetSocketAddress;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -23,7 +25,7 @@ public class UtpAlgorithmTest {
 		/* when delay is 50ms, then packetsize = 
 		 * (delay/max_delay)*(max_packet-min_packet)+min_packet */
 		MicroSecondsTimeStamp stamper = new MicroSecondsTimeStamp();
-		UtpAlgorithm alg = new UtpAlgorithm(stamper);
+		UtpAlgorithm alg = new UtpAlgorithm(stamper, new InetSocketAddress(51235));
 		alg.packetSizeModus = PacketSizeModus.DYNAMIC_LINEAR;
 		alg.setMinDelay(mockMinDelay);
 		assertEquals(811, alg.sizeOfNextPacket());

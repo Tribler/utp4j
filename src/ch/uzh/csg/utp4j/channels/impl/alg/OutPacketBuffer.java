@@ -29,6 +29,7 @@ public class OutPacketBuffer {
 	}
 
 	private MicroSecondsTimeStamp timeStamper;
+	private SocketAddress addr;
 	
 	public OutPacketBuffer(MicroSecondsTimeStamp stamper) {
 		timeStamper = stamper;
@@ -134,7 +135,6 @@ public class OutPacketBuffer {
 
 	private void updateResendTimeStamps(UtpTimestampedPacketDTO unackedPkt) throws SocketException {
 		unackedPkt.utpPacket().setTimestamp(timeStamper.utpTimeStamp());
-		SocketAddress addr = unackedPkt.dataGram().getSocketAddress();
 		byte[] newBytes = unackedPkt.utpPacket().toByteArray();
 		unackedPkt.setDgPacket(new DatagramPacket(newBytes, newBytes.length, addr));
 		long timeStamp = timeStamper.timeStamp();
@@ -205,6 +205,12 @@ public class OutPacketBuffer {
 			return pkt.stamp();
 		}
 		return -1;
+	}
+
+
+	public void setRemoteAdress(SocketAddress addr) {
+		this.addr = addr;
+		
 	}
 
 }

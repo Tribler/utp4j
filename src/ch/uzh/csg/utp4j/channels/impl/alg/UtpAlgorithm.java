@@ -1,6 +1,8 @@
 package ch.uzh.csg.utp4j.channels.impl.alg;
 
 import java.net.DatagramPacket;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -95,9 +97,10 @@ public class UtpAlgorithm {
 	private long lastTimeWindowReduced;
 
 	
-	public UtpAlgorithm(MicroSecondsTimeStamp timestamper) {
+	public UtpAlgorithm(MicroSecondsTimeStamp timestamper, SocketAddress addr) {
 		timeStamper = timestamper;
 		buffer = new OutPacketBuffer(timestamper);
+		buffer.setRemoteAdress(addr);
 	}
 
 
@@ -185,6 +188,7 @@ public class UtpAlgorithm {
 			maxWindow = MAX_PACKET_SIZE;
 		}
 		logger.maxWindow(maxWindow);
+		logger.advertisedWindow(advertisedWindowSize);
 		buffer.setTimeOutMicroSec(getTimeOutMicros());
 	}
 

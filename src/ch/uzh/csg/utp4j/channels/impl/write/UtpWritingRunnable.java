@@ -32,7 +32,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 		this.buffer = buffer;
 		this.channel = channel;
 		this.timeStamper = timeStamper;
-		algorithm = new UtpAlgorithm(timeStamper);
+		algorithm = new UtpAlgorithm(timeStamper, channel.getRemoteAdress());
 	}
 
 

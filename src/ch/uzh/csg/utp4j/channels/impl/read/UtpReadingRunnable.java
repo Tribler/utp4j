@@ -130,6 +130,10 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	}
 	
 	private long getWindowSize() {
+		int freeSize = skippedBuffer.getFreeSize();
+		if (freeSize < 200) {
+			return freeSize*UtpAlgorithm.MIN_PACKET_SIZE;
+		}
 		return (skippedBuffer.getFreeSize()) * UtpAlgorithm.MIN_PACKET_SIZE;
 	}
 
