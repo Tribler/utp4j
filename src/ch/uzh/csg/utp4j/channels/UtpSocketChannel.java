@@ -43,7 +43,7 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 	/**
 	 * Current State of the Socket. {@link UtpSocketState}
 	 */
-	protected UtpSocketState state = null;
+	protected volatile UtpSocketState state = null;
 
 	/**
 	 * Sequencing begin.

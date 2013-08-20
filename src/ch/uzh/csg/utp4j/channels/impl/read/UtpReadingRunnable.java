@@ -29,6 +29,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	private boolean finRecieved;
 	private long payloadLength = 0;
 	private long finRecievedTimestamp;
+	private int lastPayloadLength = UtpAlgorithm.MAX_PACKET_SIZE;
 	
 	public UtpReadingRunnable(UtpSocketChannelImpl channel, ByteBuffer buff, MicroSecondsTimeStamp timestamp) {
 		this.channel = channel;
@@ -99,7 +100,9 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	private void handleExpectedPacket(UtpTimestampedPacketDTO timestampedPair) throws IOException {
 		if (hasSkippedPackets()) {
 			buffer.put(timestampedPair.utpPacket().getPayload());
-			payloadLength += timestampedPair.utpPacket().getPayload().length;
+			int payloadLength = timestampedPair.utpPacket().getPayload().length;
+			lastPayloadLength = payloadLength;
+			payloadLength += payloadLength;
 			Queue<UtpTimestampedPacketDTO> packets = skippedBuffer.getAllUntillNextMissing();
 			int lastSeqNumber = 0;
 			if (packets.isEmpty()) {
@@ -130,11 +133,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	}
 	
 	private long getWindowSize() {
-		int freeSize = skippedBuffer.getFreeSize();
-		if (freeSize < 200) {
-			return freeSize*UtpAlgorithm.MIN_PACKET_SIZE;
-		}
-		return (skippedBuffer.getFreeSize()) * UtpAlgorithm.MIN_PACKET_SIZE;
+		return (skippedBuffer.getFreeSize()) * lastPayloadLength;
 	}
 
 	private int getTimestampDifference(UtpTimestampedPacketDTO timestampedPair) {
