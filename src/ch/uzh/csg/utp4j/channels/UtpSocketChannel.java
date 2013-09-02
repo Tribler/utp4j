@@ -22,10 +22,9 @@ import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.UtpPacket;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
-import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
 
-public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channel, ReadableByteChannel, WritableByteChannel {
+public abstract class UtpSocketChannel implements Closeable, Channel, ReadableByteChannel {
 	
 
 	
@@ -126,11 +125,10 @@ public abstract class UtpSocketChannel implements Closeable, ByteChannel, Channe
 		
 	}
 	
-	protected abstract int writeImpl(ByteBuffer src) throws IOException;
+	protected abstract UtpWriteFuture writeImpl(ByteBuffer src) throws IOException;
 	
 	
-	@Override
-	public int write(ByteBuffer src) throws IOException {
+	public UtpWriteFuture write(ByteBuffer src) throws IOException {
 		return writeImpl(src);
 	}
 

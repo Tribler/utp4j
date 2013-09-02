@@ -84,7 +84,7 @@ public class UtpDataLogger {
 	}
 
 	public UtpDataLogger() {
-		log.add("TimeMillis;AckRecieved;CurrentWidow_Bytes;Difference_Micros;MinDelay_Micros;OurDelay_Micros;OffTarget_Micros;" +
+		log.add("TimeMicros;AckRecieved;CurrentWidow_Bytes;Difference_Micros;MinDelay_Micros;OurDelay_Micros;OffTarget_Micros;" +
 				"DelayFactor;WindowFactor;Gain_Bytes;PacketRtt_Millis;RttVar_Millis;Rtt_Millis;AdvertisedWindow_Bytes;MaxWindow_Bytes;SACK\n");
 		minimumTimeStamp = 0;
 	}
@@ -150,7 +150,7 @@ public class UtpDataLogger {
 		return bytesLength + 100;
 	}
 
-	public void milliSecTimeStamp(long logTimeStampMillisec) {
+	public void microSecTimeStamp(long logTimeStampMillisec) {
 		if (minimumTimeStamp == 0) {
 			minimumTimeStamp = logTimeStampMillisec;
 		}

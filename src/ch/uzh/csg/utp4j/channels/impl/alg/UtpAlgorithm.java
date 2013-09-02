@@ -1,12 +1,10 @@
 package ch.uzh.csg.utp4j.channels.impl.alg;
 
 import java.net.DatagramPacket;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.Queue;
-
 
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.channels.impl.log.UtpDataLogger;
@@ -69,6 +67,8 @@ public class UtpAlgorithm {
 	 * Minimum number of acks past seqNr=x to trigger a resend of seqNr=x;
 	 */
 	public static final int MIN_SKIP_PACKET_BEFORE_RESEND = 3;
+	
+	private static final long WAIT_DIVISOR_NONFULL_WINDOW = 10;
 		
 	
 	/**
@@ -91,6 +91,7 @@ public class UtpAlgorithm {
 	
 
 	private int advertisedWindowSize;
+	private boolean advertisedWindowSizeSet = false;
 
 	private UtpDataLogger logger = new UtpDataLogger();
 
@@ -154,19 +155,15 @@ public class UtpAlgorithm {
 
 
 	private void updateAdvertisedWindowSize(int advertisedWindo) {
+		if (!advertisedWindowSizeSet) {
+			advertisedWindowSizeSet = true;
+		}
 		this.advertisedWindowSize = advertisedWindo;
 		
-	}
-
-
-	private void checkTimeouts() {
-		// TODO: check if packets timed out
-	}
-
-	
+	}	
 	private void updateWindow(UtpPacket utpPacket, long timestamp, int packetSizeJustAcked) {
-		long logTimeStampMillisec = timeStamper.timeStamp()/1000;
-		logger.milliSecTimeStamp(logTimeStampMillisec);
+		long logTimeStampMillisec = timeStamper.timeStamp();
+		logger.microSecTimeStamp(logTimeStampMillisec);
 		currentWindow = buffer.getBytesOnfly();
 		logger.currentWindow(currentWindow);
 		long difference = utpPacket.getTimestampDifference() & 0xFFFFFFFF;
@@ -195,7 +192,6 @@ public class UtpAlgorithm {
 
 	private long getTimeOutMicros() {
 		return Math.max(rtt*1000 + rttVar * 4 * 1000, MINIMUM_TIMEOUT_MILLIS*1000);
-//		return rtt*1000 + rttVar * 4 * 1000;
 	}
 
 
@@ -248,48 +244,58 @@ public class UtpAlgorithm {
 	
 	
 	public boolean canSendNextPacket() {
-		checkTimeouts();
-		int maximumWindow = (advertisedWindowSize < maxWindow) ? advertisedWindowSize : maxWindow;
-		boolean canSend = maximumWindow >= currentWindow;
+		boolean windowNotFull = !isWondowFull();
 		boolean burstFull = false;
 		
-		if (canSend) {
-			burstFull = (currentBurstSend >= MAX_BURST_SEND);
+		if (windowNotFull) {
+			burstFull = isBurstFull();
 		}
 		
-		if (!burstFull && canSend) {
+		if (!burstFull && windowNotFull) {
 			currentBurstSend++;
 		} 
 		
 		if (burstFull) {
 			currentBurstSend = 0;
 		}
-		return SEND_IN_BURST ? (!burstFull && canSend) : canSend;
+		return SEND_IN_BURST ? (!burstFull && windowNotFull) : windowNotFull;
+	}
+	
+	private boolean isBurstFull() {
+		return currentBurstSend >= MAX_BURST_SEND;
 	}
 	
 
+	private boolean isWondowFull() {
+		int maximumWindow = (advertisedWindowSize < maxWindow 
+				&& advertisedWindowSizeSet) ? advertisedWindowSize : maxWindow;
+		return currentWindow >= maximumWindow;
+	}
+	
 	public int sizeOfNextPacket() {
 		if (packetSizeModus.equals(PacketSizeModus.DYNAMIC_LINEAR)) {
-			int packetSizeDelta = MAX_PACKET_SIZE - MIN_PACKET_SIZE;
-			double packetSizeFactor = (((double) C_CONTROL_TARGET_MS) - ((double) minDelay.getMinDelay()))/((double) C_CONTROL_TARGET_MS);
-			double packetSize = MIN_PACKET_SIZE + packetSizeFactor*packetSizeDelta;
-			return (int) Math.ceil(packetSize);
+			return calculateDynamicLinearPacketSize();
 		} else if (packetSizeModus.equals(PacketSizeModus.CONSTANT_1472)) {
 			return MAX_PACKET_SIZE;
-		} else {
-			return MINIMUM_MTU;
 		}
+		return MINIMUM_MTU;
 	}
+
+	private int calculateDynamicLinearPacketSize() {
+		int packetSizeDelta = MAX_PACKET_SIZE - MIN_PACKET_SIZE;
+		long minDelayOffTarget = C_CONTROL_TARGET_MS - minDelay.getMinDelay();
+		double packetSizeFactor = ((double) minDelayOffTarget)/((double) C_CONTROL_TARGET_MS);
+		double packetSize = MIN_PACKET_SIZE + packetSizeFactor*packetSizeDelta;
+		return (int) Math.ceil(packetSize);
+	}
+
 
 	public void markPacketOnfly(UtpPacket utpPacket, DatagramPacket dgPacket) {
 		long timeStamp = timeStamper.timeStamp();
 		UtpTimestampedPacketDTO pkt = new UtpTimestampedPacketDTO(dgPacket, utpPacket, timeStamp, 0);
 		buffer.bufferPacket(pkt);
 		incrementAckNumber();
-		currentWindow += UtpPacketUtils.DEF_HEADER_LENGTH;
-		if (utpPacket.getPayload() != null) {
-			currentWindow += utpPacket.getPayload().length;
-		}
+		addPacketToCurrentWindow(utpPacket);
 
 	}
 
@@ -309,11 +315,16 @@ public class UtpAlgorithm {
 		UtpTimestampedPacketDTO pkt = new UtpTimestampedPacketDTO(dgFin, fin, timeStamp, 0);
 		buffer.bufferPacket(pkt);
 		incrementAckNumber();
-		currentWindow += UtpPacketUtils.DEF_HEADER_LENGTH;
-		if (fin.getPayload() != null) {
-			currentWindow += fin.getPayload().length;
-		}
+		addPacketToCurrentWindow(fin);
 	}
+
+	private void addPacketToCurrentWindow(UtpPacket pkt) {
+		currentWindow += UtpPacketUtils.DEF_HEADER_LENGTH;
+		if (pkt.getPayload() != null) {
+			currentWindow += pkt.getPayload().length;
+		}	
+	}
+
 
 	public boolean areAllPacketsAcked() {
 		return buffer.isEmpty();
@@ -380,15 +391,23 @@ public class UtpAlgorithm {
 	}
 
 
-	public long getMicrosToNextTimeOut() {
+	public long getWaitingTimeMicroSeconds() {
 		long oldestTimeStamp = buffer.getOldestUnackedTimestamp();
 		long nextTimeOut = oldestTimeStamp + getTimeOutMicros();
 		long timeOutInMicroSeconds = nextTimeOut - timeStamper.timeStamp();
-		if (timeOutInMicroSeconds < 0 || oldestTimeStamp == 0) {
+		if (continueImmidiately(timeOutInMicroSeconds, oldestTimeStamp)) {
 			return 0L;
-		} else {
-			return timeOutInMicroSeconds + 1;
 		}
+		if (isWondowFull()) {
+			return timeOutInMicroSeconds/WAIT_DIVISOR_NONFULL_WINDOW;
+		} 
+		return timeOutInMicroSeconds;
+	}
+
+
+	private boolean continueImmidiately(
+			long timeOutInMicroSeconds, long oldestTimeStamp) {
+		return timeOutInMicroSeconds < 0 || oldestTimeStamp == 0;
 	}
 
 

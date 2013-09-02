@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
+import ch.uzh.csg.utp4j.channels.UtpWriteFuture;
 
 public class TestWrite {
 
@@ -33,8 +34,9 @@ public class TestWrite {
 //		chanel.connect(new InetSocketAddress("192.168.1.44", 13344));
 		while(!chanel.isConnected()) { }
 		
-		chanel.write(buffer);
-		Thread.sleep(2000);
+		UtpWriteFuture fut = chanel.write(buffer);
+		fut.block();
+		System.out.println("writing test done");
 
 	}
 

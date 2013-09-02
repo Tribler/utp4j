@@ -3,7 +3,6 @@ package ch.uzh.csg.utp4j.examples;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import ch.uzh.csg.utp4j.channels.UtpServerSocketChannel;
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;

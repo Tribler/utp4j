@@ -66,11 +66,7 @@ public class SkippedPacketBuffer {
 		}
 	}
 
-	// 31 bit -> 4
-	// 32 bit -> 4
-	// 33 bit -> 8
-	// 63 bit -> 8
-	// 65 bit -> 12
+	
 	private int calculateHeaderLength() {
 		int size = getRange();
 		return (((size - 1) / 32 ) + 1) * 4;

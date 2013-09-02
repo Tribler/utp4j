@@ -5,7 +5,6 @@ import java.net.DatagramPacket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import ch.uzh.csg.utp4j.channels.UtpServerSocketChannel;

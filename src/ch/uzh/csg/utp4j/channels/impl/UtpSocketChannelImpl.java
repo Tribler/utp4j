@@ -10,26 +10,24 @@ import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
-import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
 import ch.uzh.csg.utp4j.channels.UtpSocketState;
+import ch.uzh.csg.utp4j.channels.UtpWriteFuture;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
 import ch.uzh.csg.utp4j.channels.impl.read.UtpReadingRunnable;
 import ch.uzh.csg.utp4j.channels.impl.recieve.UtpPacketRecievable;
 import ch.uzh.csg.utp4j.channels.impl.recieve.UtpRecieveRunnable;
+import ch.uzh.csg.utp4j.channels.impl.write.UtpWriteFutureImpl;
 import ch.uzh.csg.utp4j.channels.impl.write.UtpWritingRunnable;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
 import ch.uzh.csg.utp4j.data.UtpHeaderExtension;
 import ch.uzh.csg.utp4j.data.UtpPacket;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
-import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
 
 
@@ -150,17 +148,14 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	}
 
 	@Override
-	protected int writeImpl(ByteBuffer src) throws IOException {
-		writer = new UtpWritingRunnable(this, src, timeStamper);
-		if (!isBlocking) {
-			writer.start();			
-		} else {
-			writer.run();
-		}
+	protected UtpWriteFuture writeImpl(ByteBuffer src) throws IOException {
+		UtpWriteFutureImpl future = new UtpWriteFutureImpl();
+		writer = new UtpWritingRunnable(this, src, timeStamper, future);
+		writer.start();			
 		if (writer.hasExceptionOccured()) {
 			throw writer.getException();
 		}
-		return writer.getBytesSend();
+		return future;
 	}
 
 	public BlockingQueue<UtpTimestampedPacketDTO> getDataGramQueue() {

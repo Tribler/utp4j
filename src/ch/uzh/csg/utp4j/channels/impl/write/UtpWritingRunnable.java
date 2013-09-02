@@ -5,7 +5,6 @@ import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
@@ -24,11 +23,14 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 	private IOException possibleException = null;
 	private boolean finSend;
 	private MicroSecondsTimeStamp timeStamper;
+	private UtpWriteFutureImpl future;
 	
-	public UtpWritingRunnable(UtpSocketChannelImpl channel, ByteBuffer buffer, MicroSecondsTimeStamp timeStamper) {
+	public UtpWritingRunnable(UtpSocketChannelImpl channel, ByteBuffer buffer, 
+			MicroSecondsTimeStamp timeStamper, UtpWriteFutureImpl future) {
 		this.buffer = buffer;
 		this.channel = channel;
 		this.timeStamper = timeStamper;
+		this.future = future;
 		algorithm = new UtpAlgorithm(timeStamper, channel.getRemoteAdress());
 	}
 
@@ -62,10 +64,8 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 			}
 
 			while (algorithm.canSendNextPacket() && !exceptionOccured && !graceFullInterrupt && buffer.hasRemaining()) {
-				int packetSize = algorithm.sizeOfNextPacket();
 				try {
-					DatagramPacket udpPacket = sendNextPacket(packetSize);
-					channel.sendPacket(udpPacket);	
+					channel.sendPacket(getNextPacket());	
 				} catch (IOException exp) {
 					exp.printStackTrace();
 					graceFullInterrupt = true;
@@ -88,6 +88,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 				}
 				finSend = true;
 			}
+			uptadeFuture();
 			durchgang++;
 			if (durchgang % 100 == 0) {
 				System.out.println("buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
@@ -99,17 +100,25 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 		}
 		isRunning = false;
 		algorithm.end();
+		future.finished(possibleExp, buffer.position());
+		future.unblock();
 		System.out.println("WRITER OUT");
 	}
 	
+	private void uptadeFuture() {
+		future.setBytesSend(buffer.position());
+		
+	}
+
+
 	private boolean checkForAcks() {
 		BlockingQueue<UtpTimestampedPacketDTO> queue = channel.getDataGramQueue();
 		try {
-		if (queue.peek() != null) {
-			processAcks(queue);
-		} else {
-			waitAndProcessAcks(queue);
-		}
+			if (queue.peek() != null) {
+				processAcks(queue);
+			} else {
+				waitAndProcessAcks(queue);
+			}
 		} catch (InterruptedException ie) {
 			return false;
 		}
@@ -117,9 +126,8 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 	}
 	
 	private void waitAndProcessAcks(BlockingQueue<UtpTimestampedPacketDTO> queue) throws InterruptedException {
-		long timeOut = algorithm.getMicrosToNextTimeOut();
-		timeOut /= 20;
-		UtpTimestampedPacketDTO temp = queue.poll(timeOut, TimeUnit.MICROSECONDS);
+		long waitingTimeMicros = algorithm.getWaitingTimeMicroSeconds();
+		UtpTimestampedPacketDTO temp = queue.poll(waitingTimeMicros, TimeUnit.MICROSECONDS);
 		if (temp != null) {
 			algorithm.ackRecieved(temp);
 			algorithm.removeAcked();
@@ -137,7 +145,8 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 		}
 	}
 
-	private DatagramPacket sendNextPacket(int packetSize) throws IOException {
+	private DatagramPacket getNextPacket() throws IOException {
+		int packetSize = algorithm.sizeOfNextPacket();
 		if (buffer.remaining() < packetSize) {
 			packetSize = buffer.remaining();
 		}
@@ -179,7 +188,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 	}
 
 	public int getBytesSend() {
-		return 0;
+		return buffer.position();
 	}
 	
 	public boolean isRunning() {

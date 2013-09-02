@@ -1,7 +1,9 @@
 package ch.uzh.csg.utp4j.channels.impl.alg;
 
-import static org.junit.Assert.*;
-
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
@@ -16,10 +18,6 @@ import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.UtpPacket;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
-
-import static org.mockito.Mockito.*;
-
-import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.*;
 
 
 @RunWith(org.mockito.runners.MockitoJUnitRunner.class)
