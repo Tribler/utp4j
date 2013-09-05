@@ -2,7 +2,6 @@ package ch.uzh.csg.utp4j.examples;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import ch.uzh.csg.utp4j.channels.UtpServerSocketChannel;
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
@@ -52,20 +51,21 @@ public class TestIO {
 			this.server = sckt;
 		}
 		
+		@Override
 		public void run() {
-			try {
-				UtpSocketChannel channel = server.accept();
-				ByteBuffer buff = ByteBuffer.allocate(10000);
-				channel.read(buff);
-				Thread.sleep(2000);
-				System.out.println(Arrays.toString(buff.array()));
-				channel.close();
-				server.close();
-				System.out.println("OUT");
-			} catch (IOException | InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+//			try {
+//				UtpSocketChannel channel = server.accept();
+//				ByteBuffer buff = ByteBuffer.allocate(10000);
+//				channel.read(buff);
+//				Thread.sleep(2000);
+//				System.out.println(Arrays.toString(buff.array()));
+//				channel.close();
+//				server.close();
+//				System.out.println("OUT");
+//			} catch (IOException | InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
 		}
 	}
 

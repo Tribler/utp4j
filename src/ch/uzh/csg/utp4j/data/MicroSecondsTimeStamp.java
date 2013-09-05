@@ -30,8 +30,8 @@ public class MicroSecondsTimeStamp {
 	
 	public int utpDifference(int thisTimeStamp, int othertimestamp) {
 		int nowTime = thisTimeStamp;
-		long nowTimeL = (long) (nowTime & 0xFFFFFFFF);
-		long otherTimeL = (long) (othertimestamp & 0xFFFFFFFF);
+		long nowTimeL = nowTime & 0xFFFFFFFF;
+		long otherTimeL = othertimestamp & 0xFFFFFFFF;
 		long differenceL = nowTimeL - otherTimeL;
 		// TODO: POSSIBLE BUG NEGATIVE DIFFERENCE
 		if (differenceL < 0) {

@@ -9,6 +9,8 @@ import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
@@ -16,8 +18,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
 import ch.uzh.csg.utp4j.channels.UtpSocketState;
-import ch.uzh.csg.utp4j.channels.UtpWriteFuture;
+import ch.uzh.csg.utp4j.channels.futures.UtpWriteFuture;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
+import ch.uzh.csg.utp4j.channels.impl.conn.UtpConnectFutureImpl;
+import ch.uzh.csg.utp4j.channels.impl.read.UtpReadFutureImpl;
 import ch.uzh.csg.utp4j.channels.impl.read.UtpReadingRunnable;
 import ch.uzh.csg.utp4j.channels.impl.recieve.UtpPacketRecievable;
 import ch.uzh.csg.utp4j.channels.impl.recieve.UtpRecieveRunnable;
@@ -39,6 +43,8 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	private UtpWritingRunnable writer;
 	private UtpReadingRunnable reader;
 	private Object sendLock = new Object();
+
+	private UtpServerSocketChannelImpl server;
 	
 	
 	@Override
@@ -65,6 +71,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		setAckNrFromPacketSqNr(pkt);
 		setState(CONNECTED);
 		printState("[SynAck recieved] ");
+		connectFuture.finished(null);
 	}
 
 	private void handlePacket(DatagramPacket udpPacket) {
@@ -118,6 +125,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		
 	}
 
+	@Override
 	protected void setAckNrFromPacketSqNr(UtpPacket utpPacket) {
 		short ackNumberS = utpPacket.getSequenceNumber();
 		setAckNumber(ackNumberS & 0xFFFF);
@@ -133,7 +141,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	}
 
 	@Override
-	protected void connectImpl() {
+	protected void connectImpl(UtpConnectFutureImpl future) {
 		reciever = new UtpRecieveRunnable(getDgSocket(), this);
 		reciever.start();
 		
@@ -148,13 +156,15 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	}
 
 	@Override
-	protected UtpWriteFuture writeImpl(ByteBuffer src) throws IOException {
-		UtpWriteFutureImpl future = new UtpWriteFutureImpl();
+	protected UtpWriteFuture writeImpl(ByteBuffer src) {
+		UtpWriteFutureImpl future = null;
+		try {
+			future = new UtpWriteFutureImpl();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		writer = new UtpWritingRunnable(this, src, timeStamper, future);
 		writer.start();			
-		if (writer.hasExceptionOccured()) {
-			throw writer.getException();
-		}
 		return future;
 	}
 
@@ -173,17 +183,16 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	}
 
 	@Override
-	protected int readImpl(ByteBuffer dst) throws IOException {
-		reader = new UtpReadingRunnable(this, dst, timeStamper);
-		if (!isBlocking) {
-			reader.start();
-		} else {
-			reader.run();
+	protected UtpReadFutureImpl readImpl(ByteBuffer dst) throws IOException {
+		UtpReadFutureImpl readFuture = null;
+		try {
+			readFuture = new UtpReadFutureImpl();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
-		if (reader.hasExceptionOccured()) {
-			throw reader.getException();
-		}
-		return reader.getBytesRead();
+		reader = new UtpReadingRunnable(this, dst, timeStamper, readFuture);
+		reader.start();
+		return readFuture;
 	}
 
 	public void selectiveAckPacket(UtpPacket utpPacket, SelectiveAckHeaderExtension headerExtension, int timestampDifference, long advertisedWindow) throws IOException {
@@ -209,10 +218,12 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		return ackPacket;		
 	}
 	
+	@Override
 	public UtpSocketState getState() {
 		return state;
 	}
 	
+	@Override
 	public void setState(UtpSocketState state) {
 		this.state = state;
 	}
@@ -231,7 +242,16 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	protected void closeImpl() {
 		if (reciever != null) {
 			reciever.graceFullInterrupt();			
+		} else if (server != null) {
+			server.unregister(this);
 		}
+		if (isReading()) {
+			reader.graceFullInterrupt();
+		} 
+		if (isWriting()) {
+			writer.graceFullInterrupt();
+		}
+		
 	}
 
 	@Override
@@ -264,6 +284,29 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 			getDgSocket().send(pkt);
 		}
 		
+	}
+	
+	@Override
+	public void setDgSocket(DatagramSocket dgSocket) {
+		if (this.dgSocket != null) {
+			this.dgSocket.close();
+		}
+		this.dgSocket = dgSocket;
+	}
+	
+	@Override
+	public void setAckNumber(int ackNumber) {
+		this.ackNumber = ackNumber;
+	}
+
+	public void setServer(UtpServerSocketChannelImpl utpServerSocketChannelImpl) {
+		this.server = utpServerSocketChannelImpl;
+		
+	}
+
+	@Override
+	public void setRemoteAddress(SocketAddress remoteAdress) {
+		this.remoteAddress = remoteAdress;	
 	}
 	
 	

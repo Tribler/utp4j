@@ -69,6 +69,8 @@ public class UtpAlgorithm {
 	public static final int MIN_SKIP_PACKET_BEFORE_RESEND = 3;
 	
 	private static final long WAIT_DIVISOR_NONFULL_WINDOW = 10;
+
+	public static final long TIME_WAIT_AFTER_FIN = 3000*1000;
 		
 	
 	/**

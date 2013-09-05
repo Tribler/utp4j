@@ -1,13 +1,11 @@
 package ch.uzh.csg.utp4j.channels.impl.read;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 
+import ch.uzh.csg.utp4j.channels.UtpSocketState;
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
@@ -26,15 +24,16 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	private boolean graceFullInterrupt;
 	private boolean isRunning;
 	private MicroSecondsTimeStamp timestamp;
-	private boolean finRecieved;
 	private long payloadLength = 0;
 	private long finRecievedTimestamp;
 	private int lastPayloadLength = UtpAlgorithm.MAX_PACKET_SIZE;
+	private UtpReadFutureImpl readFuture;
 	
-	public UtpReadingRunnable(UtpSocketChannelImpl channel, ByteBuffer buff, MicroSecondsTimeStamp timestamp) {
+	public UtpReadingRunnable(UtpSocketChannelImpl channel, ByteBuffer buff, MicroSecondsTimeStamp timestamp, UtpReadFutureImpl future) {
 		this.channel = channel;
 		this.buffer = buff;
 		this.timestamp = timestamp;
+		this.readFuture = future;
 	}
 	
 	public int getBytesRead() {
@@ -54,13 +53,14 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 //		buffer.flip();
 
 		isRunning = true;
+		IOException exp = null;
 		while(continueReading()) {
 			BlockingQueue<UtpTimestampedPacketDTO> queue = channel.getDataGramQueue();
 			try {
 				UtpTimestampedPacketDTO timestampedPair = queue.take();
 				if (timestampedPair != null) {
 					if (isFinPacket(timestampedPair)) {
-						finRecieved = true;
+						channel.setState(UtpSocketState.GOT_FIN);
 						finRecievedTimestamp = timestamp.timeStamp();
 					}
 					if (isPacketExpected(timestampedPair.utpPacket())) {
@@ -70,22 +70,15 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 					}						
 				}
 					
-			} catch (IOException | InterruptedException exp) {
-				exp.printStackTrace();
+			} catch (IOException ioe) {
+				exp = ioe;
+			} catch (InterruptedException iexp) {
+				iexp.printStackTrace();
 			}
 		}
 		isRunning = false;
+		readFuture.finished(exp, buffer);
 		
-		try {
-			buffer.flip();
-			File outFile = new File("testData/c_sc S01E01.avi");
-			FileChannel fchannel = new FileOutputStream(outFile).getChannel();
-			fchannel.write(buffer);
-			fchannel.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		
 		System.out.println("Buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
 		System.out.println("PAYLOAD LENGHT " + payloadLength);
@@ -170,11 +163,16 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	}
 
 	private boolean continueReading() {
-		return !graceFullInterrupt && !exceptionOccured && (!finRecieved || (finRecieved && hasSkippedPackets() && !timeAwaitedAfterFin()));
+		return !graceFullInterrupt && !exceptionOccured 
+				&& (!finRecieved() || (finRecieved() && hasSkippedPackets() && !timeAwaitedAfterFin()));
+	}
+	
+	private boolean finRecieved() {
+		return channel.getState() == UtpSocketState.GOT_FIN;
 	}
 	
 	private boolean timeAwaitedAfterFin() {
-		return (timestamp.timeStamp() - finRecievedTimestamp) > 5000*1000;
+		return (timestamp.timeStamp() - finRecievedTimestamp) > UtpAlgorithm.TIME_WAIT_AFTER_FIN;
 	}
 
 	public boolean isRunning() {

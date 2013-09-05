@@ -61,10 +61,10 @@ public final class UnsignedTypesUtil {
 	}
 	
 	public static int bytesToUint(byte first, byte second, byte third, byte fourth) {
-		int firstI = ((int) (first & 0xFF)) << 24;
-		int secondI = ((int) (second & 0xFF)) << 16;
-		int thirdI = ((int) (third & 0xFF)) << 8;
-		int fourthI = ((int) (fourth & 0xFF));
+		int firstI = (first & 0xFF) << 24;
+		int secondI = (second & 0xFF) << 16;
+		int thirdI = (third & 0xFF) << 8;
+		int fourthI = (fourth & 0xFF);
 		
 		return firstI | secondI | thirdI | fourthI;
 

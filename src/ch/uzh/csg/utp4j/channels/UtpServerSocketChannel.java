@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 
+import ch.uzh.csg.utp4j.channels.futures.UtpAcceptFuture;
 import ch.uzh.csg.utp4j.channels.impl.UtpServerSocketChannelImpl;
 import ch.uzh.csg.utp4j.channels.impl.recieve.UtpRecieveRunnable;
 
@@ -20,9 +21,9 @@ public abstract class UtpServerSocketChannel {
 	}
 	
 	
-	protected abstract UtpSocketChannel acceptImpl() throws IOException;
+	protected abstract UtpAcceptFuture acceptImpl() throws IOException;
 	
-	public UtpSocketChannel accept() throws IOException {
+	public UtpAcceptFuture accept() throws IOException {
 		return acceptImpl();		
 	}
 	

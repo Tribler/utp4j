@@ -101,7 +101,6 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 		isRunning = false;
 		algorithm.end();
 		future.finished(possibleExp, buffer.position());
-		future.unblock();
 		System.out.println("WRITER OUT");
 	}
 	

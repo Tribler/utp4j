@@ -12,19 +12,20 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.ByteChannel;
 import java.nio.channels.Channel;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.util.Random;
 
+import ch.uzh.csg.utp4j.channels.futures.UtpConnectFuture;
+import ch.uzh.csg.utp4j.channels.futures.UtpReadFuture;
+import ch.uzh.csg.utp4j.channels.futures.UtpWriteFuture;
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
+import ch.uzh.csg.utp4j.channels.impl.conn.UtpConnectFutureImpl;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.UtpPacket;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
 
 
-public abstract class UtpSocketChannel implements Closeable, Channel, ReadableByteChannel {
+public abstract class UtpSocketChannel implements Closeable, Channel {
 	
 
 	
@@ -33,10 +34,11 @@ public abstract class UtpSocketChannel implements Closeable, Channel, ReadableBy
 	protected MicroSecondsTimeStamp timeStamper = new MicroSecondsTimeStamp();
 	private int sequenceNumber;
 	private long connectionIdRecieving;
-	private SocketAddress remoteAddress;
-	private int ackNumber;
+	protected SocketAddress remoteAddress;
+	protected int ackNumber;
 	protected boolean isBlocking;
-	private DatagramSocket dgSocket;
+	protected DatagramSocket dgSocket;
+	protected volatile UtpConnectFutureImpl connectFuture = null;
 	
 	
 	/**
@@ -62,10 +64,18 @@ public abstract class UtpSocketChannel implements Closeable, Channel, ReadableBy
 		return c;
 	}
 	
-	public void connect(SocketAddress address) throws IOException {
+	public UtpConnectFuture connect(SocketAddress address) {
+		UtpConnectFutureImpl future = null;
+		try {
+			future = new UtpConnectFutureImpl();
+			connectFuture = future;
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			// TODO Auto-generated catch block
+		}
 		try {
 			
-			connectImpl();
+			connectImpl(future);
 			setRemoteAddress(address);
 			setupConnectionId();
 			setSequenceNumber(DEF_SEQ_START);
@@ -82,8 +92,9 @@ public abstract class UtpSocketChannel implements Closeable, Channel, ReadableBy
 			setRemoteAddress(null);
 			abortImpl();
 			setState(CLOSED);
-			throw new IOException("Could not conenct to remote adress: " + exp.getMessage());
-		}
+			future.finished(exp);
+		} 
+		return future;
 	}
 	
 	protected void printState(String msg) {
@@ -94,7 +105,7 @@ public abstract class UtpSocketChannel implements Closeable, Channel, ReadableBy
 	}
 
 	protected abstract void abortImpl();
-	protected abstract void connectImpl();
+	protected abstract void connectImpl(UtpConnectFutureImpl future);
 	
 	
 	protected void incrementSequenceNumber() {
@@ -125,20 +136,20 @@ public abstract class UtpSocketChannel implements Closeable, Channel, ReadableBy
 		
 	}
 	
-	protected abstract UtpWriteFuture writeImpl(ByteBuffer src) throws IOException;
+	protected abstract UtpWriteFuture writeImpl(ByteBuffer src);
 	
 	
-	public UtpWriteFuture write(ByteBuffer src) throws IOException {
+	public UtpWriteFuture write(ByteBuffer src) {
 		return writeImpl(src);
 	}
 
-	@Override
-	public int read(ByteBuffer dst) throws IOException {
+
+	public UtpReadFuture read(ByteBuffer dst) throws IOException {
 		return readImpl(dst);
 	}
 
 
-	protected abstract int readImpl(ByteBuffer dst) throws IOException;
+	protected abstract UtpReadFuture readImpl(ByteBuffer dst) throws IOException;
 
 	@Override
 	public boolean isOpen() {
@@ -159,7 +170,7 @@ public abstract class UtpSocketChannel implements Closeable, Channel, ReadableBy
 	}
 	
 
-	public void setConnectionIdsending(long connectionIdSending) {
+	protected void setConnectionIdsending(long connectionIdSending) {
 		this.connectionIdSending = connectionIdSending;
 		
 	}
@@ -195,7 +206,7 @@ public abstract class UtpSocketChannel implements Closeable, Channel, ReadableBy
 		return connectionIdRecieving;
 	}
 
-	public void setConnectionIdRecieving(long connectionIdRecieving) {
+	protected void setConnectionIdRecieving(long connectionIdRecieving) {
 		this.connectionIdRecieving = connectionIdRecieving;
 	}
 
@@ -215,9 +226,7 @@ public abstract class UtpSocketChannel implements Closeable, Channel, ReadableBy
 		this.sequenceNumber = sequenceNumber;
 	}
 
-	public void setRemoteAddress(SocketAddress remoteAdress) {
-		remoteAddress = remoteAdress;
-	}
+	protected abstract void setRemoteAddress(SocketAddress remoteAdress);
 	
 	public SocketAddress getRemoteAdress() {
 		return remoteAddress;
@@ -227,20 +236,13 @@ public abstract class UtpSocketChannel implements Closeable, Channel, ReadableBy
 		return ackNumber;
 	}
 
-	public void setAckNumber(int ackNumber) {
-		this.ackNumber = ackNumber;
-	}
+	protected abstract void setAckNumber(int ackNumber);
 
 	public DatagramSocket getDgSocket() {
 		return dgSocket;
 	}
 
-	public void setDgSocket(DatagramSocket dgSocket) {
-		if (this.dgSocket != null) {
-			this.dgSocket.close();
-		}
-		this.dgSocket = dgSocket;
-	}
+	protected abstract void setDgSocket(DatagramSocket dgSocket); 
 	
 	public boolean isConnected() {
 		return getState() == UtpSocketState.CONNECTED;

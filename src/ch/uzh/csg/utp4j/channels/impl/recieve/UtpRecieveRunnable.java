@@ -45,8 +45,12 @@ public class UtpRecieveRunnable extends Thread implements Runnable {
 //				(new UtpPassPacket(dgpkt, queueable)).start();
 
 			} catch (IOException exp) {
-				exp.printStackTrace();
-				break;
+				if (graceFullInterrupt) {
+					System.out.println("socket closing");
+					break;					
+				} else {
+					exp.printStackTrace();					
+				}
 			}
 		}
 		System.out.println("RECIEVER OUT");

@@ -9,7 +9,6 @@ import java.util.ArrayList;
 
 public class UtpDataLogger {
 	
-	private String current = new String();
 	private ArrayList<String> log = new ArrayList<String>();
 	private int currentWindow;
 	private long difference;

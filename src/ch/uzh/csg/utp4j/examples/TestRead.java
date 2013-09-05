@@ -6,6 +6,8 @@ import java.nio.ByteBuffer;
 
 import ch.uzh.csg.utp4j.channels.UtpServerSocketChannel;
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
+import ch.uzh.csg.utp4j.channels.futures.UtpAcceptFuture;
+import ch.uzh.csg.utp4j.channels.futures.UtpReadFuture;
 
 public class TestRead {
 
@@ -18,9 +20,15 @@ public class TestRead {
 		ByteBuffer buffer = ByteBuffer.allocate(150000000);
 		UtpServerSocketChannel server = UtpServerSocketChannel.open();
 		server.bind(new InetSocketAddress(13344));
-		UtpSocketChannel channel = server.accept();
-		channel.read(buffer);
-		Thread.sleep(5000);
+		UtpAcceptFuture acceptFuture = server.accept();
+		acceptFuture.block();
+		UtpSocketChannel channel = acceptFuture.getChannel();
+		UtpReadFuture readFuture = channel.read(buffer);
+		readFuture.setListener(new SaveFileListener());
+		readFuture.block();
+		System.out.println("reading end");
+		channel.close();
+		server.close();
 
 
 	}
