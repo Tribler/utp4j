@@ -17,15 +17,15 @@ public class OutPacketBuffer {
 	private static int size = 1000;
 	private ArrayList<UtpTimestampedPacketDTO> buffer = new ArrayList<UtpTimestampedPacketDTO>(size);
 	private int bytesOnFly = 0;
-	private long timeOutMicroSec;
+	private long resendTimeOutMicros;
 	
-	public long getTimeOutMicroSec() {
-		return timeOutMicroSec;
+	public long getResendTimeOutMicros() {
+		return resendTimeOutMicros;
 	}
 
 
-	public void setTimeOutMicroSec(long timeOutMicroSec) {
-		this.timeOutMicroSec = timeOutMicroSec;
+	public void setResendtimeOutMicros(long timeOutMicroSec) {
+		this.resendTimeOutMicros = timeOutMicroSec;
 	}
 
 	private MicroSecondsTimeStamp timeStamper;
@@ -173,7 +173,7 @@ public class OutPacketBuffer {
 //		if (delta > timeOutMicroSec) {
 //			System.out.println("timed out so resending: " + (utpTimestampedPacketDTO.utpPacket().getSequenceNumber() & 0xFFFF));
 //		}
-		return delta > timeOutMicroSec;
+		return delta > resendTimeOutMicros;
 	}
 
 

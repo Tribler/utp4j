@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import ch.uzh.csg.utp4j.channels.UtpSocketState;
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
@@ -57,7 +58,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		while(continueReading()) {
 			BlockingQueue<UtpTimestampedPacketDTO> queue = channel.getDataGramQueue();
 			try {
-				UtpTimestampedPacketDTO timestampedPair = queue.take();
+				UtpTimestampedPacketDTO timestampedPair = queue.poll(UtpAlgorithm.TIME_WAIT_AFTER_FIN, TimeUnit.MICROSECONDS);
 				if (timestampedPair != null) {
 					if (isFinPacket(timestampedPair)) {
 						channel.setState(UtpSocketState.GOT_FIN);

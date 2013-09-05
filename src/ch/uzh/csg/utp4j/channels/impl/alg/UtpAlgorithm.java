@@ -68,7 +68,7 @@ public class UtpAlgorithm {
 	 */
 	public static final int MIN_SKIP_PACKET_BEFORE_RESEND = 3;
 	
-	private static final long WAIT_DIVISOR_NONFULL_WINDOW = 10;
+	private static final long MICROSECOND_WAIT_BETWEEN_BURSTS = 10000;
 
 	public static final long TIME_WAIT_AFTER_FIN = 3000*1000;
 		
@@ -164,8 +164,8 @@ public class UtpAlgorithm {
 		
 	}	
 	private void updateWindow(UtpPacket utpPacket, long timestamp, int packetSizeJustAcked) {
-		long logTimeStampMillisec = timeStamper.timeStamp();
-		logger.microSecTimeStamp(logTimeStampMillisec);
+		long timestampNow = timeStamper.timeStamp();
+		logger.microSecTimeStamp(timestampNow);
 		currentWindow = buffer.getBytesOnfly();
 		logger.currentWindow(currentWindow);
 		long difference = utpPacket.getTimestampDifference() & 0xFFFFFFFF;
@@ -188,12 +188,16 @@ public class UtpAlgorithm {
 		}
 		logger.maxWindow(maxWindow);
 		logger.advertisedWindow(advertisedWindowSize);
-		buffer.setTimeOutMicroSec(getTimeOutMicros());
+		buffer.setResendtimeOutMicros(getEstimatedRttMicros());
 	}
 
 
 	private long getTimeOutMicros() {
-		return Math.max(rtt*1000 + rttVar * 4 * 1000, MINIMUM_TIMEOUT_MILLIS*1000);
+		return Math.max(getEstimatedRttMicros(), MINIMUM_TIMEOUT_MILLIS*1000);
+	}
+	
+	private long getEstimatedRttMicros() {
+		return rtt*1000 + rttVar * 4 * 1000;
 	}
 
 
@@ -227,7 +231,7 @@ public class UtpAlgorithm {
 		
 		long now = timeStamper.timeStamp();
 		long delta = now - lastTimeWindowReduced;
-		return delta > rtt*1000;
+		return delta > getEstimatedRttMicros();
 		
 	}
 
@@ -400,8 +404,8 @@ public class UtpAlgorithm {
 		if (continueImmidiately(timeOutInMicroSeconds, oldestTimeStamp)) {
 			return 0L;
 		}
-		if (isWondowFull()) {
-			return timeOutInMicroSeconds/WAIT_DIVISOR_NONFULL_WINDOW;
+		if (!isWondowFull()) {
+			return MICROSECOND_WAIT_BETWEEN_BURSTS;
 		} 
 		return timeOutInMicroSeconds;
 	}

@@ -31,7 +31,7 @@ public class OutPacketBufferTest {
 		when(stamper.timeStamp()).thenReturn(2L);
 		OutPacketBuffer buffer = new OutPacketBuffer(stamper);
 		buffer.setRemoteAdress(new InetSocketAddress(12345));
-		buffer.setTimeOutMicroSec(2000L);
+		buffer.setResendtimeOutMicros(2000L);
 		buffer.bufferPacket(createPacket(3));
 		buffer.bufferPacket(createPacket(4));
 		buffer.bufferPacket(createPacket(5));
