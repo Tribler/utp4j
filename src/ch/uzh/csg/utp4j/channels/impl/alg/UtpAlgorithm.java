@@ -61,7 +61,7 @@ public class UtpAlgorithm {
 	/**
 	 * Reduce burst sending artificially
 	 */
-	public static int MAX_BURST_SEND = 3;
+	public static int MAX_BURST_SEND = 1;
 	
 	/**
 	 * Minimum number of acks past seqNr=x to trigger a resend of seqNr=x;

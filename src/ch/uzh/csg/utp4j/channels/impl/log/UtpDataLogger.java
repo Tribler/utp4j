@@ -88,6 +88,9 @@ public class UtpDataLogger {
 		minimumTimeStamp = 0;
 	}
 	public void next() {
+		if (minimumTimeStamp > timeStamp) {
+			System.out.println("minimum bigger than timestamp:" + (minimumTimeStamp > timeStamp));			
+		}
 		String logEntry = "" + (timeStamp - minimumTimeStamp) + ";";
 		logEntry += "" + ackRecieved + ";";
 		logEntry += "" + currentWindow + ";";
@@ -122,6 +125,7 @@ public class UtpDataLogger {
 		try {
 			aFile = new RandomAccessFile("testData/log.csv", "rw");
 			FileChannel inChannel = aFile.getChannel();
+			inChannel.truncate(0);
 			ByteBuffer bbuffer = ByteBuffer.allocate(examineBytes());
 			for (String str : log) {
 				bbuffer.put(str.getBytes());
