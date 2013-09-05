@@ -99,7 +99,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 			exceptionOccured(possibleExp);
 		}
 		isRunning = false;
-		algorithm.end();
+		algorithm.end(buffer.position());
 		future.finished(possibleExp, buffer.position());
 		System.out.println("WRITER OUT");
 		channel.removeWriter();

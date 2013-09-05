@@ -61,7 +61,7 @@ public class UtpAlgorithm {
 	/**
 	 * Reduce burst sending artificially
 	 */
-	public static int MAX_BURST_SEND = 1;
+	public static int MAX_BURST_SEND = 3;
 	
 	/**
 	 * Minimum number of acks past seqNr=x to trigger a resend of seqNr=x;
@@ -417,8 +417,8 @@ public class UtpAlgorithm {
 	}
 
 
-	public void end() {
-		logger.end();
+	public void end(int bytesSend) {
+		logger.end(bytesSend);
 	}
 	
 	public void resetBurst() {

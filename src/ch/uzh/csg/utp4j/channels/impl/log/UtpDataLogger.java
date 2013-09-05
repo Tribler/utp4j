@@ -120,7 +120,7 @@ public class UtpDataLogger {
 		
 	}
 	
-	public void end() {
+	public void end(int bytesLength) {
 		RandomAccessFile aFile;
 		try {
 			aFile = new RandomAccessFile("testData/log.csv", "rw");
@@ -134,7 +134,8 @@ public class UtpDataLogger {
 			while(bbuffer.hasRemaining()) {
 				inChannel.write(bbuffer);
 			}
-			
+			long seconds = (timeStamp - minimumTimeStamp)/1000000;
+			System.out.println("SENDRATE: " + (bytesLength/1024)/seconds + "kB/sec");
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
