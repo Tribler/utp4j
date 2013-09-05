@@ -61,14 +61,14 @@ public class UtpAlgorithm {
 	/**
 	 * Reduce burst sending artificially
 	 */
-	public static int MAX_BURST_SEND = 3;
+	public static int MAX_BURST_SEND = 1;
 	
 	/**
 	 * Minimum number of acks past seqNr=x to trigger a resend of seqNr=x;
 	 */
 	public static final int MIN_SKIP_PACKET_BEFORE_RESEND = 3;
 	
-	private static final long MICROSECOND_WAIT_BETWEEN_BURSTS = 10000;
+	private static final long MICROSECOND_WAIT_BETWEEN_BURSTS = 2000;
 
 	public static final long TIME_WAIT_AFTER_FIN = 3000*1000;
 		

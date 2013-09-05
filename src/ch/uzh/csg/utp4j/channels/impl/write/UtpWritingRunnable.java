@@ -91,7 +91,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 			uptadeFuture();
 			durchgang++;
 			if (durchgang % 100 == 0) {
-				System.out.println("buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
+//				System.out.println("buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
 			}
 		}
 
