@@ -153,8 +153,7 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 
 	@Override
 	public boolean isOpen() {
-		// TODO Auto-generated method stub
-		return false;
+		return state != CLOSED;
 	}
 
 	@Override

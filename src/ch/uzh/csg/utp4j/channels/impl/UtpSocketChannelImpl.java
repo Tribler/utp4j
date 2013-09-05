@@ -18,6 +18,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
 import ch.uzh.csg.utp4j.channels.UtpSocketState;
+import ch.uzh.csg.utp4j.channels.exception.ChannelStateException;
 import ch.uzh.csg.utp4j.channels.futures.UtpWriteFuture;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
 import ch.uzh.csg.utp4j.channels.impl.conn.UtpConnectFutureImpl;
@@ -262,7 +263,6 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	@Override
 	public boolean isWriting() {
 		return (writer != null ? writer.isRunning() : false);
-
 	}
 
 	public void ackAlreadyAcked(UtpPacket utpPacket, int timestampDifference, long windowSize) throws IOException {
@@ -307,6 +307,14 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	@Override
 	public void setRemoteAddress(SocketAddress remoteAdress) {
 		this.remoteAddress = remoteAdress;	
+	}
+
+	public void removeReader() {
+		reader = null;
+	}
+	
+	public void removeWriter() {
+		writer = null;
 	}
 	
 	

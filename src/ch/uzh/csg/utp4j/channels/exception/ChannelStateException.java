@@ -1,4 +1,4 @@
-package ch.uzh.csg.utp4j.channels.impl;
+package ch.uzh.csg.utp4j.channels.exception;
 
 import java.net.SocketAddress;
 

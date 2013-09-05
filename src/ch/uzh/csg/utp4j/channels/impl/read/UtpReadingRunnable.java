@@ -84,6 +84,8 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		System.out.println("PAYLOAD LENGHT " + payloadLength);
 		System.out.println("READER OUT");
 
+		channel.removeReader();
+
 	}
 	
 	private boolean isFinPacket(UtpTimestampedPacketDTO timestampedPair) {
