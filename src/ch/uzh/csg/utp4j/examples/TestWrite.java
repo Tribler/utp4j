@@ -20,7 +20,7 @@ public class TestWrite {
 	public static void main(String[] args) throws IOException, InterruptedException {
 		
 		ByteBuffer buffer = ByteBuffer.allocate(150000000);
-		RandomAccessFile file     = new RandomAccessFile("testData/testData.zip", "rw");
+		RandomAccessFile file     = new RandomAccessFile("testData/sc S01E01.avi", "rw");
 		FileChannel  fileChannel = file.getChannel();
 		int bytesRead = 0;
 		System.out.println("start reading from file");

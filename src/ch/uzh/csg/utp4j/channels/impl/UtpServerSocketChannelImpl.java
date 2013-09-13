@@ -48,7 +48,10 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
 	}
 	
 	private void synRecieved(DatagramPacket packet) {
-		if (packet != null || acceptQueue.peek() != null) {
+		if (handleDoubleSyn(packet)) {
+			return;
+		}
+		if (packet != null && acceptQueue.peek() != null) {
 			boolean registered = false;
 			UtpAcceptFutureImpl future = acceptQueue.poll();
 			UtpSocketChannelImpl utpChannel = null;
@@ -71,6 +74,19 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
 		}
 	}
 		
+	private boolean handleDoubleSyn(DatagramPacket packet) {
+		UtpPacket pkt = UtpPacketUtils.extractUtpPacket(packet);
+		int connId = pkt.getConnectionId();
+		connId = (connId & 0xFFFF) + 1;
+		ConnectionIdTriplet triplet = connectionIds.get(connId);
+		if (triplet != null) {
+			triplet.getChannel().recievePacket(packet);
+			return true;
+		}
+		
+		return false;
+	}
+
 	@Override
 	public void recievePacket(DatagramPacket packet) {
 		if (UtpPacketUtils.isSynPkt(packet)) {

@@ -9,14 +9,12 @@ public class UtpAcceptFutureImpl extends UtpAcceptFuture {
 	
 	public UtpAcceptFutureImpl() throws InterruptedException {
 		semaphore.acquire();
-		System.out.println("accept future blocked");
 	}
 
 	public void synRecieved(UtpSocketChannelImpl utpChannel) {
 		this.channel = utpChannel;
 		this.isDone = true;
 		semaphore.release();
-		System.out.println("accept future released");
 
 	}
 

@@ -8,14 +8,12 @@ public class UtpConnectFutureImpl extends UtpConnectFuture {
 	
 	public UtpConnectFutureImpl() throws InterruptedException {
 		semaphore.acquire();
-		System.out.println("connection future locking");
 	}
 
 	public void finished(IOException exp) {
 		this.exception = exp;
 		this.isDone = true;
 		semaphore.release();
-		System.out.println("connection future releasing");
 	}
 
 }

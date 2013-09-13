@@ -9,11 +9,13 @@ import java.util.concurrent.TimeUnit;
 import ch.uzh.csg.utp4j.channels.UtpSocketState;
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
+import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
 import ch.uzh.csg.utp4j.data.UtpPacket;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
+import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
 public class UtpReadingRunnable extends Thread implements Runnable {
 	
@@ -24,17 +26,20 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	private boolean exceptionOccured = false;
 	private boolean graceFullInterrupt;
 	private boolean isRunning;
-	private MicroSecondsTimeStamp timestamp;
+	private MicroSecondsTimeStamp timeStamper;
 	private long payloadLength = 0;
 	private long finRecievedTimestamp;
-	private int lastPayloadLength = UtpAlgorithm.MAX_PACKET_SIZE;
+	private int lastPayloadLength;
 	private UtpReadFutureImpl readFuture;
+	private long nowtimeStamp;
+	private long lastPackedRecieved;
 	
 	public UtpReadingRunnable(UtpSocketChannelImpl channel, ByteBuffer buff, MicroSecondsTimeStamp timestamp, UtpReadFutureImpl future) {
 		this.channel = channel;
 		this.buffer = buff;
-		this.timestamp = timestamp;
+		this.timeStamper = timestamp;
 		this.readFuture = future;
+		lastPayloadLength = UtpAlgConfiguration.MAX_PACKET_SIZE;
 	}
 	
 	public int getBytesRead() {
@@ -58,23 +63,36 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		while(continueReading()) {
 			BlockingQueue<UtpTimestampedPacketDTO> queue = channel.getDataGramQueue();
 			try {
-				UtpTimestampedPacketDTO timestampedPair = queue.poll(UtpAlgorithm.TIME_WAIT_AFTER_FIN, TimeUnit.MICROSECONDS);
+				UtpTimestampedPacketDTO timestampedPair = queue.poll(UtpAlgConfiguration.TIME_WAIT_AFTER_FIN_MICROS/2, TimeUnit.MICROSECONDS);
+				nowtimeStamp = timeStamper.timeStamp();
 				if (timestampedPair != null) {
+					lastPackedRecieved = nowtimeStamp;
 					if (isFinPacket(timestampedPair)) {
 						channel.setState(UtpSocketState.GOT_FIN);
-						finRecievedTimestamp = timestamp.timeStamp();
+						finRecievedTimestamp = timeStamper.timeStamp();
 					}
 					if (isPacketExpected(timestampedPair.utpPacket())) {
 						handleExpectedPacket(timestampedPair);								
 					} else {
 						handleUnexpectedPacket(timestampedPair);
-					}						
+					}												
+				} 
+				/*TODO: HOWTOMEASURE RTT HERE?*/
+				if (nowtimeStamp - lastPackedRecieved >= 5000000) {
+					throw new IOException();
 				}
 					
 			} catch (IOException ioe) {
 				exp = ioe;
+				System.out.println("EXCEPTION");
+				exceptionOccured = true;
 			} catch (InterruptedException iexp) {
 				iexp.printStackTrace();
+				exceptionOccured = true;
+			} catch (ArrayIndexOutOfBoundsException aexp) {
+				aexp.printStackTrace();
+				exceptionOccured = true;
+				exp = new IOException();
 			}
 		}
 		isRunning = false;
@@ -89,6 +107,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 
 	}
 	
+
 	private boolean isFinPacket(UtpTimestampedPacketDTO timestampedPair) {
 		return timestampedPair.utpPacket().getTypeVersion() == UtpPacketUtils.ST_FIN;
 	}
@@ -124,7 +143,6 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 			channel.ackPacket(timestampedPair.utpPacket(), getTimestampDifference(timestampedPair), getWindowSize());
 			buffer.put(timestampedPair.utpPacket().getPayload());
 			payloadLength += timestampedPair.utpPacket().getPayload().length;
-
 		}
 	}
 	
@@ -133,12 +151,12 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	}
 
 	private int getTimestampDifference(UtpTimestampedPacketDTO timestampedPair) {
-		int difference = timestamp.utpDifference(timestampedPair.utpTimeStamp(), timestampedPair.utpPacket().getTimestamp());
+		int difference = timeStamper.utpDifference(timestampedPair.utpTimeStamp(), timestampedPair.utpPacket().getTimestamp());
 		return difference;
 	}
 
 	private void handleUnexpectedPacket(UtpTimestampedPacketDTO timestampedPair) throws IOException {
-		int expected = channel.getAckNumber() + 1;
+		int expected = getExpectedSeqNr();
 		if (skippedBuffer.isEmpty()) {
 			skippedBuffer.setExpectedSequenceNumber(expected);
 		}
@@ -154,9 +172,17 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	
 	public boolean isPacketExpected(UtpPacket utpPacket) {
 		int seqNumberFromPacket = utpPacket.getSequenceNumber() & 0xFFFF;
-		return (channel.getAckNumber() + 1) == seqNumberFromPacket;
+		return getExpectedSeqNr() == seqNumberFromPacket;
 	}
 	
+	private int getExpectedSeqNr() {
+		int ackNumber = channel.getAckNumber();
+		if (ackNumber == UnsignedTypesUtil.MAX_USHORT) {
+			return 1;
+		} 
+		return ackNumber + 1;
+	}
+
 	private boolean hasSkippedPackets() {
 		return !skippedBuffer.isEmpty();
 	}
@@ -167,7 +193,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 
 	private boolean continueReading() {
 		return !graceFullInterrupt && !exceptionOccured 
-				&& (!finRecieved() || (finRecieved() && hasSkippedPackets() && !timeAwaitedAfterFin()));
+				&& (!finRecieved() || hasSkippedPackets() || !timeAwaitedAfterFin());
 	}
 	
 	private boolean finRecieved() {
@@ -175,7 +201,8 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	}
 	
 	private boolean timeAwaitedAfterFin() {
-		return (timestamp.timeStamp() - finRecievedTimestamp) > UtpAlgorithm.TIME_WAIT_AFTER_FIN;
+		return (timeStamper.timeStamp() - finRecievedTimestamp) > UtpAlgConfiguration.TIME_WAIT_AFTER_FIN_MICROS 
+				&& channel.getState() == UtpSocketState.GOT_FIN;
 	}
 
 	public boolean isRunning() {
@@ -183,11 +210,11 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	}
 
 	public MicroSecondsTimeStamp getTimestamp() {
-		return timestamp;
+		return timeStamper;
 	}
 
 	public void setTimestamp(MicroSecondsTimeStamp timestamp) {
-		this.timestamp = timestamp;
+		this.timeStamper = timestamp;
 	}
 
 }

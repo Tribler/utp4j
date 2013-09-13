@@ -3,12 +3,15 @@ package ch.uzh.csg.utp4j.channels.impl.log;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.management.ManagementFactory;
+import com.sun.management.OperatingSystemMXBean;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 
 public class UtpDataLogger {
 	
+	public static String LOG_NAME = "log.csv";
 	private ArrayList<String> log = new ArrayList<String>();
 	private int currentWindow;
 	private long difference;
@@ -27,6 +30,7 @@ public class UtpDataLogger {
 	private long rttVar;
 	private long rtt;
 	private int advertisedWindow;
+	private OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);  
 
 	
 	public void currentWindow(int currentWindow) {
@@ -84,13 +88,10 @@ public class UtpDataLogger {
 
 	public UtpDataLogger() {
 		log.add("TimeMicros;AckRecieved;CurrentWidow_Bytes;Difference_Micros;MinDelay_Micros;OurDelay_Micros;OffTarget_Micros;" +
-				"DelayFactor;WindowFactor;Gain_Bytes;PacketRtt_Millis;RttVar_Millis;Rtt_Millis;AdvertisedWindow_Bytes;MaxWindow_Bytes;SACK\n");
+				"DelayFactor;WindowFactor;Gain_Bytes;PacketRtt_Millis;RttVar_Millis;Rtt_Millis;AdvertisedWindow_Bytes;MaxWindow_Bytes;CPU%;SACK\n");
 		minimumTimeStamp = 0;
 	}
 	public void next() {
-		if (minimumTimeStamp > timeStamp) {
-			System.out.println("minimum bigger than timestamp:" + (minimumTimeStamp > timeStamp));			
-		}
 		String logEntry = "" + (timeStamp - minimumTimeStamp) + ";";
 		logEntry += "" + ackRecieved + ";";
 		logEntry += "" + currentWindow + ";";
@@ -98,14 +99,15 @@ public class UtpDataLogger {
 		logEntry += "" + minDelay + ";";
 		logEntry += "" + ourDelay + ";";
 		logEntry += "" + offTarget + ";";
-		logEntry += "" +  + delayFactor + ";";
-		logEntry += "" +  + windowFactor + ";";
-		logEntry += "" +  + gain + ";";
-		logEntry += "" +  + packetRtt + ";";
-		logEntry += "" +  + rttVar + ";";
-		logEntry += "" +  + rtt + ";";
-		logEntry += "" +  + advertisedWindow + ";";
-		logEntry += "" +  + maxWindow;
+		logEntry += "" + delayFactor + ";";
+		logEntry += "" + windowFactor + ";";
+		logEntry += "" + gain + ";";
+		logEntry += "" + packetRtt + ";";
+		logEntry += "" + rttVar + ";";
+		logEntry += "" + rtt + ";";
+		logEntry += "" + advertisedWindow + ";";
+		logEntry += "" + maxWindow + ";";
+		logEntry += "" + osBean.getProcessCpuLoad();
 		if (sAck != null) {
 			logEntry += ";(" + sAck + ")\n";
 		} else {
@@ -123,7 +125,7 @@ public class UtpDataLogger {
 	public void end(int bytesLength) {
 		RandomAccessFile aFile;
 		try {
-			aFile = new RandomAccessFile("testData/log.csv", "rw");
+			aFile = new RandomAccessFile("testData/" + LOG_NAME, "rw");
 			FileChannel inChannel = aFile.getChannel();
 			inChannel.truncate(0);
 			ByteBuffer bbuffer = ByteBuffer.allocate(examineBytes());
@@ -135,6 +137,8 @@ public class UtpDataLogger {
 				inChannel.write(bbuffer);
 			}
 			long seconds = (timeStamp - minimumTimeStamp)/1000000;
+			aFile.close();
+			inChannel.close();
 			System.out.println("SENDRATE: " + (bytesLength/1024)/seconds + "kB/sec");
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

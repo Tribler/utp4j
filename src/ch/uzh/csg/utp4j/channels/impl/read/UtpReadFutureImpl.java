@@ -17,9 +17,7 @@ public class UtpReadFutureImpl extends UtpReadFuture {
 		isDone = true;
 		semaphore.release();
 		listenerLock.lock();
-		System.out.println("afterlock");
 		if (listener != null) {
-			System.out.println("afternullcheck");
 			listener.setByteBuffer(buffer);
 			listener.setIOException(exp);
 			(new Thread(listener)).start();

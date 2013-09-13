@@ -14,6 +14,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.util.Random;
+import java.util.concurrent.locks.ReentrantLock;
 
 import ch.uzh.csg.utp4j.channels.futures.UtpConnectFuture;
 import ch.uzh.csg.utp4j.channels.futures.UtpReadFuture;
@@ -39,6 +40,7 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 	protected boolean isBlocking;
 	protected DatagramSocket dgSocket;
 	protected volatile UtpConnectFutureImpl connectFuture = null;
+	protected volatile ReentrantLock stateLock = new ReentrantLock();
 	
 	
 	/**
@@ -49,7 +51,7 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 	/**
 	 * Sequencing begin.
 	 */
-	private static int DEF_SEQ_START = 1;
+	protected static int DEF_SEQ_START = 1;
 
 	protected UtpSocketChannel() {}
 	
@@ -65,6 +67,7 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 	}
 	
 	public UtpConnectFuture connect(SocketAddress address) {
+		stateLock.lock();
 		UtpConnectFutureImpl future = null;
 		try {
 			future = new UtpConnectFutureImpl();
@@ -87,16 +90,21 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 			setState(SYN_SENT);
 			printState("[Syn send] ");
 			incrementSequenceNumber();
+			startConnectionTimeOutCounter(synPacket);
 		} catch (IOException exp) {
-			setSequenceNumber(DEF_SEQ_START);
-			setRemoteAddress(null);
-			abortImpl();
-			setState(CLOSED);
-			future.finished(exp);
+			//DO NOTHING, let's try later with reconnect runnable 
+//			setSequenceNumber(DEF_SEQ_START);
+//			setRemoteAddress(null);
+//			abortImpl();
+//			setState(CLOSED);
+//			future.finished(exp);
 		} 
+		stateLock.unlock();
 		return future;
 	}
 	
+	protected abstract void startConnectionTimeOutCounter(UtpPacket synPacket);
+
 	protected void printState(String msg) {
 		String state = "[ConnID Sending: " + connectionIdSending + "] [ConnID Recv: " + connectionIdRecieving +
 					   "] [SeqNr. " + sequenceNumber + "] [AckNr: " + ackNumber + "]";

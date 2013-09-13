@@ -14,13 +14,19 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
 import ch.uzh.csg.utp4j.channels.UtpSocketState;
 import ch.uzh.csg.utp4j.channels.exception.ChannelStateException;
 import ch.uzh.csg.utp4j.channels.futures.UtpWriteFuture;
+import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
+import ch.uzh.csg.utp4j.channels.impl.conn.ConnectionTimeOutRunnable;
 import ch.uzh.csg.utp4j.channels.impl.conn.UtpConnectFutureImpl;
 import ch.uzh.csg.utp4j.channels.impl.read.UtpReadFutureImpl;
 import ch.uzh.csg.utp4j.channels.impl.read.UtpReadingRunnable;
@@ -46,6 +52,8 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	private Object sendLock = new Object();
 
 	private UtpServerSocketChannelImpl server;
+	private ScheduledExecutorService retryConnectionTimeScheduler;
+	private int connectionAttempts = 0;
 	
 	
 	@Override
@@ -68,11 +76,30 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	}
 	
 	private void handleSynSendAck(DatagramPacket udpPacket) {
+		stateLock.lock();
 		UtpPacket pkt = UtpPacketUtils.extractUtpPacket(udpPacket);
 		setAckNrFromPacketSqNr(pkt);
 		setState(CONNECTED);
 		printState("[SynAck recieved] ");
+		disableConnectionTimeOutCounter();
 		connectFuture.finished(null);
+		stateLock.unlock();
+	}
+
+	private void disableConnectionTimeOutCounter() {
+		if (retryConnectionTimeScheduler != null) {
+			retryConnectionTimeScheduler.shutdown();
+			retryConnectionTimeScheduler = null;
+		}
+		connectionAttempts = 0;
+	}
+	
+	public int getConnectionAttempts() {
+		return connectionAttempts;
+	}
+	
+	public void incrementConnectionAttempts() {
+		connectionAttempts++;
 	}
 
 	private void handlePacket(DatagramPacket udpPacket) {
@@ -98,12 +125,12 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	
 	private void handleIncommingConnectionRequest(DatagramPacket udpPacket) {
 		int timeStamp = timeStamper.utpTimeStamp();
-		if (getState() != CLOSED) {
-			ChannelStateException exp = new ChannelStateException("Recieved Syn Packet but Channel is already connected");
-			exp.setState(getState());
-			exp.setAddresse(udpPacket.getSocketAddress());
-			throw exp;
-		}
+//		if (getState() != CLOSED) {
+//			ChannelStateException exp = new ChannelStateException("Recieved Syn Packet but Channel is already connected");
+//			exp.setState(getState());
+//			exp.setAddresse(udpPacket.getSocketAddress());
+//			throw exp;
+//		}
 		
 		UtpPacket utpPacket = UtpPacketUtils.extractUtpPacket(udpPacket);
 		setRemoteAddress(udpPacket.getSocketAddress());
@@ -112,11 +139,12 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		setAckNrFromPacketSqNr(utpPacket);
 		printState("[Syn recieved] ");
 		int timestampDifference = timeStamper.utpDifference(timeStamp, utpPacket.getTimestamp());
-		UtpPacket ackPacket = createAckPacket(utpPacket, timestampDifference, UtpAlgorithm.MAX_PACKET_SIZE*1000);
+		UtpPacket ackPacket = createAckPacket(utpPacket, timestampDifference, UtpAlgConfiguration.MAX_PACKET_SIZE*1000);
 		try {
 			sendPacket(ackPacket);			
 			setState(CONNECTED);
  		} catch (IOException exp) {
+ 			// TODO: In future?
  			setRemoteAddress(null);
  			setConnectionIdsending((short) 0);
  			setConnectionIdRecieving((short) 0);
@@ -151,9 +179,10 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	@Override
 	protected void abortImpl() {
 		if (reciever != null) {
-			reciever.interrupt();
+			reciever.graceFullInterrupt();			
+		} else if (server != null) {
+			server.unregister(this);
 		}
-		
 	}
 
 	@Override
@@ -241,11 +270,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 
 	@Override
 	protected void closeImpl() {
-		if (reciever != null) {
-			reciever.graceFullInterrupt();			
-		} else if (server != null) {
-			server.unregister(this);
-		}
+		abortImpl();
 		if (isReading()) {
 			reader.graceFullInterrupt();
 		} 
@@ -315,6 +340,29 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	
 	public void removeWriter() {
 		writer = null;
+	}
+
+	@Override
+	protected void startConnectionTimeOutCounter(UtpPacket synPacket) {
+		retryConnectionTimeScheduler = Executors.newSingleThreadScheduledExecutor();
+		ConnectionTimeOutRunnable runnable = new ConnectionTimeOutRunnable(synPacket, this, stateLock);
+		System.out.println("starting scheduler");
+//		retryConnectionTimeScheduler.schedule(runnable, 2, TimeUnit.SECONDS);
+		retryConnectionTimeScheduler.scheduleWithFixedDelay(runnable, 
+				UtpAlgConfiguration.CONNECTION_ATTEMPT_INTERVALL_MILLIS, 
+				UtpAlgConfiguration.CONNECTION_ATTEMPT_INTERVALL_MILLIS, TimeUnit.MILLISECONDS);
+	}
+
+	public void connectionFailed(IOException exp) {
+		System.out.println("got failing message");
+		setSequenceNumber(DEF_SEQ_START);
+		setRemoteAddress(null);
+		abortImpl();
+		setState(CLOSED);
+		retryConnectionTimeScheduler.shutdown();
+		retryConnectionTimeScheduler = null;
+		connectFuture.finished(exp);
+		
 	}
 	
 	

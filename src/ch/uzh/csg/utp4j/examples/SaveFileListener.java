@@ -10,18 +10,38 @@ import ch.uzh.csg.utp4j.channels.futures.UtpReadListener;
 
 public class SaveFileListener implements UtpReadListener {
 	
+	public SaveFileListener(int i, boolean concat) {
+		file = i;
+		this.append = concat;
+	}
+	
+	public SaveFileListener(int i) {
+		file = i;
+	}
+	
+	public SaveFileListener() {}
+	public SaveFileListener(boolean concat) {
+		this.append = concat;
+	}
+	
+	private int file;
 	private volatile IOException exp;
 	private volatile ByteBuffer byteBuffer;
+	private volatile boolean append = false;
 
 	@Override
 	public void run() {
 		if (exp == null && byteBuffer != null) {
 			try {
-//				byteBuffer.flip();
-				File outFile = new File("testData/c_sc S01E01.avi");
-				FileChannel fchannel = new FileOutputStream(outFile).getChannel();
-				fchannel.write(byteBuffer);
+				byteBuffer.flip();
+				File outFile = new File("testData/gotData_" + file + " .avi");
+				FileOutputStream fileOutputStream = new FileOutputStream(outFile, append);
+				FileChannel fchannel = fileOutputStream.getChannel();
+				while(byteBuffer.hasRemaining()) {
+					fchannel.write(byteBuffer);					
+				}
 				fchannel.close();
+				fileOutputStream.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

@@ -144,7 +144,7 @@ public class OutPacketBuffer {
 
 	private boolean resendRequired(UtpTimestampedPacketDTO unackedPkt) {
 		boolean fastResend = false;
-		if (unackedPkt.getAckedAfterMeCounter() >= UtpAlgorithm.MIN_SKIP_PACKET_BEFORE_RESEND) {
+		if (unackedPkt.getAckedAfterMeCounter() >= UtpAlgConfiguration.MIN_SKIP_PACKET_BEFORE_RESEND) {
 			if (!unackedPkt.alreadyResendBecauseSkipped()) {
 				fastResend = true;
 				unackedPkt.setResendBecauseSkipped(true);

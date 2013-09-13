@@ -62,7 +62,11 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 				exceptionOccured = true;
 				break;
 			}
-
+			if (algorithm.isTimedOut()) {
+				graceFullInterrupt = true;
+				possibleExp = new IOException("timed out");
+				exceptionOccured = true;
+			}
 			while (algorithm.canSendNextPacket() && !exceptionOccured && !graceFullInterrupt && buffer.hasRemaining()) {
 				try {
 					channel.sendPacket(getNextPacket());	
@@ -90,8 +94,8 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 			}
 			uptadeFuture();
 			durchgang++;
-			if (durchgang % 100 == 0) {
-//				System.out.println("buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
+			if (durchgang % 1000 == 0) {
+				System.out.println("buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
 			}
 		}
 
@@ -99,7 +103,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 			exceptionOccured(possibleExp);
 		}
 		isRunning = false;
-		algorithm.end(buffer.position());
+		algorithm.end(buffer.position(), !exceptionOccured);
 		future.finished(possibleExp, buffer.position());
 		System.out.println("WRITER OUT");
 		channel.removeWriter();

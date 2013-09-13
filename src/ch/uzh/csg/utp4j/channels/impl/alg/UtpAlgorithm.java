@@ -14,81 +14,23 @@ import ch.uzh.csg.utp4j.data.UtpHeaderExtension;
 import ch.uzh.csg.utp4j.data.UtpPacket;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
 import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.*;
 
 public class UtpAlgorithm {
-	/**
-	 * TWEAKING SECTION
-	 */
-	
-	public static int MINIMUM_TIMEOUT_MILLIS = 500;
-	
-	/**
-	 * Packet size modus
-	 */
-	public PacketSizeModus packetSizeModus = PacketSizeModus.CONSTANT_1472;
-	
-	/**
-	 * maximum packet size
-	 * should be dynamically set once path mtu discovery implemented. 
-	 */
-	
-	public static int MAX_PACKET_SIZE = 1472;
-	
-	/**
-	 * minimum packet size. 
-	 */
-	public static int MIN_PACKET_SIZE = 150;
-	
-	/**
-	 * Minimum path MTU
-	 */
-	public static int MINIMUM_MTU = 576;
-	/**
-	 * Maximal window increase per RTT - increase to allow uTP throttle up faster.
-	 */
-	public static int MAX_CWND_INCREASE_PACKETS_PER_RTT = 3000;
-	
-	/**
-	 * maximal buffering delay
-	 */
-	public static int C_CONTROL_TARGET_MS = 1000000;
-	
-	/**
-	 * activate burst sending
-	 */
-	public static boolean SEND_IN_BURST = true;
-	
-	/**
-	 * Reduce burst sending artificially
-	 */
-	public static int MAX_BURST_SEND = 1;
-	
-	/**
-	 * Minimum number of acks past seqNr=x to trigger a resend of seqNr=x;
-	 */
-	public static final int MIN_SKIP_PACKET_BEFORE_RESEND = 3;
-	
-	private static final long MICROSECOND_WAIT_BETWEEN_BURSTS = 2000;
 
-	public static final long TIME_WAIT_AFTER_FIN = 3000*1000;
-		
-	
-	/**
-	 * TWEAKING SECTION END
-	 */
-	
 	/**
 	 * Variables
 	 */
 	private int currentWindow = 0;
-	private int maxWindow = MAX_CWND_INCREASE_PACKETS_PER_RTT;
+	private int maxWindow;
 	private MinimumDelay minDelay = new MinimumDelay();
 	private OutPacketBuffer buffer;
 	private MicroSecondsTimeStamp timeStamper;
 	private int currentAckPosition = 0;
 	private int currentBurstSend = 0;
+	private long lastZeroWindow;
 
-	private long rtt = MINIMUM_TIMEOUT_MILLIS*2;
+	private long rtt;
 	private long rttVar = 0;
 	
 
@@ -98,25 +40,32 @@ public class UtpAlgorithm {
 	private UtpDataLogger logger = new UtpDataLogger();
 
 	private long lastTimeWindowReduced;
+	private long timeStampNow;
+	private long lastAckRecieved;
 
 	
 	public UtpAlgorithm(MicroSecondsTimeStamp timestamper, SocketAddress addr) {
+		maxWindow = MAX_CWND_INCREASE_PACKETS_PER_RTT;
+		rtt = MINIMUM_TIMEOUT_MILLIS*2;
 		timeStamper = timestamper;
 		buffer = new OutPacketBuffer(timestamper);
 		buffer.setRemoteAdress(addr);
+		System.out.println(UtpAlgConfiguration.getString());
+		timeStampNow = timeStamper.timeStamp();
 	}
 
 
 	public void ackRecieved(UtpTimestampedPacketDTO pair) {
 		int seqNrToAck = pair.utpPacket().getAckNumber() & 0xFFFF;
-		long timestamp = timeStamper.timeStamp();
+		timeStampNow = timeStamper.timeStamp();
+		lastAckRecieved = timeStampNow;
 		int advertisedWindo = pair.utpPacket().getWindowSize() & 0xFFFFFFFF;
 		updateAdvertisedWindowSize(advertisedWindo);
 		logger.ackRecieved(seqNrToAck);
-		int packetSizeJustAcked = buffer.markPacketAcked(seqNrToAck, timestamp);
+		int packetSizeJustAcked = buffer.markPacketAcked(seqNrToAck, timeStampNow);
 		if (packetSizeJustAcked > 0) {
-			updateRtt(timestamp, seqNrToAck);
-			updateWindow(pair.utpPacket(), timestamp, packetSizeJustAcked);
+			updateRtt(timeStampNow, seqNrToAck);
+			updateWindow(pair.utpPacket(), timeStampNow, packetSizeJustAcked);
 		} 
 
 		if (pair.utpPacket().getExtensions() != null) {
@@ -125,14 +74,13 @@ public class UtpAlgorithm {
 			for (int i = 0; i < bitMask.length; i++) {
 				for (int j = 2; j < 9; j++) {
 					if (SelectiveAckHeaderExtension.isBitMarked(bitMask[i], j)) {
-						timestamp = timeStamper.timeStamp();
 						int sackSeqNr = i*8 + j + seqNrToAck;
 						logger.sAck(sackSeqNr);
-						buffer.markPacketAcked(sackSeqNr, timestamp);	
-						packetSizeJustAcked = buffer.markPacketAcked(seqNrToAck, timestamp);
+						buffer.markPacketAcked(sackSeqNr, timeStampNow);	
+						packetSizeJustAcked = buffer.markPacketAcked(seqNrToAck, timeStampNow);
 						if (packetSizeJustAcked > 0) {
-							updateRtt(timestamp, sackSeqNr);
-							updateWindow(pair.utpPacket(), timestamp, packetSizeJustAcked);
+							updateRtt(timeStampNow, sackSeqNr);
+							updateWindow(pair.utpPacket(), timeStampNow, packetSizeJustAcked);
 						} 
 					}
 				}
@@ -164,31 +112,39 @@ public class UtpAlgorithm {
 		
 	}	
 	private void updateWindow(UtpPacket utpPacket, long timestamp, int packetSizeJustAcked) {
-		long timestampNow = timeStamper.timeStamp();
-		logger.microSecTimeStamp(timestampNow);
+		logger.microSecTimeStamp(timeStampNow);
 		currentWindow = buffer.getBytesOnfly();
 		logger.currentWindow(currentWindow);
 		long difference = utpPacket.getTimestampDifference() & 0xFFFFFFFF;
 		logger.difference(difference);
-		updateMinDelay(difference, timestamp);
+		updateMinDelay(difference, timeStampNow);
 		long ourDelay = difference - minDelay.getMinDelay();
 		logger.minDelay(minDelay.getMinDelay());
 		logger.ourDelay(ourDelay);
-		long offTarget = C_CONTROL_TARGET_MS - ourDelay;
+		long offTarget = C_CONTROL_TARGET_MICROS - ourDelay;
 		logger.offTarget(offTarget);
-		double delayFactor = ((double) offTarget) / ((double) C_CONTROL_TARGET_MS);
+		double delayFactor = ((double) offTarget) / ((double) C_CONTROL_TARGET_MICROS);
 		logger.delayFactor(delayFactor);
 		double windowFactor = (Math.min((double)packetSizeJustAcked, (double)maxWindow)) / (Math.max((double)maxWindow, (double)packetSizeJustAcked));
 		logger.windowFactor(windowFactor);
 		int gain = (int) (MAX_CWND_INCREASE_PACKETS_PER_RTT * delayFactor * windowFactor);
+		
+		if (ONLY_POSITIVE_GAIN && gain < 0) {
+			gain = 0;
+		}
+		
 		logger.gain(gain);
 		maxWindow += gain;
 		if (maxWindow < 0) {
-			maxWindow = MAX_PACKET_SIZE;
+			maxWindow = 0;
 		}
+//		System.out.println("current:max " + currentWindow + ":" + maxWindow);
 		logger.maxWindow(maxWindow);
 		logger.advertisedWindow(advertisedWindowSize);
 		buffer.setResendtimeOutMicros(getEstimatedRttMicros());
+		if (maxWindow == 0) {
+			lastZeroWindow = timeStampNow;
+		}
 	}
 
 
@@ -206,13 +162,14 @@ public class UtpAlgorithm {
 	}
 
 	public Queue<DatagramPacket> getPacketsToResend() throws SocketException {
+		timeStampNow = timeStamper.timeStamp();
 		Queue<DatagramPacket> queue = new LinkedList<DatagramPacket>();
 		Queue<UtpTimestampedPacketDTO> toResend = buffer.getPacketsToResend();
 		for (UtpTimestampedPacketDTO utpTimestampedPacketDTO : toResend) {
 			queue.add(utpTimestampedPacketDTO.dataGram());			
 			if (utpTimestampedPacketDTO.reduceWindow()) {
 				if (reduceWindowNecessary()) {
-					lastTimeWindowReduced = timeStamper.timeStamp();
+					lastTimeWindowReduced = timeStampNow;
 					maxWindow *= 0.5;					
 				}
 				utpTimestampedPacketDTO.setReduceWindow(false);
@@ -229,8 +186,7 @@ public class UtpAlgorithm {
 			return true;
 		} 
 		
-		long now = timeStamper.timeStamp();
-		long delta = now - lastTimeWindowReduced;
+		long delta = timeStampNow - lastTimeWindowReduced;
 		return delta > getEstimatedRttMicros();
 		
 	}
@@ -250,6 +206,10 @@ public class UtpAlgorithm {
 	
 	
 	public boolean canSendNextPacket() {
+		if (timeStampNow - lastZeroWindow > getTimeOutMicros() && lastZeroWindow != 0) {
+			System.out.println("Reducing window");
+			maxWindow = MAX_PACKET_SIZE- UtpPacketUtils.DEF_HEADER_LENGTH;
+		}
 		boolean windowNotFull = !isWondowFull();
 		boolean burstFull = false;
 		
@@ -279,26 +239,26 @@ public class UtpAlgorithm {
 	}
 	
 	public int sizeOfNextPacket() {
-		if (packetSizeModus.equals(PacketSizeModus.DYNAMIC_LINEAR)) {
+		if (PACKET_SIZE_MODE.equals(PacketSizeModus.DYNAMIC_LINEAR)) {
 			return calculateDynamicLinearPacketSize();
-		} else if (packetSizeModus.equals(PacketSizeModus.CONSTANT_1472)) {
-			return MAX_PACKET_SIZE;
+		} else if (PACKET_SIZE_MODE.equals(PacketSizeModus.CONSTANT_1472)) {
+			return MAX_PACKET_SIZE- UtpPacketUtils.DEF_HEADER_LENGTH;
 		}
-		return MINIMUM_MTU;
+		return MINIMUM_MTU - UtpPacketUtils.DEF_HEADER_LENGTH;
 	}
 
 	private int calculateDynamicLinearPacketSize() {
 		int packetSizeDelta = MAX_PACKET_SIZE - MIN_PACKET_SIZE;
-		long minDelayOffTarget = C_CONTROL_TARGET_MS - minDelay.getMinDelay();
-		double packetSizeFactor = ((double) minDelayOffTarget)/((double) C_CONTROL_TARGET_MS);
+		long minDelayOffTarget = C_CONTROL_TARGET_MICROS - minDelay.getMinDelay();
+		double packetSizeFactor = ((double) minDelayOffTarget)/((double) C_CONTROL_TARGET_MICROS);
 		double packetSize = MIN_PACKET_SIZE + packetSizeFactor*packetSizeDelta;
 		return (int) Math.ceil(packetSize);
 	}
 
 
 	public void markPacketOnfly(UtpPacket utpPacket, DatagramPacket dgPacket) {
-		long timeStamp = timeStamper.timeStamp();
-		UtpTimestampedPacketDTO pkt = new UtpTimestampedPacketDTO(dgPacket, utpPacket, timeStamp, 0);
+		timeStampNow = timeStamper.timeStamp();
+		UtpTimestampedPacketDTO pkt = new UtpTimestampedPacketDTO(dgPacket, utpPacket, timeStampNow, 0);
 		buffer.bufferPacket(pkt);
 		incrementAckNumber();
 		addPacketToCurrentWindow(utpPacket);
@@ -315,10 +275,10 @@ public class UtpAlgorithm {
 	}
 
 	public void markFinOnfly(UtpPacket fin) {
-		long timeStamp = timeStamper.timeStamp();
+		timeStampNow = timeStamper.timeStamp();
 		byte[] finBytes = fin.toByteArray();
 		DatagramPacket dgFin = new DatagramPacket(finBytes, finBytes.length);
-		UtpTimestampedPacketDTO pkt = new UtpTimestampedPacketDTO(dgFin, fin, timeStamp, 0);
+		UtpTimestampedPacketDTO pkt = new UtpTimestampedPacketDTO(dgFin, fin, timeStampNow, 0);
 		buffer.bufferPacket(pkt);
 		incrementAckNumber();
 		addPacketToCurrentWindow(fin);
@@ -400,7 +360,8 @@ public class UtpAlgorithm {
 	public long getWaitingTimeMicroSeconds() {
 		long oldestTimeStamp = buffer.getOldestUnackedTimestamp();
 		long nextTimeOut = oldestTimeStamp + getTimeOutMicros();
-		long timeOutInMicroSeconds = nextTimeOut - timeStamper.timeStamp();
+		timeStampNow = timeStamper.timeStamp();
+		long timeOutInMicroSeconds = nextTimeOut - timeStampNow;
 		if (continueImmidiately(timeOutInMicroSeconds, oldestTimeStamp)) {
 			return 0L;
 		}
@@ -417,12 +378,23 @@ public class UtpAlgorithm {
 	}
 
 
-	public void end(int bytesSend) {
-		logger.end(bytesSend);
+	public void end(int bytesSend, boolean successfull) {
+		if (successfull) {
+			logger.end(bytesSend);			
+		}
 	}
 	
 	public void resetBurst() {
 		currentBurstSend = 0;
+	}
+
+
+	public boolean isTimedOut() {
+		if (timeStampNow - lastAckRecieved > getTimeOutMicros()*5 && lastAckRecieved != 0) {
+			System.out.println("TIMED OUT!");
+			return true;
+		}
+		return false;
 	}
 	
 }

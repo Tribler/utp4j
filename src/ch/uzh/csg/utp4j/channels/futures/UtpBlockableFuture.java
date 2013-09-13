@@ -15,10 +15,8 @@ public class UtpBlockableFuture {
 	}
 
 	public void block() throws InterruptedException {
-		System.out.println("accept future blocking");
 		semaphore.acquire();
 		semaphore.release();
-		System.out.println("accept future releasing");
 
 	}
 

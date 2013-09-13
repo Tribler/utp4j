@@ -18,9 +18,9 @@ import ch.uzh.csg.utp4j.data.bytes.exceptions.SignedNumberException;
 
 public final class UnsignedTypesUtil {
 
-	public static final long MAX_UBYTE = Byte.MAX_VALUE - Byte.MIN_VALUE;
-	public static final long MAX_USHORT = Short.MAX_VALUE - Short.MIN_VALUE;
-	public static final long MAX_UINT = (long) Integer.MAX_VALUE - (long) Integer.MIN_VALUE;
+	public static final long MAX_UBYTE = 255;
+	public static final long MAX_USHORT = 65535;
+	public static final long MAX_UINT = 4294967295L;
 
 		
 	public static byte longToUbyte(long longvalue) {

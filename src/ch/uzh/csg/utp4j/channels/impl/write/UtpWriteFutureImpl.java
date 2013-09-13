@@ -11,7 +11,6 @@ public class UtpWriteFutureImpl extends UtpWriteFuture {
 	}
 	
 	public void finished(IOException exp, int bytesWritten) {
-		System.out.println("unlocked finished");
 		this.setBytesSend(bytesWritten);
 		this.exception = exp;
 		isDone = true;
