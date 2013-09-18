@@ -8,6 +8,7 @@ import com.sun.management.OperatingSystemMXBean;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.DEBUG;
 
 public class UtpDataLogger {
 	
@@ -92,29 +93,31 @@ public class UtpDataLogger {
 		minimumTimeStamp = 0;
 	}
 	public void next() {
-		String logEntry = "" + (timeStamp - minimumTimeStamp) + ";";
-		logEntry += "" + ackRecieved + ";";
-		logEntry += "" + currentWindow + ";";
-		logEntry += "" + difference + ";";
-		logEntry += "" + minDelay + ";";
-		logEntry += "" + ourDelay + ";";
-		logEntry += "" + offTarget + ";";
-		logEntry += "" + delayFactor + ";";
-		logEntry += "" + windowFactor + ";";
-		logEntry += "" + gain + ";";
-		logEntry += "" + packetRtt + ";";
-		logEntry += "" + rttVar + ";";
-		logEntry += "" + rtt + ";";
-		logEntry += "" + advertisedWindow + ";";
-		logEntry += "" + maxWindow + ";";
-		logEntry += "" + osBean.getProcessCpuLoad();
-		if (sAck != null) {
-			logEntry += ";(" + sAck + ")\n";
-		} else {
-			logEntry += "\n";
+		if (DEBUG) {
+			String logEntry = "" + (timeStamp - minimumTimeStamp) + ";";
+			logEntry += "" + ackRecieved + ";";
+			logEntry += "" + currentWindow + ";";
+			logEntry += "" + difference + ";";
+			logEntry += "" + minDelay + ";";
+			logEntry += "" + ourDelay + ";";
+			logEntry += "" + offTarget + ";";
+			logEntry += "" + delayFactor + ";";
+			logEntry += "" + windowFactor + ";";
+			logEntry += "" + gain + ";";
+			logEntry += "" + packetRtt + ";";
+			logEntry += "" + rttVar + ";";
+			logEntry += "" + rtt + ";";
+			logEntry += "" + advertisedWindow + ";";
+			logEntry += "" + maxWindow + ";";
+			logEntry += "" + osBean.getProcessCpuLoad();
+			if (sAck != null) {
+				logEntry += ";(" + sAck + ")\n";
+			} else {
+				logEntry += "\n";
+			}
+			log.add(logEntry);
+			sAck = null;		
 		}
-		log.add(logEntry);
-		sAck = null;		
 	}
 
 	public void maxWindow(int maxWindow) {
@@ -123,31 +126,33 @@ public class UtpDataLogger {
 	}
 	
 	public void end(int bytesLength) {
-		RandomAccessFile aFile;
-		try {
-			aFile = new RandomAccessFile("testData/" + LOG_NAME, "rw");
-			FileChannel inChannel = aFile.getChannel();
-			inChannel.truncate(0);
-			ByteBuffer bbuffer = ByteBuffer.allocate(examineBytes());
-			for (String str : log) {
-				bbuffer.put(str.getBytes());
+		if (DEBUG) {
+			RandomAccessFile aFile;
+			try {
+				aFile = new RandomAccessFile("testData/" + LOG_NAME, "rw");
+				FileChannel inChannel = aFile.getChannel();
+				inChannel.truncate(0);
+				ByteBuffer bbuffer = ByteBuffer.allocate(examineBytes());
+				for (String str : log) {
+					bbuffer.put(str.getBytes());
+				}
+				bbuffer.flip();
+				while(bbuffer.hasRemaining()) {
+					inChannel.write(bbuffer);
+				}
+				long seconds = (timeStamp - minimumTimeStamp)/1000000;
+				aFile.close();
+				inChannel.close();
+				System.out.println("SENDRATE: " + (bytesLength/1024)/seconds + "kB/sec");
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			bbuffer.flip();
-			while(bbuffer.hasRemaining()) {
-				inChannel.write(bbuffer);
-			}
-			long seconds = (timeStamp - minimumTimeStamp)/1000000;
-			aFile.close();
-			inChannel.close();
-			System.out.println("SENDRATE: " + (bytesLength/1024)/seconds + "kB/sec");
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		
+		}
 	}
 
 	private int examineBytes() {

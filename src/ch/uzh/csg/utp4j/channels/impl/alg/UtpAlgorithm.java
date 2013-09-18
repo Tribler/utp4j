@@ -208,7 +208,7 @@ public class UtpAlgorithm {
 	public boolean canSendNextPacket() {
 		if (timeStampNow - lastZeroWindow > getTimeOutMicros() && lastZeroWindow != 0) {
 			System.out.println("Reducing window");
-			maxWindow = MAX_PACKET_SIZE- UtpPacketUtils.DEF_HEADER_LENGTH;
+			maxWindow = MAX_PACKET_SIZE - UtpPacketUtils.DEF_HEADER_LENGTH;
 		}
 		boolean windowNotFull = !isWondowFull();
 		boolean burstFull = false;

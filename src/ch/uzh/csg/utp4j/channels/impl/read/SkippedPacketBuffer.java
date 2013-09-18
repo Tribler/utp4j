@@ -2,10 +2,18 @@ package ch.uzh.csg.utp4j.channels.impl.read;
 
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_USHORT;
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.security.acl.LastOwnerException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.Queue;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
+import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
 import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
 
 public class SkippedPacketBuffer {
@@ -14,16 +22,28 @@ public class SkippedPacketBuffer {
 	private UtpTimestampedPacketDTO[] buffer = new UtpTimestampedPacketDTO[SIZE];
 	private int expectedSequenceNumber = 0;
 	private int elementCount = 0;
-	
+	private int debug_lastSeqNumber;
+	private int debug_lastPosition;
+
 		
-	public void bufferPacket(UtpTimestampedPacketDTO pkt) {
+	public void bufferPacket(UtpTimestampedPacketDTO pkt) throws IOException {
 		int sequenceNumber = pkt.utpPacket().getSequenceNumber() & 0xFFFF;
 		int position = sequenceNumber - expectedSequenceNumber;
+		debug_lastSeqNumber = sequenceNumber;
 		if (position < 0) {
 			position = mapOverflowPosition(sequenceNumber);
 		}
+		debug_lastPosition = position;
 		elementCount++;
-		buffer[position] = pkt;
+		try {
+			buffer[position] = pkt;			
+		} catch (ArrayIndexOutOfBoundsException ioobe) {
+			System.err.println("seq, exp: " + sequenceNumber + " " + expectedSequenceNumber + " ");
+			ioobe.printStackTrace();
+
+			dumpBuffer("oob: " + ioobe.getMessage());
+			throw new IOException();
+		}
 
 	}
 	
@@ -101,7 +121,7 @@ public class SkippedPacketBuffer {
 		return queue;
 	} 
 
-	public void reindex(int lastSeqNumber) {
+	public void reindex(int lastSeqNumber) throws IOException {
 		int expectedSequenceNumber = 0;
 		if (lastSeqNumber == MAX_USHORT) {
 			expectedSequenceNumber = 1;
@@ -122,8 +142,50 @@ public class SkippedPacketBuffer {
 		
 	}
 
-	public int getFreeSize() {
-		return SIZE-elementCount;
+	public int getFreeSize() throws IOException {
+		if (SIZE - elementCount < 0) {
+			dumpBuffer("freesize negative");
+		}
+		return SIZE-elementCount-1;
+	}
+
+	private void dumpBuffer(String string) throws IOException {
+		if (UtpAlgConfiguration.DEBUG) {
+			
+			System.out.println("dumping buffer");
+			RandomAccessFile aFile = new RandomAccessFile("testData/auto/bufferdump.txt", "rw");
+			FileChannel inChannel = aFile.getChannel();
+			inChannel.truncate(0);
+			ByteBuffer bbuffer = ByteBuffer.allocate(100000);
+			bbuffer.put((new SimpleDateFormat("dd_MM_hh_mm_ss")).format(new Date()).getBytes());
+			bbuffer.put((string + "\n").getBytes());
+			bbuffer.put(("SIZE: " + 	Integer.toString(SIZE) + "\n").getBytes());
+			bbuffer.put(("count: " + 	Integer.toString(elementCount) + "\n").getBytes());
+			bbuffer.put(("expect: " + 	Integer.toString(expectedSequenceNumber) + "\n").getBytes());
+			bbuffer.put(("lastSeq: " + 	Integer.toString(debug_lastSeqNumber) + "\n").getBytes());
+			bbuffer.put(("lastPos: " + 	Integer.toString(debug_lastPosition) + "\n").getBytes());
+	
+			for (int i = 0; i < SIZE; i++) {
+				String seq;
+				if (buffer[i] == null) {
+					seq = "_; ";
+				} else {
+					seq = Integer.toString((buffer[i].utpPacket().getSequenceNumber() & 0xFFFF)) + "; ";
+				}
+				bbuffer.put((Integer.toString(i) + " -> " + seq).getBytes());
+				if (i % 50 == 0) {
+					bbuffer.put("\n".getBytes());
+				}
+			}
+			System.out.println(bbuffer.position() + " " + bbuffer.limit());
+			bbuffer.flip();
+			while(bbuffer.hasRemaining()) {
+				inChannel.write(bbuffer);
+			}
+			aFile.close();
+			inChannel.close();
+		}
+		
 	}
 	
 

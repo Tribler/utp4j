@@ -27,6 +27,7 @@ public class ConfigTestPlanReader {
 
 	public ConfigTestPlanReader(String fileLocation) {
 		this.fileLocation = fileLocation;
+		UtpAlgConfiguration.DEBUG = true;
 	}
 	
 	public void read() throws IOException {
@@ -76,6 +77,7 @@ public class ConfigTestPlanReader {
 		UtpAlgConfiguration.MICROSECOND_WAIT_BETWEEN_BURSTS = Integer.parseInt(splitParameters[10]);
 		UtpAlgConfiguration.TIME_WAIT_AFTER_FIN_MICROS = Integer.parseInt(splitParameters[11]);
 		UtpAlgConfiguration.ONLY_POSITIVE_GAIN = toBool(splitParameters[12]);
+		UtpAlgConfiguration.DEBUG = true;
 		return parameters + " -- " + dateString;
 		
 	}

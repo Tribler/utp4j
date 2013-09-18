@@ -5,6 +5,7 @@ import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
 import static org.junit.Assert.assertEquals;
 
+import java.io.IOException;
 import java.util.Queue;
 
 import org.junit.Test;
@@ -25,9 +26,10 @@ public class SkippedPacketBufferTest {
 	
 	/**
 	 * Test for correct order
+	 * @throws IOException 
 	 */
 	@Test
-	public void testCorrectOrder() {
+	public void testCorrectOrder() throws IOException {
 		SkippedPacketBuffer buffer = new SkippedPacketBuffer();
 		buffer.setExpectedSequenceNumber(5);
 		
@@ -56,9 +58,10 @@ public class SkippedPacketBufferTest {
 	
 	/**
 	 * Test for correct order on SEQ-Nr Overflow
+	 * @throws IOException 
 	 */
 	@Test
-	public void testOrderOnSeqNrOverflow() {
+	public void testOrderOnSeqNrOverflow() throws IOException {
 		SkippedPacketBuffer buffer = new SkippedPacketBuffer();
 		buffer.setExpectedSequenceNumber((int) (MAX_USHORT - 2));
 		
@@ -87,9 +90,10 @@ public class SkippedPacketBufferTest {
 	
 	/**
 	 * Test correct order, missing max_unsigned_short
+	 * @throws IOException 
 	 */
 	@Test
-	public void testOrderOnSeqNrOverflowMaxMissing() {
+	public void testOrderOnSeqNrOverflowMaxMissing() throws IOException {
 		SkippedPacketBuffer buffer = new SkippedPacketBuffer();
 		buffer.setExpectedSequenceNumber((int) MAX_USHORT);
 		
@@ -119,9 +123,10 @@ public class SkippedPacketBufferTest {
 	
 	/**
 	 * Test reindexing with 0 left
+	 * @throws IOException 
 	 */
 	@Test
-	public void testReindexing() {
+	public void testReindexing() throws IOException {
 		SkippedPacketBuffer buffer = new SkippedPacketBuffer();
 		buffer.setExpectedSequenceNumber(5);
 		
@@ -155,10 +160,11 @@ public class SkippedPacketBufferTest {
 	
 	/**
 	 * Test reindexing with 0 left and overflow
+	 * @throws IOException 
 	 */
 	
 	@Test
-	public void testReindexingOverflow() {
+	public void testReindexingOverflow() throws IOException {
 		SkippedPacketBuffer buffer = new SkippedPacketBuffer();
 		buffer.setExpectedSequenceNumber((int) (MAX_USHORT - 2));
 		
@@ -190,10 +196,11 @@ public class SkippedPacketBufferTest {
 
 	/**
 	 * Test reindexing when still missing 
+	 * @throws IOException 
 	 */
 	
 	@Test
-	public void testReindexingStillMissing() {
+	public void testReindexingStillMissing() throws IOException {
 		SkippedPacketBuffer buffer = new SkippedPacketBuffer();
 		buffer.setExpectedSequenceNumber(5);
 		
@@ -255,9 +262,10 @@ public class SkippedPacketBufferTest {
 	
 	/**
 	 * Test reindexing when still missing and overflow occured
+	 * @throws IOException 
 	 */
 	@Test
-	public void testReindexingStillMissingOverflow() {
+	public void testReindexingStillMissingOverflow() throws IOException {
 		SkippedPacketBuffer buffer = new SkippedPacketBuffer();
 		buffer.setExpectedSequenceNumber((int) (MAX_USHORT) - 2);
 		
@@ -313,11 +321,23 @@ public class SkippedPacketBufferTest {
 		assertEquals(true, buffer.isEmpty());
 	}
 	
+	@Test
+	public void testBufferFull() throws IOException {
+		SkippedPacketBuffer buffer = new SkippedPacketBuffer();
+		buffer.setExpectedSequenceNumber(3); // add one packet
+		assertEquals(999, buffer.getFreeSize());
+		for (int i = 0; i < 998; i++) { // add another 998 -> totally 999 packets. i can have only now seq = 3;
+			buffer.bufferPacket(createPacket(i + 4));
+		}
+		assertEquals(0, buffer.getFreeSize());
+	}
+	
 	/**
 	 * Test header extension with overflow and still missing packets
+	 * @throws IOException 
 	 */
 	@Test
-	public void testHeader() {
+	public void testHeader() throws IOException {
 		SkippedPacketBuffer buffer = new SkippedPacketBuffer();
 		buffer.setExpectedSequenceNumber((int) (MAX_USHORT) - 2);	
 		

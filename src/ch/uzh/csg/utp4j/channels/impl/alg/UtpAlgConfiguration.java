@@ -64,6 +64,8 @@ public class UtpAlgConfiguration {
 	public volatile static long TIME_WAIT_AFTER_FIN_MICROS = 3000000;
 
 	public volatile static boolean ONLY_POSITIVE_GAIN = false;
+	
+	public volatile static boolean DEBUG = false;
 
 	public static String getString() {
 		String toReturn = "";

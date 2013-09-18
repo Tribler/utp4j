@@ -146,7 +146,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		}
 	}
 	
-	private long getWindowSize() {
+	private long getWindowSize() throws IOException {
 		return (skippedBuffer.getFreeSize()) * lastPayloadLength;
 	}
 

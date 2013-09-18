@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
+import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.UtpPacket;
@@ -51,9 +52,19 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 					break;
 				}
 				Queue<DatagramPacket> packetsToResend = algorithm.getPacketsToResend();
+				int currentResendBurst = 0;
 				for (DatagramPacket datagramPacket : packetsToResend) {
 					datagramPacket.setSocketAddress(channel.getRemoteAdress());
-					channel.sendPacket(datagramPacket);	
+					channel.sendPacket(datagramPacket);
+					currentResendBurst++;
+					if (currentResendBurst >= UtpAlgConfiguration.MAX_BURST_SEND) {
+						currentResendBurst = 0;
+						boolean interrupted = checkForAcks();
+						if (interrupted) {
+							graceFullInterrupt = true;
+							break;
+						}
+					}
 				}
 			} catch (IOException exp) {
 				exp.printStackTrace();

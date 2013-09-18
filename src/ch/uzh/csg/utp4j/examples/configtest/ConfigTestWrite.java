@@ -22,13 +22,17 @@ public class ConfigTestWrite {
 	 * @throws InterruptedException 
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
-		ConfigTestPlanReader plan = new ConfigTestPlanReader("testPlan/testplan.csv");
+		
+		String testPlan = "testPlan/testplan.csv";
+		String testDataFile = "testData/sc S01E01.avi";
+		
+		ConfigTestPlanReader plan = new ConfigTestPlanReader(testPlan);
 		plan.read();
 		MicroSecondsTimeStamp timeStamper = new MicroSecondsTimeStamp();
 		while(plan.hasNext()) {
 			String testRunLogEntry = plan.next();
 			ByteBuffer buffer = ByteBuffer.allocate(150000000);
-			RandomAccessFile file     = new RandomAccessFile("testData/sc S01E01.avi", "rw");
+			RandomAccessFile file     = new RandomAccessFile(testDataFile, "rw");
 			FileChannel  fileChannel = file.getChannel();
 			int bytesRead = 0;
 			System.out.println("start reading from file");
