@@ -143,7 +143,11 @@ public class UtpDataLogger {
 				long seconds = (timeStamp - minimumTimeStamp)/1000000;
 				aFile.close();
 				inChannel.close();
-				System.out.println("SENDRATE: " + (bytesLength/1024)/seconds + "kB/sec");
+				long sendRate = 0;
+				if (seconds != 0) {
+					sendRate = (bytesLength/1024)/seconds;					
+				}
+				System.out.println("SENDRATE: " + sendRate + "kB/sec");
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

@@ -54,6 +54,7 @@ public class ConfigTestWrite {
 				writeFuture.block();
 				if (!writeFuture.isSuccessfull()) {
 					plan.failed();
+					System.out.println("FAILED");
 				} else {
 					String logEntry = testRunLogEntry + " -- " + calculateRate(bytesToSend, start, timeStamper.timeStamp());
 					System.out.println(logEntry);
@@ -74,7 +75,11 @@ public class ConfigTestWrite {
 
 	private static String calculateRate(int bytesToSend, long start, long end) {
 			long seconds = (end - start)/1000000;
-			return (bytesToSend/1024)/seconds + "kB/sec";
+			long sendRate = 0;
+			if (seconds != 0) {
+				sendRate = (bytesToSend/1024)/seconds;
+			}
+			return sendRate + "kB/sec";
 	}
 
 	private static void writeLog() throws IOException {

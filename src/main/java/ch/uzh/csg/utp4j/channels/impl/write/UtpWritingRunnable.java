@@ -59,7 +59,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 					currentResendBurst++;
 					if (currentResendBurst >= UtpAlgConfiguration.MAX_BURST_SEND) {
 						currentResendBurst = 0;
-						boolean interrupted = checkForAcks();
+						boolean interrupted = !checkForAcks();
 						if (interrupted) {
 							graceFullInterrupt = true;
 							break;
@@ -76,6 +76,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 			if (algorithm.isTimedOut()) {
 				graceFullInterrupt = true;
 				possibleExp = new IOException("timed out");
+				System.out.println("timed out");
 				exceptionOccured = true;
 			}
 			while (algorithm.canSendNextPacket() && !exceptionOccured && !graceFullInterrupt && buffer.hasRemaining()) {

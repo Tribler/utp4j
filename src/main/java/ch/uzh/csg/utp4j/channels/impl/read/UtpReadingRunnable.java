@@ -33,6 +33,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	private UtpReadFutureImpl readFuture;
 	private long nowtimeStamp;
 	private long lastPackedRecieved;
+	private long startReadingTimeStamp;
 	
 	public UtpReadingRunnable(UtpSocketChannelImpl channel, ByteBuffer buff, MicroSecondsTimeStamp timestamp, UtpReadFutureImpl future) {
 		this.channel = channel;
@@ -40,6 +41,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		this.timeStamper = timestamp;
 		this.readFuture = future;
 		lastPayloadLength = UtpAlgConfiguration.MAX_PACKET_SIZE;
+		this.startReadingTimeStamp = timestamp.timeStamp();
 	}
 	
 	public int getBytesRead() {
@@ -66,7 +68,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 				UtpTimestampedPacketDTO timestampedPair = queue.poll(UtpAlgConfiguration.TIME_WAIT_AFTER_FIN_MICROS/2, TimeUnit.MICROSECONDS);
 				nowtimeStamp = timeStamper.timeStamp();
 				if (timestampedPair != null) {
-					lastPackedRecieved = nowtimeStamp;
+					lastPackedRecieved = timestampedPair.stamp();
 					if (isFinPacket(timestampedPair)) {
 						channel.setState(UtpSocketState.GOT_FIN);
 						finRecievedTimestamp = timeStamper.timeStamp();
@@ -78,13 +80,16 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 					}												
 				} 
 				/*TODO: HOWTOMEASURE RTT HERE?*/
-				if (nowtimeStamp - lastPackedRecieved >= 5000000) {
+				if (isTimedOut()) {
+					System.out.println("now: " + nowtimeStamp + " last: " + lastPackedRecieved + " = " + (nowtimeStamp - lastPackedRecieved));
+					System.out.println("now: " + nowtimeStamp + " start: " + startReadingTimeStamp + " = " + (nowtimeStamp - startReadingTimeStamp));
+
 					throw new IOException();
 				}
 					
 			} catch (IOException ioe) {
 				exp = ioe;
-				System.out.println("EXCEPTION");
+				exp.printStackTrace();
 				exceptionOccured = true;
 			} catch (InterruptedException iexp) {
 				iexp.printStackTrace();
@@ -107,6 +112,12 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 
 	}
 	
+
+	private boolean isTimedOut() {
+		boolean timedOut = nowtimeStamp - lastPackedRecieved >= 5000000;
+		boolean connectionReattemptAwaited = nowtimeStamp - startReadingTimeStamp >= 10000000;
+		return timedOut && connectionReattemptAwaited;
+	}
 
 	private boolean isFinPacket(UtpTimestampedPacketDTO timestampedPair) {
 		return timestampedPair.utpPacket().getTypeVersion() == UtpPacketUtils.ST_FIN;

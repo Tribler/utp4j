@@ -150,6 +150,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
  			setConnectionIdRecieving((short) 0);
  			setAckNumber(0);
  			setState(SYN_ACKING_FAILED);
+ 			exp.printStackTrace();
  		}
 		
 	}
