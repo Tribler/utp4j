@@ -65,7 +65,7 @@ public class UtpAlgorithm {
 		int packetSizeJustAcked = buffer.markPacketAcked(seqNrToAck, timeStampNow);
 		if (packetSizeJustAcked > 0) {
 			updateRtt(timeStampNow, seqNrToAck);
-			updateWindow(pair.utpPacket(), timeStampNow, packetSizeJustAcked);
+			updateWindow(pair.utpPacket(), timeStampNow, packetSizeJustAcked, pair.utpTimeStamp());
 		} 
 
 		if (pair.utpPacket().getExtensions() != null) {
@@ -80,7 +80,7 @@ public class UtpAlgorithm {
 						packetSizeJustAcked = buffer.markPacketAcked(seqNrToAck, timeStampNow);
 						if (packetSizeJustAcked > 0) {
 							updateRtt(timeStampNow, sackSeqNr);
-							updateWindow(pair.utpPacket(), timeStampNow, packetSizeJustAcked);
+							updateWindow(pair.utpPacket(), timeStampNow, packetSizeJustAcked, pair.utpTimeStamp());
 						} 
 					}
 				}
@@ -111,16 +111,25 @@ public class UtpAlgorithm {
 		this.advertisedWindowSize = advertisedWindo;
 		
 	}	
-	private void updateWindow(UtpPacket utpPacket, long timestamp, int packetSizeJustAcked) {
+	private void updateWindow(UtpPacket utpPacket, long timestamp, int packetSizeJustAcked, int utpRecieved) {
 		logger.microSecTimeStamp(timeStampNow);
 		currentWindow = buffer.getBytesOnfly();
 		logger.currentWindow(currentWindow);
-		long difference = utpPacket.getTimestampDifference() & 0xFFFFFFFF;
-		logger.difference(difference);
-		updateMinDelay(difference, timeStampNow);
-		long ourDelay = difference - minDelay.getMinDelay();
-		logger.minDelay(minDelay.getMinDelay());
+		
+		long ourDifference = utpPacket.getTimestampDifference() & 0xFFFFFFFF;
+		logger.ourDifference(ourDifference);
+		updateOurDelay(ourDifference);
+		
+		int theirDifference = timeStamper.utpDifference(utpRecieved, utpPacket.getTimestamp());
+		
+		logger.theirDifference(theirDifference);
+		updateTheirDelay(theirDifference);
+		logger.theirMinDelay(minDelay.getTheirMinDelay());
+		
+		long ourDelay = ourDifference - minDelay.getCorrectedMinDelay();
+		logger.minDelay(minDelay.getCorrectedMinDelay());
 		logger.ourDelay(ourDelay);
+		
 		long offTarget = C_CONTROL_TARGET_MICROS - ourDelay;
 		logger.offTarget(offTarget);
 		double delayFactor = ((double) offTarget) / ((double) C_CONTROL_TARGET_MICROS);
@@ -138,13 +147,20 @@ public class UtpAlgorithm {
 		if (maxWindow < 0) {
 			maxWindow = 0;
 		}
+		
 //		System.out.println("current:max " + currentWindow + ":" + maxWindow);
 		logger.maxWindow(maxWindow);
 		logger.advertisedWindow(advertisedWindowSize);
 		buffer.setResendtimeOutMicros(getEstimatedRttMicros());
+		
 		if (maxWindow == 0) {
 			lastZeroWindow = timeStampNow;
 		}
+	}
+
+
+	private void updateTheirDelay(long theirDifference) {
+		minDelay.updateTheirDelay(theirDifference, timeStampNow);		
 	}
 
 
@@ -157,8 +173,8 @@ public class UtpAlgorithm {
 	}
 
 
-	private void updateMinDelay(long difference, long timestamp) {
-		minDelay.updateMinDelay(difference, timestamp);
+	private void updateOurDelay(long difference) {
+		minDelay.updateOurDelay(difference, timeStampNow);
 	}
 
 	public Queue<DatagramPacket> getPacketsToResend() throws SocketException {
@@ -249,7 +265,7 @@ public class UtpAlgorithm {
 
 	private int calculateDynamicLinearPacketSize() {
 		int packetSizeDelta = MAX_PACKET_SIZE - MIN_PACKET_SIZE;
-		long minDelayOffTarget = C_CONTROL_TARGET_MICROS - minDelay.getMinDelay();
+		long minDelayOffTarget = C_CONTROL_TARGET_MICROS - minDelay.getCorrectedMinDelay();
 		double packetSizeFactor = ((double) minDelayOffTarget)/((double) C_CONTROL_TARGET_MICROS);
 		double packetSize = MIN_PACKET_SIZE + packetSizeFactor*packetSizeDelta;
 		return (int) Math.ceil(packetSize);

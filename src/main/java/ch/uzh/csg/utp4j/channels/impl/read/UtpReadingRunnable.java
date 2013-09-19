@@ -19,6 +19,7 @@ import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
 public class UtpReadingRunnable extends Thread implements Runnable {
 	
+	private static final int PACKET_DIFF_WARP = 50000;
 	private IOException exp;
 	private ByteBuffer buffer;
 	private UtpSocketChannelImpl channel;
@@ -27,7 +28,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	private boolean graceFullInterrupt;
 	private boolean isRunning;
 	private MicroSecondsTimeStamp timeStamper;
-	private long payloadLength = 0;
+	private long totalPayloadLength = 0;
 	private long finRecievedTimestamp;
 	private int lastPayloadLength;
 	private UtpReadFutureImpl readFuture;
@@ -105,7 +106,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		
 		
 		System.out.println("Buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
-		System.out.println("PAYLOAD LENGHT " + payloadLength);
+		System.out.println("PAYLOAD LENGHT " + totalPayloadLength);
 		System.out.println("READER OUT");
 
 		channel.removeReader();
@@ -128,7 +129,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 			buffer.put(timestampedPair.utpPacket().getPayload());
 			int payloadLength = timestampedPair.utpPacket().getPayload().length;
 			lastPayloadLength = payloadLength;
-			payloadLength += payloadLength;
+			totalPayloadLength += payloadLength;
 			Queue<UtpTimestampedPacketDTO> packets = skippedBuffer.getAllUntillNextMissing();
 			int lastSeqNumber = 0;
 			if (packets.isEmpty()) {
@@ -143,6 +144,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 			}
 			skippedBuffer.reindex(lastSeqNumber);
 			channel.setAckNumber(lastSeqNumber);
+			//if still has skipped packets, need to selectively ack
 			if (hasSkippedPackets()) {
 				SelectiveAckHeaderExtension headerExtension = skippedBuffer.createHeaderExtension();
 				channel.selectiveAckPacket(timestampedPair.utpPacket(), headerExtension, getTimestampDifference(timestampedPair), getWindowSize());			
@@ -153,7 +155,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		} else {
 			channel.ackPacket(timestampedPair.utpPacket(), getTimestampDifference(timestampedPair), getWindowSize());
 			buffer.put(timestampedPair.utpPacket().getPayload());
-			payloadLength += timestampedPair.utpPacket().getPayload().length;
+			totalPayloadLength += timestampedPair.utpPacket().getPayload().length;
 		}
 	}
 	
@@ -168,11 +170,18 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 
 	private void handleUnexpectedPacket(UtpTimestampedPacketDTO timestampedPair) throws IOException {
 		int expected = getExpectedSeqNr();
+		int seqNr = timestampedPair.utpPacket().getSequenceNumber() & 0xFFFF;
 		if (skippedBuffer.isEmpty()) {
 			skippedBuffer.setExpectedSequenceNumber(expected);
 		}
-		boolean isSmaller = expected > (timestampedPair.utpPacket().getSequenceNumber() & 0xFFFF);
-		if (expected == skippedBuffer.getExpectedSequenceNumber() && !isSmaller) {
+		boolean alreadyAcked = expected > seqNr || seqNr - expected > PACKET_DIFF_WARP;
+		
+		boolean saneSeqNr = expected == skippedBuffer.getExpectedSequenceNumber();
+		//TODO: wrapping seq nr: expected can be 5 e.g.
+		// but buffer can recieve 65xxx, which already has been acked, since seq numbers wrapped. 
+		// current implementation puts this wrongly into the buffer. it should go in the else block
+		// possible fix: alreadyAcked = expected > seqNr || seqNr - expected > CONSTANT;
+		if (saneSeqNr && !alreadyAcked) {
 			skippedBuffer.bufferPacket(timestampedPair);
 			SelectiveAckHeaderExtension headerExtension = skippedBuffer.createHeaderExtension();
 			channel.selectiveAckPacket(timestampedPair.utpPacket(), headerExtension, getTimestampDifference(timestampedPair), getWindowSize());	

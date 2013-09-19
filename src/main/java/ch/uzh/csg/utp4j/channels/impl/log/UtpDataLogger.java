@@ -4,6 +4,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.management.ManagementFactory;
+
+import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
+
 import com.sun.management.OperatingSystemMXBean;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -31,14 +34,15 @@ public class UtpDataLogger {
 	private long rttVar;
 	private long rtt;
 	private int advertisedWindow;
-	private OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);  
-
+	private OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
+	private int theirDifference;
+	private long theirMinDelay;  
 	
 	public void currentWindow(int currentWindow) {
 		this.currentWindow = currentWindow;
 	}
 
-	public void difference(long difference) {
+	public void ourDifference(long difference) {
 		this.difference = difference;
 		
 	}
@@ -88,8 +92,9 @@ public class UtpDataLogger {
 	}
 
 	public UtpDataLogger() {
-		log.add("TimeMicros;AckRecieved;CurrentWidow_Bytes;Difference_Micros;MinDelay_Micros;OurDelay_Micros;OffTarget_Micros;" +
-				"DelayFactor;WindowFactor;Gain_Bytes;PacketRtt_Millis;RttVar_Millis;Rtt_Millis;AdvertisedWindow_Bytes;MaxWindow_Bytes;CPU%;SACK\n");
+		log.add("TimeMicros;AckRecieved;CurrentWidow_Bytes;Difference_Micros;MinDelay_Micros;OurDelay_Micros;Their_Difference_Micros;" +
+				"Their_MinDelay_Micros;Their_Delay_Micros;OffTarget_Micros;DelayFactor;WindowFactor;Gain_Bytes;PacketRtt_Millis;" +
+				"RttVar_Millis;Rtt_Millis;AdvertisedWindow_Bytes;MaxWindow_Bytes;CPU%;SACK\n");
 		minimumTimeStamp = 0;
 	}
 	public void next() {
@@ -100,6 +105,9 @@ public class UtpDataLogger {
 			logEntry += "" + difference + ";";
 			logEntry += "" + minDelay + ";";
 			logEntry += "" + ourDelay + ";";
+			logEntry += "" + theirDifference + ";";
+			logEntry += "" + theirMinDelay + ";";
+			logEntry += "" + (theirDifference - theirMinDelay) + ";";
 			logEntry += "" + offTarget + ";";
 			logEntry += "" + delayFactor + ";";
 			logEntry += "" + windowFactor + ";";
@@ -192,6 +200,16 @@ public class UtpDataLogger {
 
 	public void advertisedWindow(int advertisedWindowSize) {
 		this.advertisedWindow = advertisedWindowSize;
+		
+	}
+
+	public void theirDifference(int theirDifference) {
+		this.theirDifference = theirDifference;
+		
+	}
+
+	public void theirMinDelay(long theirMinDelay) {
+		this.theirMinDelay = theirMinDelay;
 		
 	}
 

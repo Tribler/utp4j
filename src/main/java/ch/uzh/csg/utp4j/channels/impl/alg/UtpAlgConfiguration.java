@@ -82,6 +82,7 @@ public class UtpAlgConfiguration {
 		toReturn += "MICROSECOND_WAIT_BETWEEN_BURSTS: " + MICROSECOND_WAIT_BETWEEN_BURSTS + " ";
 		toReturn += "TIME_WAIT_AFTER_FIN_MICROS: " + TIME_WAIT_AFTER_FIN_MICROS + " ";
 		toReturn += "ONLY_POSITIVE_GAIN: " + ONLY_POSITIVE_GAIN + " ";
+		toReturn += "DEBUG: " + DEBUG + " ";
 		return toReturn;
 	}
 

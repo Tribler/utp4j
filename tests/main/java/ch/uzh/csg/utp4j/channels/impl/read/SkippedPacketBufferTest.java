@@ -329,7 +329,7 @@ public class SkippedPacketBufferTest {
 		for (int i = 0; i < 998; i++) { // add another 998 -> totally 999 packets. i can have only now seq = 3;
 			buffer.bufferPacket(createPacket(i + 4));
 		}
-		assertEquals(1, buffer.getFreeSize());
+		assertEquals(0, buffer.getFreeSize());
 	}
 	
 	/**

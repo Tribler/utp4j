@@ -14,6 +14,7 @@ import java.util.Queue;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
+import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
 import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
 
 public class SkippedPacketBuffer {
@@ -25,7 +26,6 @@ public class SkippedPacketBuffer {
 	private int debug_lastSeqNumber;
 	private int debug_lastPosition;
 
-		
 	public void bufferPacket(UtpTimestampedPacketDTO pkt) throws IOException {
 		int sequenceNumber = pkt.utpPacket().getSequenceNumber() & 0xFFFF;
 		int position = sequenceNumber - expectedSequenceNumber;
@@ -145,6 +145,9 @@ public class SkippedPacketBuffer {
 	public int getFreeSize() throws IOException {
 		if (SIZE - elementCount < 0) {
 			dumpBuffer("freesize negative");
+		}
+		if (SIZE - elementCount < 50) {
+			return 0;
 		}
 		return SIZE-elementCount-1;
 	}
