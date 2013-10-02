@@ -19,7 +19,7 @@ import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
 
 public class SkippedPacketBuffer {
 
-	private static final int SIZE = 1000;
+	private static final int SIZE = 2000;
 	private UtpTimestampedPacketDTO[] buffer = new UtpTimestampedPacketDTO[SIZE];
 	private int expectedSequenceNumber = 0;
 	private int elementCount = 0;

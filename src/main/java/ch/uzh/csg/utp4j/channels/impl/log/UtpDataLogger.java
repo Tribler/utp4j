@@ -34,9 +34,10 @@ public class UtpDataLogger {
 	private long rttVar;
 	private long rtt;
 	private int advertisedWindow;
-	private OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
 	private int theirDifference;
 	private long theirMinDelay;  
+	
+	private boolean loggerOn = false;
 	
 	public void currentWindow(int currentWindow) {
 		this.currentWindow = currentWindow;
@@ -94,11 +95,11 @@ public class UtpDataLogger {
 	public UtpDataLogger() {
 		log.add("TimeMicros;AckRecieved;CurrentWidow_Bytes;Difference_Micros;MinDelay_Micros;OurDelay_Micros;Their_Difference_Micros;" +
 				"Their_MinDelay_Micros;Their_Delay_Micros;OffTarget_Micros;DelayFactor;WindowFactor;Gain_Bytes;PacketRtt_Millis;" +
-				"RttVar_Millis;Rtt_Millis;AdvertisedWindow_Bytes;MaxWindow_Bytes;CPU%;SACK\n");
+				"RttVar_Millis;Rtt_Millis;AdvertisedWindow_Bytes;MaxWindow_Bytes;SACK\n");
 		minimumTimeStamp = 0;
 	}
 	public void next() {
-		if (DEBUG) {
+		if (DEBUG && loggerOn) {
 			String logEntry = "" + (timeStamp - minimumTimeStamp) + ";";
 			logEntry += "" + ackRecieved + ";";
 			logEntry += "" + currentWindow + ";";
@@ -116,8 +117,7 @@ public class UtpDataLogger {
 			logEntry += "" + rttVar + ";";
 			logEntry += "" + rtt + ";";
 			logEntry += "" + advertisedWindow + ";";
-			logEntry += "" + maxWindow + ";";
-			logEntry += "" + osBean.getProcessCpuLoad();
+			logEntry += "" + maxWindow;
 			if (sAck != null) {
 				logEntry += ";(" + sAck + ")\n";
 			} else {
@@ -134,7 +134,7 @@ public class UtpDataLogger {
 	}
 	
 	public void end(int bytesLength) {
-		if (DEBUG) {
+		if (DEBUG && loggerOn) {
 			RandomAccessFile aFile;
 			try {
 				aFile = new RandomAccessFile("testData/" + LOG_NAME, "rw");

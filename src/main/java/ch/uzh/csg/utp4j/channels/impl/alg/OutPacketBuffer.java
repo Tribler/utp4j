@@ -14,7 +14,7 @@ import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
 public class OutPacketBuffer {
 	
-	private static int size = 1000;
+	private static int size = 3000;
 	private ArrayList<UtpTimestampedPacketDTO> buffer = new ArrayList<UtpTimestampedPacketDTO>(size);
 	private int bytesOnFly = 0;
 	private long resendTimeOutMicros;
@@ -75,10 +75,23 @@ public class OutPacketBuffer {
 				// overflow in seq nr
 				index += UnsignedTypesUtil.MAX_USHORT;
 			}
-			if (index >= buffer.size()) {
-				return null;
+			// bug
+//			if (index >= buffer.size()) {
+//				return null;
+//			}
+
+			if (index < buffer.size() && (buffer.get(index).utpPacket().getSequenceNumber() & 0xFFFF) == seqNrToAck) {
+				return buffer.get(index);
+			} else {
+				// bug -> search sequentially until fixed
+				for (int i = 0; i < buffer.size(); i++) {
+					UtpTimestampedPacketDTO pkt = buffer.get(i);
+					if ((pkt.utpPacket().getSequenceNumber() & 0xFFFF) == seqNrToAck) {
+						return pkt;
+					}
+				}
 			}
-			return buffer.get(index);
+			return null;
 		}
 		
 		return null;

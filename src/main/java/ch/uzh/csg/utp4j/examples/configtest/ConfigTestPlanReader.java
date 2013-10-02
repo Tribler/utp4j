@@ -27,7 +27,7 @@ public class ConfigTestPlanReader {
 
 	public ConfigTestPlanReader(String fileLocation) {
 		this.fileLocation = fileLocation;
-		UtpAlgConfiguration.DEBUG = true;
+		UtpAlgConfiguration.DEBUG = false;
 	}
 	
 	public void read() throws IOException {
