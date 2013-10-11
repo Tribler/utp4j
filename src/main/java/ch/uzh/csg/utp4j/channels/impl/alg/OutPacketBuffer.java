@@ -110,8 +110,10 @@ public class OutPacketBuffer {
 		ArrayList<UtpTimestampedPacketDTO> toRemove = new ArrayList<UtpTimestampedPacketDTO>(size);
 		for (UtpTimestampedPacketDTO pkt : buffer) {
 			if (pkt.isPacketAcked()) {
+				//we got the header, remove it from the bytes that are on the wire
 				bytesOnFly -= UtpPacketUtils.DEF_HEADER_LENGTH;
 				if (pkt.utpPacket().getPayload() != null) {
+					//in case of a data packet, subtract the payload
 					bytesOnFly -= pkt.utpPacket().getPayload().length;
 				}
 				toRemove.add(pkt);
@@ -151,6 +153,7 @@ public class OutPacketBuffer {
 	private void updateResendTimeStamps(UtpTimestampedPacketDTO unackedPkt) throws SocketException {
 		unackedPkt.utpPacket().setTimestamp(timeStamper.utpTimeStamp());
 		byte[] newBytes = unackedPkt.utpPacket().toByteArray();
+		//TB: why create new datagram packet, can't it be reused?
 		unackedPkt.setDgPacket(new DatagramPacket(newBytes, newBytes.length, addr));
 		long timeStamp = timeStamper.timeStamp();
 		unackedPkt.setStamp(timeStamp);
