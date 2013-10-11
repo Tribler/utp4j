@@ -25,10 +25,12 @@
   		<version>1.8.4</version>
   		<scope>test</scope>
   	</dependency>
+  	<!-- TB: add logging, system.out/err in the code should be replaced with log.something() -->
   	<dependency>
   		<groupId>junit</groupId>
   		<artifactId>junit</artifactId>
   		<version>4.11</version>
   	</dependency>
   </dependencies>
+  <!--  exclude the package ch.uzh.csg.utp4j.channels.impl.log from the final build -->
 </project>
