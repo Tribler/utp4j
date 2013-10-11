@@ -11,9 +11,6 @@ import ch.uzh.csg.utp4j.channels.impl.recieve.UtpRecieveRunnable;
 public abstract class UtpServerSocketChannel {
 	
 	private DatagramSocket socket;
-	protected boolean blocking = true;
-
-
 
 	public static UtpServerSocketChannel open() {
 		UtpServerSocketChannelImpl sChannel = new UtpServerSocketChannelImpl();	
