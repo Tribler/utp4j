@@ -37,10 +37,10 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 	private long connectionIdRecieving;
 	protected SocketAddress remoteAddress;
 	protected int ackNumber;
-	protected boolean isBlocking;
 	protected DatagramSocket dgSocket;
+	//an other thread might not see that we have set a reference
 	protected volatile UtpConnectFutureImpl connectFuture = null;
-	protected volatile ReentrantLock stateLock = new ReentrantLock();
+	protected ReentrantLock stateLock = new ReentrantLock();
 	
 	
 	/**
@@ -67,39 +67,44 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 	}
 	
 	public UtpConnectFuture connect(SocketAddress address) {
-		stateLock.lock();
 		UtpConnectFutureImpl future = null;
+		stateLock.lock();
 		try {
-			future = new UtpConnectFutureImpl();
-			connectFuture = future;
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			// TODO Auto-generated catch block
+			try {
+				future = new UtpConnectFutureImpl();
+				connectFuture = future;
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				// TODO Auto-generated catch block
+			}
+			try {
+
+				connectImpl(future);
+				setRemoteAddress(address);
+				setupConnectionId();
+				setSequenceNumber(DEF_SEQ_START);
+
+				UtpPacket synPacket = UtpPacketUtils.createSynPacket();
+				synPacket
+						.setConnectionId(longToUshort(getConnectionIdRecieving()));
+				synPacket.setTimestamp(timeStamper.utpTimeStamp());
+				sendPacket(synPacket);
+				setState(SYN_SENT);
+				printState("[Syn send] ");
+				incrementSequenceNumber();
+				startConnectionTimeOutCounter(synPacket);
+			} catch (IOException exp) {
+				// DO NOTHING, let's try later with reconnect runnable
+				// setSequenceNumber(DEF_SEQ_START);
+				// setRemoteAddress(null);
+				// abortImpl();
+				// setState(CLOSED);
+				// future.finished(exp);
+			}
+		} finally {
+			stateLock.unlock();
 		}
-		try {
-			
-			connectImpl(future);
-			setRemoteAddress(address);
-			setupConnectionId();
-			setSequenceNumber(DEF_SEQ_START);
-			
-			UtpPacket synPacket = UtpPacketUtils.createSynPacket();
-			synPacket.setConnectionId(longToUshort(getConnectionIdRecieving()));
-			synPacket.setTimestamp(timeStamper.utpTimeStamp());
-			sendPacket(synPacket);
-			setState(SYN_SENT);
-			printState("[Syn send] ");
-			incrementSequenceNumber();
-			startConnectionTimeOutCounter(synPacket);
-		} catch (IOException exp) {
-			//DO NOTHING, let's try later with reconnect runnable 
-//			setSequenceNumber(DEF_SEQ_START);
-//			setRemoteAddress(null);
-//			abortImpl();
-//			setState(CLOSED);
-//			future.finished(exp);
-		} 
-		stateLock.unlock();
+
 		return future;
 	}
 	
