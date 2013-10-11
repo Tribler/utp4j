@@ -40,7 +40,7 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 	protected DatagramSocket dgSocket;
 	//an other thread might not see that we have set a reference
 	protected volatile UtpConnectFutureImpl connectFuture = null;
-	protected ReentrantLock stateLock = new ReentrantLock();
+	protected final ReentrantLock stateLock = new ReentrantLock();
 	
 	
 	/**
