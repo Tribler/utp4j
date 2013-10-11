@@ -67,6 +67,9 @@ public class UtpAlgConfiguration {
 	
 	public volatile static boolean DEBUG = false;
 
+	/**
+	 * @return information about the algorithm. This is only used for debugging 
+	 */
 	public static String getString() {
 		String toReturn = "";
 		toReturn += "MINIMUM_TIMEOUT_MILLIS: " + MINIMUM_TIMEOUT_MILLIS + " ";
