@@ -17,13 +17,14 @@ public class UtpReadFutureImpl extends UtpReadFuture {
 		isDone = true;
 		semaphore.release();
 		listenerLock.lock();
+		try {
 		if (listener != null) {
 			listener.setByteBuffer(buffer);
 			listener.setIOException(exp);
+			//maybe let the user decide
 			(new Thread(listener)).start();
-		}
+		}}finally {
 		listenerLock.unlock();
+		}
 	}
-
-
 }
