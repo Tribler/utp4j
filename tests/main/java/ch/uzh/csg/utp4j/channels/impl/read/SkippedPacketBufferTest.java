@@ -320,13 +320,13 @@ public class SkippedPacketBufferTest {
 		assertEquals(0, noPackets.size());
 		assertEquals(true, buffer.isEmpty());
 	}
-	
+	//TB: failure?
 	@Test
 	public void testBufferFull() throws IOException {
 		SkippedPacketBuffer buffer = new SkippedPacketBuffer();
 		buffer.setExpectedSequenceNumber(3); // add one packet
-		assertEquals(999, buffer.getFreeSize());
-		for (int i = 0; i < 998; i++) { // add another 998 -> totally 999 packets. i can have only now seq = 3;
+		assertEquals(1999, buffer.getFreeSize());
+		for (int i = 0; i < 1998; i++) { // add another 998 -> totally 999 packets. i can have only now seq = 3;
 			buffer.bufferPacket(createPacket(i + 4));
 		}
 		assertEquals(0, buffer.getFreeSize());
