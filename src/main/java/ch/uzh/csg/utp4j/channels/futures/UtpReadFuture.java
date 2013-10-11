@@ -7,7 +7,7 @@ public class UtpReadFuture extends UtpBlockableFuture {
 	
 	protected volatile ByteBuffer buffer;
 	protected volatile UtpReadListener listener;
-	protected volatile ReentrantLock listenerLock = new ReentrantLock();
+	protected final ReentrantLock listenerLock = new ReentrantLock();
 	
 	public ByteBuffer getBuffer() {
 		return buffer;
