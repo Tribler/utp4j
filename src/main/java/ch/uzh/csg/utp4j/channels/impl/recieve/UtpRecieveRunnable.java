@@ -40,7 +40,9 @@ public class UtpRecieveRunnable extends Thread implements Runnable {
 			byte[] buffer = new byte[MAX_UDP_HEADER_LENGTH + MAX_UTP_PACKET_LENGTH];
 			DatagramPacket dgpkt = new DatagramPacket(buffer, buffer.length);
 			try {
+				//the packet will be filled here
 				socket.receive(dgpkt);
+				//hand packet to the queue
 				queueable.recievePacket(dgpkt);
 //				(new UtpPassPacket(dgpkt, queueable)).start();
 
