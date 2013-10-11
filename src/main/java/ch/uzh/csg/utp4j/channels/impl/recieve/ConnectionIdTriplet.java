@@ -6,7 +6,9 @@ import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
 public class ConnectionIdTriplet {
 
 	private UtpSocketChannelImpl channel;
+	//incomming connection ID
 	private long inComming;
+	//outgoing is incomming connection ID + 1 as specified
 	private long outGoing;
 
 	public UtpSocketChannelImpl getChannel() {
