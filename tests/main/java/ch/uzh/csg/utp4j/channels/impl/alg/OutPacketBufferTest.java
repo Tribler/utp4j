@@ -57,7 +57,7 @@ public class OutPacketBufferTest {
 		assertEquals(8*(PAYLOAD_LENGTH + UtpPacketUtils.DEF_HEADER_LENGTH), buffer.getBytesOnfly());
 		
 		// now packet 3 should be triggeret to resend
-		Queue<UtpTimestampedPacketDTO> packetsToResend = buffer.getPacketsToResend();
+		Queue<UtpTimestampedPacketDTO> packetsToResend = buffer.getPacketsToResend(50);
 		assertEquals(1, packetsToResend.size());
 		UtpTimestampedPacketDTO three = packetsToResend.remove();
 		assertEquals(3, three.utpPacket().getSequenceNumber() & 0xFFFF);
@@ -75,7 +75,7 @@ public class OutPacketBufferTest {
 		
 		// 6 should be resend now, because we already resend 3 
 		// for the reason 3 or more packets were acked after it. next resend should be timeout
-		packetsToResend = buffer.getPacketsToResend();
+		packetsToResend = buffer.getPacketsToResend(50);
 		assertEquals(1, packetsToResend.size());
 		UtpTimestampedPacketDTO seven = packetsToResend.remove();
 		
@@ -89,7 +89,7 @@ public class OutPacketBufferTest {
 		assertEquals(4*(PAYLOAD_LENGTH + UtpPacketUtils.DEF_HEADER_LENGTH), buffer.getBytesOnfly());
 		
 		// 7 already triggered an resend because 3 or more packets past it where acked. next resend is when a timeout occures. 
-		packetsToResend = buffer.getPacketsToResend();
+		packetsToResend = buffer.getPacketsToResend(50);
 		assertEquals(0, packetsToResend.size());
 
 		
@@ -102,7 +102,7 @@ public class OutPacketBufferTest {
 		assertEquals(true, buffer.isEmpty());
 			
 		// and nothing to resend
-		packetsToResend = buffer.getPacketsToResend();
+		packetsToResend = buffer.getPacketsToResend(50);
 		assertEquals(true, packetsToResend.isEmpty());
 	}
 	

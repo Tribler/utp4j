@@ -51,21 +51,13 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 					graceFullInterrupt = true;
 					break;
 				}
+				
 				Queue<DatagramPacket> packetsToResend = algorithm.getPacketsToResend();
-				int currentResendBurst = 0;
 				for (DatagramPacket datagramPacket : packetsToResend) {
 					datagramPacket.setSocketAddress(channel.getRemoteAdress());
 					channel.sendPacket(datagramPacket);
-					currentResendBurst++;
-					if (currentResendBurst >= UtpAlgConfiguration.MAX_BURST_SEND) {
-						currentResendBurst = 0;
-						boolean interrupted = !checkForAcks();
-						if (interrupted) {
-							graceFullInterrupt = true;
-							break;
-						}
-					}
 				}
+				
 			} catch (IOException exp) {
 				exp.printStackTrace();
 				graceFullInterrupt = true;
@@ -79,6 +71,10 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 				System.out.println("timed out");
 				exceptionOccured = true;
 			}
+//			if(!checkForAcks()) {
+//				graceFullInterrupt = true;
+//				break;
+//			}
 			while (algorithm.canSendNextPacket() && !exceptionOccured && !graceFullInterrupt && buffer.hasRemaining()) {
 				try {
 					channel.sendPacket(getNextPacket());	

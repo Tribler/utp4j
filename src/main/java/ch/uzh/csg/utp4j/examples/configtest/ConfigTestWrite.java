@@ -46,9 +46,9 @@ public class ConfigTestWrite {
 		ConfigTestPlanReader plan = new ConfigTestPlanReader(testPlan);
 		plan.read();
 		
+		ByteBuffer buffer = ByteBuffer.allocate(150000000);
 		while(plan.hasNext()) {
 			String testRunLogEntry = plan.next();
-			ByteBuffer buffer = ByteBuffer.allocate(150000000);
 			RandomAccessFile file     = new RandomAccessFile(testDataFile, "rw");
 			FileChannel  fileChannel = file.getChannel();
 			int bytesRead = 0;
@@ -86,8 +86,10 @@ public class ConfigTestWrite {
 			file.close();
 			fileChannel.close();
 			chanel.close();
+			buffer.clear();
 			cpuLoad.reset();
-			Thread.sleep(15000);	
+			Thread.sleep(15000);
+			
 		}
 		closeLog();
 		executor.shutdown();

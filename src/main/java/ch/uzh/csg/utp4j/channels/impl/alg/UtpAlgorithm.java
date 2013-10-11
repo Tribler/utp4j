@@ -76,8 +76,7 @@ public class UtpAlgorithm {
 					if (SelectiveAckHeaderExtension.isBitMarked(bitMask[i], j)) {
 						int sackSeqNr = i*8 + j + seqNrToAck;
 						logger.sAck(sackSeqNr);
-						buffer.markPacketAcked(sackSeqNr, timeStampNow);	
-						packetSizeJustAcked = buffer.markPacketAcked(seqNrToAck, timeStampNow);
+						packetSizeJustAcked = buffer.markPacketAcked(sackSeqNr, timeStampNow);
 						if (packetSizeJustAcked > 0) {
 							updateRtt(timeStampNow, sackSeqNr);
 							updateWindow(pair.utpPacket(), timeStampNow, packetSizeJustAcked, pair.utpTimeStamp());
@@ -92,7 +91,7 @@ public class UtpAlgorithm {
 		
 	private void updateRtt(long timestamp, int seqNrToAck) {
 		long sendTimeStamp = buffer.getSendTimeStamp(seqNrToAck);	
-		if (sendTimeStamp != -1) {
+		if (rttUpdateNecessary(sendTimeStamp, seqNrToAck)) {
 			long packetRtt = (timestamp-sendTimeStamp)/1000;;
 			long delta = rtt - packetRtt;
 			rttVar += (Math.abs(delta) - rttVar)/4;
@@ -101,6 +100,11 @@ public class UtpAlgorithm {
 			logger.rttVar(rttVar);
 			logger.rtt(rtt);
 		}
+	}
+
+
+	private boolean rttUpdateNecessary(long sendTimeStamp, int seqNrToAck) {
+		return sendTimeStamp != -1 && buffer.getResendCounter(seqNrToAck) == 0;
 	}
 
 
@@ -180,9 +184,10 @@ public class UtpAlgorithm {
 	public Queue<DatagramPacket> getPacketsToResend() throws SocketException {
 		timeStampNow = timeStamper.timeStamp();
 		Queue<DatagramPacket> queue = new LinkedList<DatagramPacket>();
-		Queue<UtpTimestampedPacketDTO> toResend = buffer.getPacketsToResend();
+		Queue<UtpTimestampedPacketDTO> toResend = buffer.getPacketsToResend(UtpAlgConfiguration.MAX_BURST_SEND);
 		for (UtpTimestampedPacketDTO utpTimestampedPacketDTO : toResend) {
-			queue.add(utpTimestampedPacketDTO.dataGram());			
+			queue.add(utpTimestampedPacketDTO.dataGram());
+			utpTimestampedPacketDTO.incrementResendCounter();
 			if (utpTimestampedPacketDTO.reduceWindow()) {
 				if (reduceWindowNecessary()) {
 					lastTimeWindowReduced = timeStampNow;
@@ -224,7 +229,7 @@ public class UtpAlgorithm {
 	public boolean canSendNextPacket() {
 		if (timeStampNow - lastZeroWindow > getTimeOutMicros() && lastZeroWindow != 0) {
 			System.out.println("Reducing window");
-			maxWindow = MAX_PACKET_SIZE - UtpPacketUtils.DEF_HEADER_LENGTH;
+			maxWindow = MAX_PACKET_SIZE;
 		}
 		boolean windowNotFull = !isWondowFull();
 		boolean burstFull = false;

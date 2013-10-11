@@ -16,7 +16,16 @@ public class UtpTimestampedPacketDTO {
 	private boolean isPacketAcked = false;
 	private boolean reduceWindow;
 	
-	boolean resendBecauseSkipped;
+	private boolean resendBecauseSkipped;
+	private int resendCounter = 0;
+	
+	public void incrementResendCounter() {
+		resendCounter++;
+	}
+	
+	public int getResendCounter() {
+		return resendCounter;
+	}
 	
 	public UtpTimestampedPacketDTO(DatagramPacket p, UtpPacket u, Long s, int utpStamp) {
 		this.timestamp = s;

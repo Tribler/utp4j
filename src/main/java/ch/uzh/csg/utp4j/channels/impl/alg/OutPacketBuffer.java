@@ -122,7 +122,7 @@ public class OutPacketBuffer {
 		buffer.removeAll(toRemove);
 	}
 
-	public Queue<UtpTimestampedPacketDTO> getPacketsToResend() throws SocketException {
+	public Queue<UtpTimestampedPacketDTO> getPacketsToResend(int maxResend) throws SocketException {
 		Queue<UtpTimestampedPacketDTO> unacked = new LinkedList<UtpTimestampedPacketDTO>();
 		for (UtpTimestampedPacketDTO pkt : buffer) {
 			if (!pkt.isPacketAcked()) {
@@ -132,10 +132,12 @@ public class OutPacketBuffer {
 					unackedPkt.incrementAckedAfterMe();
 				}
 			}
+
 		}
 		Queue<UtpTimestampedPacketDTO> toReturn = new LinkedList<UtpTimestampedPacketDTO>();
+		
 		for (UtpTimestampedPacketDTO unackedPkt : unacked) {
-			if (resendRequired(unackedPkt)) {
+			if (resendRequired(unackedPkt) && toReturn.size() <= maxResend) {
 				toReturn.add(unackedPkt);
 				updateResendTimeStamps(unackedPkt);
 			}
@@ -224,6 +226,15 @@ public class OutPacketBuffer {
 	public void setRemoteAdress(SocketAddress addr) {
 		this.addr = addr;
 		
+	}
+
+
+	public int getResendCounter(int seqNrToAck) {
+		UtpTimestampedPacketDTO pkt = findPacket(seqNrToAck);
+		if (pkt != null) {
+			return pkt.getResendCounter();
+		}
+		return 1;
 	}
 
 }
