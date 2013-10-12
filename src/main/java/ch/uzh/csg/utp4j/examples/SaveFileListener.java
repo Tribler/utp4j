@@ -8,11 +8,15 @@ import java.nio.channels.FileChannel;
 
 import ch.uzh.csg.utp4j.channels.futures.UtpReadListener;
 
-public class SaveFileListener implements UtpReadListener {
+public class SaveFileListener extends UtpReadListener {
+	
+	private int file;
+	private volatile boolean append = false;
 	
 	public SaveFileListener(int i, boolean concat) {
 		file = i;
 		this.append = concat;
+		createExtraThread = true;
 	}
 	
 	public SaveFileListener(int i) {
@@ -24,14 +28,10 @@ public class SaveFileListener implements UtpReadListener {
 		this.append = concat;
 	}
 	
-	private int file;
-	private volatile IOException exp;
-	private volatile ByteBuffer byteBuffer;
-	private volatile boolean append = false;
 
 	@Override
-	public void run() {
-		if (exp == null && byteBuffer != null) {
+	public void actionAfterReading() {
+		if (exception == null && byteBuffer != null) {
 			try {
 				byteBuffer.flip();
 				File outFile = new File("testData/gotData_" + file + " .avi");
@@ -47,23 +47,10 @@ public class SaveFileListener implements UtpReadListener {
 				e.printStackTrace();
 			}
 		}
-		if (exp != null ) {
-			exp.printStackTrace();
+		if (exception != null ) {
+			exception.printStackTrace();
 		}
 		
 	}
-
-	@Override
-	public void setByteBuffer(ByteBuffer buffer) {
-		this.byteBuffer = buffer;
-		
-	}
-
-	@Override
-	public void setIOException(IOException exp) {
-		this.exp = exp;
-		
-	}
-
 
 }
