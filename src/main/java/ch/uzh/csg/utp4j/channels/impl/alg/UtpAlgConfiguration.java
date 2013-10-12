@@ -61,7 +61,7 @@ public class UtpAlgConfiguration {
 
 	public volatile static long MICROSECOND_WAIT_BETWEEN_BURSTS = 18000;
 
-	public volatile static long TIME_WAIT_AFTER_FIN_MICROS = 3000000;
+	public volatile static long TIME_WAIT_AFTER_LAST_PACKET = 3000000;
 
 	public volatile static boolean ONLY_POSITIVE_GAIN = false;
 	
@@ -83,7 +83,7 @@ public class UtpAlgConfiguration {
 		toReturn += "MAX_BURST_SEND: " + MAX_BURST_SEND + " ";
 		toReturn += "MIN_SKIP_PACKET_BEFORE_RESEND: " + MIN_SKIP_PACKET_BEFORE_RESEND + " ";
 		toReturn += "MICROSECOND_WAIT_BETWEEN_BURSTS: " + MICROSECOND_WAIT_BETWEEN_BURSTS + " ";
-		toReturn += "TIME_WAIT_AFTER_FIN_MICROS: " + TIME_WAIT_AFTER_FIN_MICROS + " ";
+		toReturn += "TIME_WAIT_AFTER_FIN_MICROS: " + TIME_WAIT_AFTER_LAST_PACKET + " ";
 		toReturn += "ONLY_POSITIVE_GAIN: " + ONLY_POSITIVE_GAIN + " ";
 		toReturn += "DEBUG: " + DEBUG + " ";
 		return toReturn;
