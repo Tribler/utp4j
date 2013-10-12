@@ -29,7 +29,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 	private MicroSecondsTimeStamp timeStamper;
 	private UtpWriteFutureImpl future;
 	
-	private final static Logger log = LoggerFactory.getLogger(UtpWriteFutureImpl.class);
+	private final static Logger log = LoggerFactory.getLogger(UtpWritingRunnable.class);
 	
 	public UtpWritingRunnable(UtpSocketChannelImpl channel, ByteBuffer buffer, 
 			MicroSecondsTimeStamp timeStamper, UtpWriteFutureImpl future) {
