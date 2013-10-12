@@ -28,63 +28,96 @@ import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.UtpPacket;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
 
-
+/**
+ * Interface for a Socket
+ * 
+ * @author Ivan Iljkic (i.iljkic@gmail.com)
+ * 
+ */
 public abstract class UtpSocketChannel implements Closeable, Channel {
-	
 
-	
-
+	/* ID for outgoing packets */
 	private long connectionIdSending;
+
+	/* timestamping utility */
 	protected MicroSecondsTimeStamp timeStamper = new MicroSecondsTimeStamp();
+
+	/* current sequenceNumber */
 	private int sequenceNumber;
+
+	/* ID for incomming packets */
 	private long connectionIdRecieving;
-	protected SocketAddress remoteAddress;
-	protected int ackNumber;
-	protected DatagramSocket dgSocket;
-	//an other thread might not see that we have set a reference
-	protected volatile UtpConnectFutureImpl connectFuture = null;
-	protected final ReentrantLock stateLock = new ReentrantLock();
-	
-	private static final Logger log = LoggerFactory.getLogger(UtpSocketChannel.class);
-	
-	
-	/**
-	 * Current State of the Socket. {@link UtpSocketState}
+
+	/*
+	 * address of the remote sockets which this socket is connected to
 	 */
+	protected SocketAddress remoteAddress;
+
+	/* current ack Number */
+	protected int ackNumber;
+
+	/* reference to the underlying UDP Socket */
+	protected DatagramSocket dgSocket;
+
+	/*
+	 * Connection Future Object - need to hold a reference here i case
+	 * connection the initial connection attempt fails. So it will be updates
+	 * once the reattempts success.
+	 */
+	protected UtpConnectFutureImpl connectFuture = null;
+
+	/* lock for the socket state* */
+	protected final ReentrantLock stateLock = new ReentrantLock();
+
+	/* logger */
+	private static final Logger log = LoggerFactory
+			.getLogger(UtpSocketChannel.class);
+
+	/* Current state of the socket */
 	protected volatile UtpSocketState state = null;
 
-	/**
-	 * Sequencing begin.
-	 */
+	/* Sequencing begin */
 	protected static int DEF_SEQ_START = 1;
 
-	protected UtpSocketChannel() {}
-	
+	/**
+	 * Opens a new Socket and binds it to any available port
+	 * 
+	 * @return {@link UtpSocketChannel}
+	 * @throws IOException
+	 *             see {@link DatagramSocket#DatagramSocket()}
+	 */
 	public static UtpSocketChannel open() throws IOException {
 		UtpSocketChannelImpl c = new UtpSocketChannelImpl();
 		try {
 			c.setDgSocket(new DatagramSocket());
 			c.setState(CLOSED);
 		} catch (IOException exp) {
-			throw new IOException("Could not open UtpSocketChannel: " + exp.getMessage());
+			throw new IOException("Could not open UtpSocketChannel: "
+					+ exp.getMessage());
 		}
 		return c;
 	}
-	
+
+	/**
+	 * Connects this Socket to the specified address
+	 * 
+	 * @param address
+	 * @return {@link UtpConnectFuture}
+	 */
 	public UtpConnectFuture connect(SocketAddress address) {
-		UtpConnectFutureImpl future = null;
 		stateLock.lock();
 		try {
 			try {
-				future = new UtpConnectFutureImpl();
-				connectFuture = future;
+				connectFuture = new UtpConnectFutureImpl();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-				// TODO Auto-generated catch block
+				return null;
 			}
 			try {
-
-				connectImpl(future);
+				/* underlying impl does it's connection setup */
+				connectImpl(connectFuture);
+				
+				/* fill packet, set initial variables and send packet */
 				setRemoteAddress(address);
 				setupConnectionId();
 				setSequenceNumber(DEF_SEQ_START);
@@ -96,36 +129,42 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 				sendPacket(synPacket);
 				setState(SYN_SENT);
 				printState("[Syn send] ");
+
 				incrementSequenceNumber();
 				startConnectionTimeOutCounter(synPacket);
 			} catch (IOException exp) {
 				// DO NOTHING, let's try later with reconnect runnable
-				// setSequenceNumber(DEF_SEQ_START);
-				// setRemoteAddress(null);
-				// abortImpl();
-				// setState(CLOSED);
-				// future.finished(exp);
 			}
 		} finally {
 			stateLock.unlock();
 		}
 
-		return future;
+		return connectFuture;
 	}
-	
+
+	/* signal the implementation to start the reConnect Timer */
 	protected abstract void startConnectionTimeOutCounter(UtpPacket synPacket);
 
+	/* debug method to print id's, seq# and ack# */
 	protected void printState(String msg) {
-		String state = "[ConnID Sending: " + connectionIdSending + "] [ConnID Recv: " + connectionIdRecieving +
-					   "] [SeqNr. " + sequenceNumber + "] [AckNr: " + ackNumber + "]";
+		String state = "[ConnID Sending: " + connectionIdSending + "] "
+				+ "[ConnID Recv: " + connectionIdRecieving + "] [SeqNr. "
+				+ sequenceNumber + "] [AckNr: " + ackNumber + "]";
 		log.debug(msg + state);
-		
+
 	}
 
+	/* implementation to cancel all operations and close the socket */
 	protected abstract void abortImpl();
+
+	/* if implementation must something do during the connection */
 	protected abstract void connectImpl(UtpConnectFutureImpl future);
-	
-	
+
+	/*
+	 * increments current sequence number unlike TCP, uTp is sequencing its
+	 * packets, not bytes but the Seq# is only 16 bits, so overflows are likely
+	 * to happen Seq# == 0 not possible.
+	 */
 	protected void incrementSequenceNumber() {
 		int seqNumber = getSequenceNumber() + 1;
 		if (seqNumber > MAX_USHORT) {
@@ -133,81 +172,110 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 		}
 		setSequenceNumber(seqNumber);
 	}
-	
-	protected void sendPacket(UtpPacket packet) throws IOException {
-		if (packet != null) {
-			byte[] utpPacketBytes = packet.toByteArray();
-			int length = packet.getPacketLength();
-			DatagramPacket pkt = new DatagramPacket(utpPacketBytes, length, getRemoteAdress());
-			sendPacket(pkt);
-		}
-	}
+
+	/*
+	 * general methods to send packets need to be public in the impl, but also
+	 * need to be accessed from this class.
+	 */
+	protected abstract void sendPacket(UtpPacket packet) throws IOException;
 
 	protected abstract void sendPacket(DatagramPacket pkt) throws IOException;
 
+	/*
+	 * sets up connection ids. incomming = rnd outgoing = incomming + 1
+	 */
 	private void setupConnectionId() {
 		Random rnd = new Random();
 		int max = (int) (MAX_USHORT - 1);
 		long rndInt = rnd.nextInt(max);
 		setConnectionIdRecieving(rndInt);
 		setConnectionIdsending(rndInt + 1);
-		
-	}
-	
-	protected abstract UtpWriteFuture writeImpl(ByteBuffer src);
-	
-	
-	public UtpWriteFuture write(ByteBuffer src) {
-		return writeImpl(src);
+
 	}
 
+	/**
+	 * Writes the content of the Buffer to the Channel.
+	 * 
+	 * @param src
+	 *            the buffer, it is expected to be in Reading-Mode.
+	 * @return {@link UtpWriteFuture} which will be updated by the channel
+	 */
+	public abstract UtpWriteFuture write(ByteBuffer src);
 
-	public UtpReadFuture read(ByteBuffer dst) throws IOException {
-		return readImpl(dst);
-	}
+	/**
+	 * Reads the incomming data to the channel.
+	 * 
+	 * @param src
+	 *            the buffer.
+	 * @return {@link UtpWriteFuture} which will be updated by the channel
+	 */
+	public abstract UtpReadFuture read(ByteBuffer dst);
 
-
-	protected abstract UtpReadFuture readImpl(ByteBuffer dst) throws IOException;
-
+	/**
+	 * @return true if the channel is open.
+	 */
 	@Override
 	public boolean isOpen() {
 		return state != CLOSED;
 	}
 
+	/**
+	 * Closes the channel. Also unbinds the socket if the socket is not shared,
+	 * for example with the server.
+	 */
 	@Override
-	public void close() throws IOException {
-		closeImpl();
-		
-	}
-	
-	protected abstract void closeImpl();
-	
+	public abstract void close();
+
+	/**
+	 * @return The Connection ID for Outgoing Packets
+	 */
 	public long getConnectionIdsending() {
 		return connectionIdSending;
 	}
-	
 
+	/* set connection ID for outgoing packets */
 	protected void setConnectionIdsending(long connectionIdSending) {
 		this.connectionIdSending = connectionIdSending;
-		
 	}
 
-	
-	protected UtpPacket createAckPacket(UtpPacket pkt, int timedifference, long advertisedWindow) {
+	/**
+	 * Creates an Ack-Packet.
+	 * 
+	 * @param pkt
+	 *            the packet to be Acked
+	 * @param timedifference
+	 *            Between t1 and t2. t1 beeing the time the remote socket has
+	 *            sent this packet, t2 when this socket recieved the packet.
+	 *            Differences is <b>unsigned</b> and in µs resolution.
+	 * @param advertisedWindow
+	 *            How much space this socket has in its temporary recieve buffer
+	 * @return ack packet
+	 */
+	protected UtpPacket createAckPacket(UtpPacket pkt, int timedifference,
+			long advertisedWindow) {
 		UtpPacket ackPacket = new UtpPacket();
 		setAckNrFromPacketSqNr(pkt);
 		ackPacket.setAckNumber(longToUshort(getAckNumber()));
-		
+
 		ackPacket.setTimestampDifference(timedifference);
 		ackPacket.setTimestamp(timeStamper.utpTimeStamp());
 		ackPacket.setConnectionId(longToUshort(getConnectionIdsending()));
 		ackPacket.setTypeVersion(UtpPacketUtils.ST_STATE);
 		ackPacket.setWindowSize(longToUint(advertisedWindow));
-		return ackPacket;		
+		return ackPacket;
 	}
-	
+
+	/*
+	 * setting the ack current ack number to the sequence number of the packet.
+	 * needs to be accessed from this class and publicly from the
+	 * implementation, hence protected and abstract.
+	 */
 	protected abstract void setAckNrFromPacketSqNr(UtpPacket utpPacket);
-	
+
+	/*
+	 * creates a datapacket, increments seq. number the packet is ready to be
+	 * filled with data.
+	 */
 	protected UtpPacket createDataPacket() {
 		UtpPacket pkt = new UtpPacket();
 		pkt.setSequenceNumber(longToUshort(getSequenceNumber()));
@@ -218,7 +286,13 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 		return pkt;
 	}
 
-
+	/**
+	 * @return true, if this socket is connected to another socket. 
+	 */
+	public boolean isConnected() {
+		return getState() == UtpSocketState.CONNECTED;
+	}
+	
 	public long getConnectionIdRecieving() {
 		return connectionIdRecieving;
 	}
@@ -244,7 +318,7 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 	}
 
 	protected abstract void setRemoteAddress(SocketAddress remoteAdress);
-	
+
 	public SocketAddress getRemoteAdress() {
 		return remoteAddress;
 	}
@@ -259,14 +333,11 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 		return dgSocket;
 	}
 
-	protected abstract void setDgSocket(DatagramSocket dgSocket); 
-	
-	public boolean isConnected() {
-		return getState() == UtpSocketState.CONNECTED;
-	}
+	protected abstract void setDgSocket(DatagramSocket dgSocket);
+
 
 	public abstract boolean isReading();
-	public abstract boolean isWriting();
 
+	public abstract boolean isWriting();
 
 }
