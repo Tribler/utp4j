@@ -39,7 +39,7 @@ public class ConfigTestWrite {
 		MicroSecondsTimeStamp timeStamper = new MicroSecondsTimeStamp();
 		
 		CpuLoadMeasure cpuLoad = new CpuLoadMeasure();
-		executor.scheduleWithFixedDelay(cpuLoad, CPU_LOAD_CHECK_INTERVALL_MILLIS, CPU_LOAD_CHECK_INTERVALL_MILLIS, TimeUnit.MICROSECONDS);
+		executor.scheduleWithFixedDelay(cpuLoad, CPU_LOAD_CHECK_INTERVALL_MILLIS, CPU_LOAD_CHECK_INTERVALL_MILLIS, TimeUnit.MILLISECONDS);
 		
 		openLog();
 		
