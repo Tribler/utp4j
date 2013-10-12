@@ -29,12 +29,13 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	private boolean isRunning;
 	private MicroSecondsTimeStamp timeStamper;
 	private long totalPayloadLength = 0;
-	private long finRecievedTimestamp;
+	private long gotLastPacketTimeStamp;
 	private int lastPayloadLength;
 	private UtpReadFutureImpl readFuture;
 	private long nowtimeStamp;
 	private long lastPackedRecieved;
 	private long startReadingTimeStamp;
+	private boolean gotLastPacket = false;
 	
 	public UtpReadingRunnable(UtpSocketChannelImpl channel, ByteBuffer buff, MicroSecondsTimeStamp timestamp, UtpReadFutureImpl future) {
 		this.channel = channel;
@@ -66,13 +67,14 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		while(continueReading()) {
 			BlockingQueue<UtpTimestampedPacketDTO> queue = channel.getDataGramQueue();
 			try {
-				UtpTimestampedPacketDTO timestampedPair = queue.poll(UtpAlgConfiguration.TIME_WAIT_AFTER_FIN_MICROS/2, TimeUnit.MICROSECONDS);
+				UtpTimestampedPacketDTO timestampedPair = queue.poll(UtpAlgConfiguration.TIME_WAIT_AFTER_LAST_PACKET/2, TimeUnit.MICROSECONDS);
 				nowtimeStamp = timeStamper.timeStamp();
 				if (timestampedPair != null) {
 					lastPackedRecieved = timestampedPair.stamp();
-					if (isFinPacket(timestampedPair)) {
-						channel.setState(UtpSocketState.GOT_FIN);
-						finRecievedTimestamp = timeStamper.timeStamp();
+					if (isLastPacket(timestampedPair)) {
+						gotLastPacket  = true;
+						System.out.println("GOT LAST PACKET");
+						gotLastPacketTimeStamp = timeStamper.timeStamp();
 					}
 					if (isPacketExpected(timestampedPair.utpPacket())) {
 						handleExpectedPacket(timestampedPair);								
@@ -120,8 +122,8 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		return timedOut && connectionReattemptAwaited;
 	}
 
-	private boolean isFinPacket(UtpTimestampedPacketDTO timestampedPair) {
-		return timestampedPair.utpPacket().getTypeVersion() == UtpPacketUtils.ST_FIN;
+	private boolean isLastPacket(UtpTimestampedPacketDTO timestampedPair) {
+		return (timestampedPair.utpPacket().getWindowSize() & 0xFFFFFFFF) == 0;
 	}
 
 	private void handleExpectedPacket(UtpTimestampedPacketDTO timestampedPair) throws IOException {
@@ -147,19 +149,19 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 			//if still has skipped packets, need to selectively ack
 			if (hasSkippedPackets()) {
 				SelectiveAckHeaderExtension headerExtension = skippedBuffer.createHeaderExtension();
-				channel.selectiveAckPacket(timestampedPair.utpPacket(), headerExtension, getTimestampDifference(timestampedPair), getWindowSize());			
+				channel.selectiveAckPacket(timestampedPair.utpPacket(), headerExtension, getTimestampDifference(timestampedPair), getLeftSpaceInBuffer());			
 
 			} else {
-				channel.ackPacket(lastPacket, getTimestampDifference(timestampedPair), getWindowSize());
+				channel.ackPacket(lastPacket, getTimestampDifference(timestampedPair), getLeftSpaceInBuffer());
 			}
 		} else {
-			channel.ackPacket(timestampedPair.utpPacket(), getTimestampDifference(timestampedPair), getWindowSize());
+			channel.ackPacket(timestampedPair.utpPacket(), getTimestampDifference(timestampedPair), getLeftSpaceInBuffer());
 			buffer.put(timestampedPair.utpPacket().getPayload());
 			totalPayloadLength += timestampedPair.utpPacket().getPayload().length;
 		}
 	}
 	
-	private long getWindowSize() throws IOException {
+	private long getLeftSpaceInBuffer() throws IOException {
 		return (skippedBuffer.getFreeSize()) * lastPayloadLength;
 	}
 
@@ -184,9 +186,9 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		if (saneSeqNr && !alreadyAcked) {
 			skippedBuffer.bufferPacket(timestampedPair);
 			SelectiveAckHeaderExtension headerExtension = skippedBuffer.createHeaderExtension();
-			channel.selectiveAckPacket(timestampedPair.utpPacket(), headerExtension, getTimestampDifference(timestampedPair), getWindowSize());	
+			channel.selectiveAckPacket(timestampedPair.utpPacket(), headerExtension, getTimestampDifference(timestampedPair), getLeftSpaceInBuffer());	
 		} else {
-			channel.ackAlreadyAcked(timestampedPair.utpPacket(), getTimestampDifference(timestampedPair), getWindowSize());
+			channel.ackAlreadyAcked(timestampedPair.utpPacket(), getTimestampDifference(timestampedPair), getLeftSpaceInBuffer());
 		}
 	}
 	
@@ -213,16 +215,12 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 
 	private boolean continueReading() {
 		return !graceFullInterrupt && !exceptionOccured 
-				&& (!finRecieved() || hasSkippedPackets() || !timeAwaitedAfterFin());
+				&& (!gotLastPacket || hasSkippedPackets() || !timeAwaitedAfterLastPacket());
 	}
-	
-	private boolean finRecieved() {
-		return channel.getState() == UtpSocketState.GOT_FIN;
-	}
-	
-	private boolean timeAwaitedAfterFin() {
-		return (timeStamper.timeStamp() - finRecievedTimestamp) > UtpAlgConfiguration.TIME_WAIT_AFTER_FIN_MICROS 
-				&& channel.getState() == UtpSocketState.GOT_FIN;
+		
+	private boolean timeAwaitedAfterLastPacket() {
+		return (timeStamper.timeStamp() - gotLastPacketTimeStamp) > UtpAlgConfiguration.TIME_WAIT_AFTER_LAST_PACKET 
+				&& gotLastPacket;
 	}
 
 	public boolean isRunning() {

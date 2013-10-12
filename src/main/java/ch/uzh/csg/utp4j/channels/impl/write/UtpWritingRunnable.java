@@ -13,16 +13,16 @@ import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.UtpPacket;
+import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
 public class UtpWritingRunnable extends Thread implements Runnable {
 	
 	private ByteBuffer buffer;
-	volatile boolean graceFullInterrupt;
+	private volatile boolean graceFullInterrupt;
 	private UtpSocketChannelImpl channel;
 	private boolean isRunning = false;
 	private UtpAlgorithm algorithm;
 	private IOException possibleException = null;
-	private boolean finSend;
 	private MicroSecondsTimeStamp timeStamper;
 	private UtpWriteFutureImpl future;
 	
@@ -86,20 +86,20 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 					break;
 				}
 			}
-			if (!buffer.hasRemaining() && !finSend) {
-				UtpPacket fin = channel.getFinPacket();
-				System.out.println("Sending FIN");
-				try {
-					channel.finalizeConnection(fin);
-					algorithm.markFinOnfly(fin);
-				} catch (IOException exp) {
-					exp.printStackTrace();
-					graceFullInterrupt = true;
-					possibleExp = exp;
-					exceptionOccured = true;
-				}
-				finSend = true;
-			}
+//			if (!buffer.hasRemaining() && !finSend) {
+//				UtpPacket fin = channel.getFinPacket();
+//				System.out.println("Sending FIN");
+//				try {
+//					channel.finalizeConnection(fin);
+//					algorithm.markFinOnfly(fin);
+//				} catch (IOException exp) {
+//					exp.printStackTrace();
+//					graceFullInterrupt = true;
+//					possibleExp = exp;
+//					exceptionOccured = true;
+//				}
+//				finSend = true;
+//			}
 			uptadeFuture();
 			durchgang++;
 			if (durchgang % 1000 == 0) {
@@ -159,13 +159,24 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 
 	private DatagramPacket getNextPacket() throws IOException {
 		int packetSize = algorithm.sizeOfNextPacket();
-		if (buffer.remaining() < packetSize) {
-			packetSize = buffer.remaining();
+		int remainingBytes = buffer.remaining();
+		
+		if (remainingBytes < packetSize) {
+			packetSize = remainingBytes;
 		}
+		
+		
 		byte[] payload = new byte[packetSize];
 		buffer.get(payload);
 		UtpPacket utpPacket = channel.getNextDataPacket();
 		utpPacket.setPayload(payload);
+		
+		int leftInBuffer = buffer.remaining();
+		if (leftInBuffer > UnsignedTypesUtil.MAX_UINT) {
+			leftInBuffer =  (int) (UnsignedTypesUtil.MAX_UINT & 0xFFFFFFFF);
+		}
+		utpPacket.setWindowSize(leftInBuffer);
+		
 		byte[] utpPacketBytes = utpPacket.toByteArray();
 		DatagramPacket udpPacket = new DatagramPacket(utpPacketBytes, utpPacketBytes.length, channel.getRemoteAdress());
 		algorithm.markPacketOnfly(utpPacket, udpPacket);
@@ -191,7 +202,8 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 	
 	private boolean allPacketsAckedSendAndAcked() {
 
-		return finSend && algorithm.areAllPacketsAcked() && !buffer.hasRemaining();
+//		return finSend && algorithm.areAllPacketsAcked() && !buffer.hasRemaining();
+		return algorithm.areAllPacketsAcked() && !buffer.hasRemaining();
 	}
 
 

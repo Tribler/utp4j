@@ -75,7 +75,7 @@ public class ConfigTestPlanReader {
 		UtpAlgConfiguration.MAX_BURST_SEND = Integer.parseInt(splitParameters[8]);
 		UtpAlgConfiguration.MIN_SKIP_PACKET_BEFORE_RESEND = Integer.parseInt(splitParameters[9]);
 		UtpAlgConfiguration.MICROSECOND_WAIT_BETWEEN_BURSTS = Integer.parseInt(splitParameters[10]);
-		UtpAlgConfiguration.TIME_WAIT_AFTER_FIN_MICROS = Integer.parseInt(splitParameters[11]);
+		UtpAlgConfiguration.TIME_WAIT_AFTER_LAST_PACKET = Integer.parseInt(splitParameters[11]);
 		UtpAlgConfiguration.ONLY_POSITIVE_GAIN = toBool(splitParameters[12]);
 		UtpAlgConfiguration.DEBUG = true;
 		return parameters + " -- " + dateString;
