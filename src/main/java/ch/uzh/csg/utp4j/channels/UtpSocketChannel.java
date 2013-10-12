@@ -16,6 +16,9 @@ import java.nio.channels.Channel;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ch.uzh.csg.utp4j.channels.futures.UtpConnectFuture;
 import ch.uzh.csg.utp4j.channels.futures.UtpReadFuture;
 import ch.uzh.csg.utp4j.channels.futures.UtpWriteFuture;
@@ -41,6 +44,8 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 	//an other thread might not see that we have set a reference
 	protected volatile UtpConnectFutureImpl connectFuture = null;
 	protected final ReentrantLock stateLock = new ReentrantLock();
+	
+	private static final Logger log = LoggerFactory.getLogger(UtpSocketChannel.class);
 	
 	
 	/**
@@ -113,7 +118,7 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 	protected void printState(String msg) {
 		String state = "[ConnID Sending: " + connectionIdSending + "] [ConnID Recv: " + connectionIdRecieving +
 					   "] [SeqNr. " + sequenceNumber + "] [AckNr: " + ackNumber + "]";
-		System.out.println(msg + state);
+		log.debug(msg + state);
 		
 	}
 

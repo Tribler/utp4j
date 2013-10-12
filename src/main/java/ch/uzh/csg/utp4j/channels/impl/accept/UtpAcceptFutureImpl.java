@@ -7,8 +7,9 @@ import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
 
 public class UtpAcceptFutureImpl extends UtpAcceptFuture {
 	
+	
 	public UtpAcceptFutureImpl() throws InterruptedException {
-		semaphore.acquire();
+		super();
 	}
 
 	public void synRecieved(UtpSocketChannelImpl utpChannel) {
@@ -16,7 +17,7 @@ public class UtpAcceptFutureImpl extends UtpAcceptFuture {
 		this.isDone = true;
 		semaphore.release();
 
-	}
+	} 
 
 	public void setIOException(IOException e) {
 		this.exception = e;	

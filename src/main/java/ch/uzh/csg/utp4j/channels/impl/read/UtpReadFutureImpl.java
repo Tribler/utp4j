@@ -8,7 +8,7 @@ import ch.uzh.csg.utp4j.channels.futures.UtpReadFuture;
 public class UtpReadFutureImpl extends UtpReadFuture {
 
 	public UtpReadFutureImpl() throws InterruptedException {
-		semaphore.acquire();
+		super(); 
 	}
 
 	public void finished(IOException exp, ByteBuffer buffer) {

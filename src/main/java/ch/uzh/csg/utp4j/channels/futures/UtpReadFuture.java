@@ -5,6 +5,10 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class UtpReadFuture extends UtpBlockableFuture {
 	
+	public UtpReadFuture() throws InterruptedException {
+		super();
+	}
+
 	protected volatile ByteBuffer buffer;
 	protected volatile UtpReadListener listener;
 	protected final ReentrantLock listenerLock = new ReentrantLock();

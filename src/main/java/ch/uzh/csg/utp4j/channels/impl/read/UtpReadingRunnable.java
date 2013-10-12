@@ -6,6 +6,9 @@ import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ch.uzh.csg.utp4j.channels.UtpSocketState;
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
@@ -36,6 +39,8 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	private long lastPackedRecieved;
 	private long startReadingTimeStamp;
 	private boolean gotLastPacket = false;
+	
+	private static final Logger log = LoggerFactory.getLogger(UtpReadingRunnable.class);
 	
 	public UtpReadingRunnable(UtpSocketChannelImpl channel, ByteBuffer buff, MicroSecondsTimeStamp timestamp, UtpReadFutureImpl future) {
 		this.channel = channel;
@@ -73,7 +78,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 					lastPackedRecieved = timestampedPair.stamp();
 					if (isLastPacket(timestampedPair)) {
 						gotLastPacket  = true;
-						System.out.println("GOT LAST PACKET");
+						log.debug("GOT LAST PACKET");
 						gotLastPacketTimeStamp = timeStamper.timeStamp();
 					}
 					if (isPacketExpected(timestampedPair.utpPacket())) {
@@ -84,8 +89,8 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 				} 
 				/*TODO: HOWTOMEASURE RTT HERE?*/
 				if (isTimedOut()) {
-					System.out.println("now: " + nowtimeStamp + " last: " + lastPackedRecieved + " = " + (nowtimeStamp - lastPackedRecieved));
-					System.out.println("now: " + nowtimeStamp + " start: " + startReadingTimeStamp + " = " + (nowtimeStamp - startReadingTimeStamp));
+					log.debug("now: " + nowtimeStamp + " last: " + lastPackedRecieved + " = " + (nowtimeStamp - lastPackedRecieved));
+					log.debug("now: " + nowtimeStamp + " start: " + startReadingTimeStamp + " = " + (nowtimeStamp - startReadingTimeStamp));
 
 					throw new IOException();
 				}
@@ -107,9 +112,9 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		readFuture.finished(exp, buffer);
 		
 		
-		System.out.println("Buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
-		System.out.println("PAYLOAD LENGHT " + totalPayloadLength);
-		System.out.println("READER OUT");
+		log.debug("Buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
+		log.debug("PAYLOAD LENGHT " + totalPayloadLength);
+		log.debug("READER OUT");
 
 		channel.removeReader();
 

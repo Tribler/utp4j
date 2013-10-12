@@ -12,12 +12,18 @@ import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
 import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
+/*Logging*/
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class OutPacketBuffer {
 	
 	private static int size = 3000;
 	private ArrayList<UtpTimestampedPacketDTO> buffer = new ArrayList<UtpTimestampedPacketDTO>(size);
 	private int bytesOnFly = 0;
 	private long resendTimeOutMicros;
+	
+	private final static Logger log = LoggerFactory.getLogger(OutPacketBuffer.class);
 	
 	public long getResendTimeOutMicros() {
 		return resendTimeOutMicros;
@@ -189,7 +195,7 @@ public class OutPacketBuffer {
 		long currentTimestamp = timeStamper.timeStamp();
 		long delta = currentTimestamp - utpTimestampedPacketDTO.stamp();
 //		if (delta > timeOutMicroSec) {
-//			System.out.println("timed out so resending: " + (utpTimestampedPacketDTO.utpPacket().getSequenceNumber() & 0xFFFF));
+//			log.debug("timed out so resending: " + (utpTimestampedPacketDTO.utpPacket().getSequenceNumber() & 0xFFFF));
 //		}
 		return delta > resendTimeOutMicros;
 	}

@@ -13,6 +13,9 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ch.uzh.csg.utp4j.channels.impl.alg.PacketSizeModus;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
 import ch.uzh.csg.utp4j.channels.impl.log.UtpDataLogger;
@@ -24,6 +27,8 @@ public class ConfigTestPlanReader {
 	private int testRun = 0;
 	private String lastParameters;
 	private SimpleDateFormat format = new SimpleDateFormat("dd_MM_hh_mm_ss");
+	
+	private static final Logger log = LoggerFactory.getLogger(ConfigTestPlanReader.class);
 
 	public ConfigTestPlanReader(String fileLocation) {
 		this.fileLocation = fileLocation;
@@ -63,7 +68,7 @@ public class ConfigTestPlanReader {
 		String parameters = testParameters.remove();
 		lastParameters = parameters;
 		String[] splitParameters = parameters.split(";");
-		System.out.println(Arrays.toString(splitParameters));
+		log.debug(Arrays.toString(splitParameters));
 		UtpAlgConfiguration.MINIMUM_TIMEOUT_MILLIS = Integer.parseInt(splitParameters[0]);
 		UtpAlgConfiguration.PACKET_SIZE_MODE = parsePktSizeMode(splitParameters[1]);
 		UtpAlgConfiguration.MAX_PACKET_SIZE = Integer.parseInt(splitParameters[2]);

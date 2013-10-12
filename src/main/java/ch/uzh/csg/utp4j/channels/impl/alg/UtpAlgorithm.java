@@ -6,6 +6,9 @@ import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.channels.impl.log.UtpDataLogger;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
@@ -42,6 +45,8 @@ public class UtpAlgorithm {
 	private long lastTimeWindowReduced;
 	private long timeStampNow;
 	private long lastAckRecieved;
+	
+	private final static Logger log = LoggerFactory.getLogger(UtpAlgorithm.class);
 
 	
 	public UtpAlgorithm(MicroSecondsTimeStamp timestamper, SocketAddress addr) {
@@ -50,7 +55,7 @@ public class UtpAlgorithm {
 		timeStamper = timestamper;
 		buffer = new OutPacketBuffer(timestamper);
 		buffer.setRemoteAdress(addr);
-		System.out.println(UtpAlgConfiguration.getString());
+		log.debug(UtpAlgConfiguration.getString());
 		timeStampNow = timeStamper.timeStamp();
 	}
 
@@ -152,7 +157,7 @@ public class UtpAlgorithm {
 			maxWindow = 0;
 		}
 		
-//		System.out.println("current:max " + currentWindow + ":" + maxWindow);
+//		log.debug("current:max " + currentWindow + ":" + maxWindow);
 		logger.maxWindow(maxWindow);
 		logger.advertisedWindow(advertisedWindowSize);
 		buffer.setResendtimeOutMicros(getEstimatedRttMicros());
@@ -228,7 +233,7 @@ public class UtpAlgorithm {
 	
 	public boolean canSendNextPacket() {
 		if (timeStampNow - lastZeroWindow > getTimeOutMicros() && lastZeroWindow != 0) {
-			System.out.println("Reducing window");
+			log.debug("Reducing window");
 			maxWindow = MAX_PACKET_SIZE;
 		}
 		boolean windowNotFull = !isWondowFull();
@@ -412,7 +417,7 @@ public class UtpAlgorithm {
 
 	public boolean isTimedOut() {
 		if (timeStampNow - lastAckRecieved > getTimeOutMicros()*5 && lastAckRecieved != 0) {
-			System.out.println("TIMED OUT!");
+			log.debug("Timed out!");
 			return true;
 		}
 		return false;

@@ -7,6 +7,9 @@ import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
@@ -25,6 +28,8 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 	private IOException possibleException = null;
 	private MicroSecondsTimeStamp timeStamper;
 	private UtpWriteFutureImpl future;
+	
+	private final static Logger log = LoggerFactory.getLogger(UtpWriteFutureImpl.class);
 	
 	public UtpWritingRunnable(UtpSocketChannelImpl channel, ByteBuffer buffer, 
 			MicroSecondsTimeStamp timeStamper, UtpWriteFutureImpl future) {
@@ -68,7 +73,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 			if (algorithm.isTimedOut()) {
 				graceFullInterrupt = true;
 				possibleExp = new IOException("timed out");
-				System.out.println("timed out");
+				log.debug("timed out");
 				exceptionOccured = true;
 			}
 //			if(!checkForAcks()) {
@@ -88,7 +93,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 			}
 //			if (!buffer.hasRemaining() && !finSend) {
 //				UtpPacket fin = channel.getFinPacket();
-//				System.out.println("Sending FIN");
+//				log.debug("Sending FIN");
 //				try {
 //					channel.finalizeConnection(fin);
 //					algorithm.markFinOnfly(fin);
@@ -103,7 +108,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 			uptadeFuture();
 			durchgang++;
 			if (durchgang % 1000 == 0) {
-				System.out.println("buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
+				log.debug("buffer position: " + buffer.position() + " buffer limit: " + buffer.limit());
 			}
 		}
 
@@ -113,7 +118,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 		isRunning = false;
 		algorithm.end(buffer.position(), !exceptionOccured);
 		future.finished(possibleExp, buffer.position());
-		System.out.println("WRITER OUT");
+		log.debug("WRITER OUT");
 		channel.removeWriter();
 	}
 	

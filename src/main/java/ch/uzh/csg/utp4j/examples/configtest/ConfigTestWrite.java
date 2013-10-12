@@ -13,6 +13,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
 import ch.uzh.csg.utp4j.channels.futures.UtpConnectFuture;
 import ch.uzh.csg.utp4j.channels.futures.UtpWriteFuture;
@@ -26,6 +29,8 @@ public class ConfigTestWrite {
 	private static RandomAccessFile aFile;
 	private static long CPU_LOAD_CHECK_INTERVALL_MILLIS = 50;
 	private static NumberFormat percentFormat = NumberFormat.getPercentInstance(Locale.US);
+	
+	private static final Logger log = LoggerFactory.getLogger(ConfigTestWrite.class);
 
 	/**
 	 * @param args
@@ -52,11 +57,11 @@ public class ConfigTestWrite {
 			RandomAccessFile file     = new RandomAccessFile(testDataFile, "rw");
 			FileChannel  fileChannel = file.getChannel();
 			int bytesRead = 0;
-			System.out.println("start reading from file");
+			log.debug("start reading from file");
 			do {
 				bytesRead = fileChannel.read(buffer);
 			} while(bytesRead != -1);
-			System.out.println("file read");
+			log.debug("file read");
 
 			UtpSocketChannel chanel = UtpSocketChannel.open();
 			int bytesToSend = buffer.position();
@@ -71,16 +76,16 @@ public class ConfigTestWrite {
 				writeFuture.block();
 				if (!writeFuture.isSuccessfull()) {
 					plan.failed();
-					System.out.println("FAILED");
+					log.debug("FAILED");
 				} else {
 					String logEntry = testRunLogEntry + " -- " + calculateRate(bytesToSend, start, timeStamper.timeStamp());
 					logEntry += getCpuLoad(cpuLoad);
-					System.out.println(logEntry);
+					log.debug(logEntry);
 					writeEntry(logEntry + "\n");
 				}
-				System.out.println("writing test done");
+				log.debug("writing test done");
 			} else {
-				System.out.println("FAILED");
+				log.debug("FAILED");
 				plan.failed();
 			}
 			file.close();

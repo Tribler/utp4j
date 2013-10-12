@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
@@ -19,6 +20,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
 import ch.uzh.csg.utp4j.channels.UtpSocketState;
@@ -55,6 +59,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	private ScheduledExecutorService retryConnectionTimeScheduler;
 	private int connectionAttempts = 0;
 	
+	private static final Logger log = LoggerFactory.getLogger(UtpSocketChannelImpl.class);
 	
 	@Override
 	public void recievePacket(DatagramPacket udpPacket) {
@@ -347,7 +352,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	protected void startConnectionTimeOutCounter(UtpPacket synPacket) {
 		retryConnectionTimeScheduler = Executors.newSingleThreadScheduledExecutor();
 		ConnectionTimeOutRunnable runnable = new ConnectionTimeOutRunnable(synPacket, this, stateLock);
-		System.out.println("starting scheduler");
+		log.debug("starting scheduler");
 //		retryConnectionTimeScheduler.schedule(runnable, 2, TimeUnit.SECONDS);
 		retryConnectionTimeScheduler.scheduleWithFixedDelay(runnable, 
 				UtpAlgConfiguration.CONNECTION_ATTEMPT_INTERVALL_MILLIS, 
@@ -355,7 +360,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	}
 
 	public void connectionFailed(IOException exp) {
-		System.out.println("got failing message");
+		log.debug("got failing message");
 		setSequenceNumber(DEF_SEQ_START);
 		setRemoteAddress(null);
 		abortImpl();
@@ -363,6 +368,32 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		retryConnectionTimeScheduler.shutdown();
 		retryConnectionTimeScheduler = null;
 		connectFuture.finished(exp);
+		
+	}
+
+	public void resendSynPacket(UtpPacket synPacket) {
+		stateLock.lock();
+		try {
+			int attempts = getConnectionAttempts();
+			log.debug("attempt: " + attempts);
+			if (getState() == UtpSocketState.SYN_SENT) {
+				try {
+					if (attempts < UtpAlgConfiguration.MAX_CONNECTION_ATTEMPTS) {
+						incrementConnectionAttempts();
+						log.debug("REATTEMPTING CONNECTION");
+						sendPacket(synPacket);
+					} else {
+						connectionFailed(new SocketTimeoutException());
+					}
+				} catch (IOException e) {
+					if (attempts >= UtpAlgConfiguration.MAX_CONNECTION_ATTEMPTS) {
+						connectionFailed(e);
+					} // else ignore, try in next attempt
+				}
+			}
+		} finally {
+			stateLock.unlock();
+		}
 		
 	}
 	

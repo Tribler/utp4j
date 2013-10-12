@@ -12,6 +12,9 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
@@ -25,6 +28,8 @@ public class SkippedPacketBuffer {
 	private int elementCount = 0;
 	private int debug_lastSeqNumber;
 	private int debug_lastPosition;
+	
+	private static final Logger log = LoggerFactory.getLogger(SkippedPacketBuffer.class);
 
 	public void bufferPacket(UtpTimestampedPacketDTO pkt) throws IOException {
 		int sequenceNumber = pkt.utpPacket().getSequenceNumber() & 0xFFFF;
@@ -38,7 +43,7 @@ public class SkippedPacketBuffer {
 		try {
 			buffer[position] = pkt;			
 		} catch (ArrayIndexOutOfBoundsException ioobe) {
-			System.err.println("seq, exp: " + sequenceNumber + " " + expectedSequenceNumber + " ");
+			log.error("seq, exp: " + sequenceNumber + " " + expectedSequenceNumber + " ");
 			ioobe.printStackTrace();
 
 			dumpBuffer("oob: " + ioobe.getMessage());
@@ -155,7 +160,7 @@ public class SkippedPacketBuffer {
 	private void dumpBuffer(String string) throws IOException {
 		if (UtpAlgConfiguration.DEBUG) {
 			
-			System.out.println("dumping buffer");
+			log.debug("dumping buffer");
 			RandomAccessFile aFile = new RandomAccessFile("testData/auto/bufferdump.txt", "rw");
 			FileChannel inChannel = aFile.getChannel();
 			inChannel.truncate(0);
@@ -180,7 +185,7 @@ public class SkippedPacketBuffer {
 					bbuffer.put("\n".getBytes());
 				}
 			}
-			System.out.println(bbuffer.position() + " " + bbuffer.limit());
+			log.debug(bbuffer.position() + " " + bbuffer.limit());
 			bbuffer.flip();
 			while(bbuffer.hasRemaining()) {
 				inChannel.write(bbuffer);

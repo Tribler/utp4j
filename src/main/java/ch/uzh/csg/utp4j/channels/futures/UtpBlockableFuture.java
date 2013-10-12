@@ -8,7 +8,10 @@ public class UtpBlockableFuture {
 	protected volatile boolean isDone;
 	protected volatile IOException exception;
 	protected volatile Semaphore semaphore = new Semaphore(1);
-		
+	
+	public UtpBlockableFuture() throws InterruptedException {
+		semaphore.acquire();
+	}
 	
 	public boolean isSuccessfull() {
 		return exception == null;

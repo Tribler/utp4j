@@ -26,37 +26,8 @@ public class ConnectionTimeOutRunnable implements Runnable {
 
 	@Override
 	public void run() { 
-		//TB: have this method in the regular send method/class in socketchannelimpl
-		lock.lock();
-		try {
-			int attempts = channel.getConnectionAttempts();
-			System.out.println("attempt: " + attempts);
-			if (channel.getState() == UtpSocketState.SYN_SENT) {
-				try {
-					if (attempts < UtpAlgConfiguration.MAX_CONNECTION_ATTEMPTS) {
-						channel.incrementConnectionAttempts();
-						System.out.println("REATTEMPTING CONNECTION");
-						channel.sendPacket(getPacket());
-					} else {
-						channel.connectionFailed(new SocketTimeoutException());
-					}
-				} catch (IOException e) {
-					if (attempts >= UtpAlgConfiguration.MAX_CONNECTION_ATTEMPTS) {
-						channel.connectionFailed(e);
-					} // else ignore, try in next attempt
-				}
-			}
-		} finally {
-			lock.unlock();
-		}
+		channel.resendSynPacket(synPacket);
 	}
 
-	private DatagramPacket getPacket() throws SocketException {
-		byte[] utpPacketBytes = synPacket.toByteArray();
-		int length = synPacket.getPacketLength();
-		DatagramPacket pkt = new DatagramPacket(utpPacketBytes, length,
-				channel.getRemoteAdress());
-		return pkt;
-	}
 
 }

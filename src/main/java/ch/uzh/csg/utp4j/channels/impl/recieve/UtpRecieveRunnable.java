@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 
 
@@ -15,13 +18,15 @@ public class UtpRecieveRunnable extends Thread implements Runnable {
 
 
 	private DatagramSocket socket;
-	private UtpPacketRecievable queueable;
+	private UtpPacketRecievable packetReciever;
 	private boolean graceFullInterrupt = false;
+	
+	private final static Logger log = LoggerFactory.getLogger(UtpRecieveRunnable.class);
 	
 
 	public UtpRecieveRunnable(DatagramSocket socket, UtpPacketRecievable queueable) {
 		this.socket = socket;
-		this.queueable = queueable;
+		this.packetReciever = queueable;
 	}
 		
 	public void graceFullInterrupt() {
@@ -43,19 +48,19 @@ public class UtpRecieveRunnable extends Thread implements Runnable {
 				//the packet will be filled here
 				socket.receive(dgpkt);
 				//hand packet to the queue
-				queueable.recievePacket(dgpkt);
+				packetReciever.recievePacket(dgpkt);
 //				(new UtpPassPacket(dgpkt, queueable)).start();
 
 			} catch (IOException exp) {
 				if (graceFullInterrupt) {
-					System.out.println("socket closing");
+					log.debug("socket closing");
 					break;					
 				} else {
 					exp.printStackTrace();					
 				}
 			}
 		}
-		System.out.println("RECIEVER OUT");
+		log.debug("RECIEVER OUT");
 		
 	}
 

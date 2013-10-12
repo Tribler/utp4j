@@ -33,7 +33,7 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
 			Thread listenRunner = new Thread(getListenRunnable());
 			listenRunner.start();
 			listenRunnerStarted = true;
-		}
+		} 
 		
 		UtpAcceptFutureImpl future;
 		try {

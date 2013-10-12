@@ -7,7 +7,7 @@ import ch.uzh.csg.utp4j.channels.futures.UtpConnectFuture;
 public class UtpConnectFutureImpl extends UtpConnectFuture {
 	
 	public UtpConnectFutureImpl() throws InterruptedException {
-		semaphore.acquire();
+		super();
 	}
 
 	public void finished(IOException exp) {
