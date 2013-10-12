@@ -192,7 +192,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	}
 
 	@Override
-	protected UtpWriteFuture writeImpl(ByteBuffer src) {
+	public UtpWriteFuture write(ByteBuffer src) {
 		UtpWriteFutureImpl future = null;
 		try {
 			future = new UtpWriteFutureImpl();
@@ -219,7 +219,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	}
 
 	@Override
-	protected UtpReadFutureImpl readImpl(ByteBuffer dst) throws IOException {
+	public UtpReadFutureImpl read(ByteBuffer dst) {
 		UtpReadFutureImpl readFuture = null;
 		try {
 			readFuture = new UtpReadFutureImpl();
@@ -264,10 +264,6 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		this.state = state;
 	}
 	
-	public void setTimetamper(MicroSecondsTimeStamp stamp) {
-		this.timeStamper = stamp;
-	}
-
 	public void finalizeConnection(UtpPacket fin) throws IOException {
 		sendPacket(fin);
 		setState(UtpSocketState.FIN_SEND);
@@ -275,7 +271,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 	}
 
 	@Override
-	protected void closeImpl() {
+	public void close() {
 		abortImpl();
 		if (isReading()) {
 			reader.graceFullInterrupt();
@@ -315,6 +311,17 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 			getDgSocket().send(pkt);
 		}
 		
+	}
+	
+	/* general method to send a packet, will be wrapped by a UDP Packet */
+	@Override
+	public void sendPacket(UtpPacket packet) throws IOException {
+		if (packet != null) {
+			byte[] utpPacketBytes = packet.toByteArray();
+			int length = packet.getPacketLength();
+			DatagramPacket pkt = new DatagramPacket(utpPacketBytes, length, getRemoteAdress());
+			sendPacket(pkt);
+		}
 	}
 	
 	@Override
@@ -394,6 +401,11 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements UtpPacketR
 		} finally {
 			stateLock.unlock();
 		}
+		
+	}
+
+	public void setTimetamper(MicroSecondsTimeStamp stamp) {
+		this.timeStamper = stamp;
 		
 	}
 	
