@@ -3,6 +3,8 @@ package ch.uzh.csg.utp4j.data;
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
 
 import java.net.DatagramPacket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -12,12 +14,12 @@ import java.net.DatagramPacket;
  */
 public class UtpPacketUtils {
 	
-	public static final byte VERSION = longToUbyte(16);
+	public static final byte VERSION = longToUbyte(1);
 	public static final byte ST_DATA = (byte) (VERSION | longToUbyte(0));
-	public static final byte ST_FIN = (byte) (VERSION | longToUbyte(1));
-	public static final byte ST_STATE = (byte) (VERSION | longToUbyte(2));
-	public static final byte ST_RESET = (byte) (VERSION | longToUbyte(3));
-	public static final byte ST_SYN = (byte) (VERSION | longToUbyte(4));
+	public static final byte ST_FIN = (byte) (VERSION | longToUbyte(16));
+	public static final byte ST_STATE = (byte) (VERSION | longToUbyte(32));
+	public static final byte ST_RESET = (byte) (VERSION | longToUbyte(48));
+	public static final byte ST_SYN = (byte) (VERSION | longToUbyte(64));
 	
 	public static final byte NO_EXTENSION = longToUbyte(0);
 	public static final byte SELECTIVE_ACK = longToUbyte(1);
@@ -25,6 +27,8 @@ public class UtpPacketUtils {
 	public static final int MAX_UTP_PACKET_LENGTH = 1500;
 	public static final int MAX_UDP_HEADER_LENGTH = 48;
 	public static final int DEF_HEADER_LENGTH = 20;
+	
+	private static final Logger log = LoggerFactory.getLogger(UtpPacketUtils.class);
 	
 	public static byte[] joinByteArray(byte[] array1, byte[] array2) {
 		
@@ -75,7 +79,7 @@ public class UtpPacketUtils {
 		pkt.setFromByteArray(pktb, dgpkt.getLength(), dgpkt.getOffset());
 		return pkt;
 	}
-	
+
 	public static boolean isSynPkt(UtpPacket packet) {
 		
 		if (packet == null) {
