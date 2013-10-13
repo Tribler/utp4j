@@ -15,11 +15,13 @@ import org.slf4j.LoggerFactory;
 public class UtpPacketUtils {
 	
 	public static final byte VERSION = longToUbyte(1);
+
 	public static final byte DATA = (byte) (VERSION | longToUbyte(0));
 	public static final byte FIN = (byte) (VERSION | longToUbyte(16));
 	public static final byte STATE = (byte) (VERSION | longToUbyte(32));
 	public static final byte RESET = (byte) (VERSION | longToUbyte(48));
 	public static final byte SYN = (byte) (VERSION | longToUbyte(64));
+
 	
 	public static final byte NO_EXTENSION = longToUbyte(0);
 	public static final byte SELECTIVE_ACK = longToUbyte(1);
