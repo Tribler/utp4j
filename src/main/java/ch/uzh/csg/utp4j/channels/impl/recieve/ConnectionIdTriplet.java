@@ -26,6 +26,8 @@ public class ConnectionIdTriplet {
 		
 		if (other == null) {
 			return false;
+		} else if (this == other) {
+			return true;
 		} else if (!(other instanceof ConnectionIdTriplet)) {
 			return false;
 		} else {
