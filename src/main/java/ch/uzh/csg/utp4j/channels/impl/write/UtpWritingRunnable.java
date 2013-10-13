@@ -181,7 +181,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 			leftInBuffer =  (int) (UnsignedTypesUtil.MAX_UINT & 0xFFFFFFFF);
 		}
 		utpPacket.setWindowSize(leftInBuffer);
-		
+//		log.debug("Sending Pkt: " + utpPacket.toString());
 		byte[] utpPacketBytes = utpPacket.toByteArray();
 		DatagramPacket udpPacket = new DatagramPacket(utpPacketBytes, utpPacketBytes.length, channel.getRemoteAdress());
 		algorithm.markPacketOnfly(utpPacket, udpPacket);
