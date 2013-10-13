@@ -62,6 +62,7 @@ public class UtpAlgorithm {
 
 	public void ackRecieved(UtpTimestampedPacketDTO pair) {
 		int seqNrToAck = pair.utpPacket().getAckNumber() & 0xFFFF;
+//		log.debug("Recieved ACK " + pair.utpPacket().toString());
 		timeStampNow = timeStamper.timeStamp();
 		lastAckRecieved = timeStampNow;
 		int advertisedWindo = pair.utpPacket().getWindowSize() & 0xFFFFFFFF;
@@ -72,8 +73,9 @@ public class UtpAlgorithm {
 			updateRtt(timeStampNow, seqNrToAck);
 			updateWindow(pair.utpPacket(), timeStampNow, packetSizeJustAcked, pair.utpTimeStamp());
 		} 
-
+		// TODO: With libutp, sometimes null pointer exception -> investigate. 
 		if (pair.utpPacket().getExtensions() != null) {
+			log.debug("utpPacket With Ext: " + pair.utpPacket().toString());
 			SelectiveAckHeaderExtension selAck = findSelectiveAckExtension(pair.utpPacket());
 			byte[] bitMask = selAck.getBitMask();
 			for (int i = 0; i < bitMask.length; i++) {
@@ -192,6 +194,7 @@ public class UtpAlgorithm {
 		Queue<UtpTimestampedPacketDTO> toResend = buffer.getPacketsToResend(UtpAlgConfiguration.MAX_BURST_SEND);
 		for (UtpTimestampedPacketDTO utpTimestampedPacketDTO : toResend) {
 			queue.add(utpTimestampedPacketDTO.dataGram());
+//			log.debug("Resending: " + utpTimestampedPacketDTO.utpPacket().toString() );
 			utpTimestampedPacketDTO.incrementResendCounter();
 			if (utpTimestampedPacketDTO.reduceWindow()) {
 				if (reduceWindowNecessary()) {
