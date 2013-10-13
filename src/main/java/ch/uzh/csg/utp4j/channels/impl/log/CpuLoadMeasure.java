@@ -1,12 +1,8 @@
 package ch.uzh.csg.utp4j.channels.impl.log;
 
 import java.lang.management.ManagementFactory;
-import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.concurrent.Semaphore;
-
-import javax.xml.ws.handler.MessageContext;
 
 import com.sun.management.OperatingSystemMXBean;
 
