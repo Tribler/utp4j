@@ -53,4 +53,6 @@ public abstract class UtpReadListener implements Runnable {
 	}
 	
 	public abstract void actionAfterReading();
+	
+	public abstract String getThreadName();
 }
