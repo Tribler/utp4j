@@ -1,7 +1,7 @@
 package ch.uzh.csg.utp4j.channels;
 
 /**
- * Possible states which a Utp Socket can be in.
+ * Possible states in which a Utp Socket can be.
  * @author Ivan Iljkic (i.iljkic@gmail.com)
  *
  */
@@ -23,7 +23,7 @@ public enum UtpSocketState {
 		CLOSED,
 		
 		/**
-		 * Indicates that a SYN has been recieved but could not acked.
+		 * Indicates that a SYN has been recieved but could not be acked.
 		 */
 		SYN_ACKING_FAILED, 
 		
@@ -36,4 +36,5 @@ public enum UtpSocketState {
 		 * Indicates that a fin was recieved. 
 		 */
 		GOT_FIN,
+
 }
