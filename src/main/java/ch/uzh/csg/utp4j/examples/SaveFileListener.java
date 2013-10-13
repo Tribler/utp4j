@@ -3,7 +3,6 @@ package ch.uzh.csg.utp4j.examples;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import ch.uzh.csg.utp4j.channels.futures.UtpReadListener;
@@ -51,6 +50,11 @@ public class SaveFileListener extends UtpReadListener {
 			exception.printStackTrace();
 		}
 		
+	}
+
+	@Override
+	public String getThreadName() {
+		return "listenerThread";
 	}
 
 }
