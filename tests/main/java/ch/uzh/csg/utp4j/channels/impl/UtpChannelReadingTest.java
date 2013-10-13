@@ -93,27 +93,27 @@ public class UtpChannelReadingTest {
 			
 			
 			// first two packets were acked normally
-			testPacket(three, 3, null, UtpPacketUtils.ST_STATE);
-			testPacket(four, 4, null, UtpPacketUtils.ST_STATE);
+			testPacket(three, 3, null, UtpPacketUtils.STATE);
+			testPacket(four, 4, null, UtpPacketUtils.STATE);
 			
 			// packet six recieved before packet 5: [Ack:4; SACK:6]
 			String selAckSix = "00000001" + "00000000" + "00000000" + "00000000";
-			testPacket(six, 4, selAckSix, UtpPacketUtils.ST_STATE);
+			testPacket(six, 4, selAckSix, UtpPacketUtils.STATE);
 			
 			// packet 8 recieved before packet 5: [Ack: 4; SACK:6,8]
 			String selAckeight = "00000101" + "00000000" + "00000000" + "00000000";
-			testPacket(eight, 4, selAckeight, UtpPacketUtils.ST_STATE);
+			testPacket(eight, 4, selAckeight, UtpPacketUtils.STATE);
 			
 			// packet 5 recieved, so everything recieved up to packet 6: [Ack:6, SACK:8]
 			String selAckfive = "00000001" + "00000000" + "00000000" + "00000000";
-			testPacket(five, 6, selAckfive, UtpPacketUtils.ST_STATE);
+			testPacket(five, 6, selAckfive, UtpPacketUtils.STATE);
 			
 			// packet 9, the fin packet, recieved before packet 6: [Ack: 6, SACK:8,9]
 			String selAckNine = "00000011" + "00000000" + "00000000" + "00000000";
-			testPacket(nine, 6, selAckNine, UtpPacketUtils.ST_STATE);
+			testPacket(nine, 6, selAckNine, UtpPacketUtils.STATE);
 			
 			// everything recieved up till packet 9, means job done: [Ack:9]
-			testPacket(seven, 9, null, UtpPacketUtils.ST_STATE);
+			testPacket(seven, 9, null, UtpPacketUtils.STATE);
 
 			
 			channel.close();
@@ -179,7 +179,7 @@ public class UtpChannelReadingTest {
 	private DatagramPacket finPacket(int i) {
 		UtpPacket utpPacket = new UtpPacket();
 		utpPacket.setSequenceNumber(longToUshort(i));
-		utpPacket.setTypeVersion(UtpPacketUtils.ST_FIN);
+		utpPacket.setTypeVersion(UtpPacketUtils.FIN);
 		byte[] array = utpPacket.toByteArray();
 		DatagramPacket dgPkt = new DatagramPacket(array, array.length);
 		return dgPkt;	
@@ -188,7 +188,7 @@ public class UtpChannelReadingTest {
 	public DatagramPacket createPacket(int seqNumber) {
 		UtpPacket utpPacket = new UtpPacket();
 		utpPacket.setSequenceNumber(longToUshort(seqNumber));
-		utpPacket.setTypeVersion(UtpPacketUtils.ST_DATA);
+		utpPacket.setTypeVersion(UtpPacketUtils.DATA);
 		utpPacket.setPayload(getPayload(seqNumber));
 		byte[] array = utpPacket.toByteArray();
 		DatagramPacket dgPkt = new DatagramPacket(array, array.length);

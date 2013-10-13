@@ -15,10 +15,10 @@ public class UtpPacketTest {
 	@Test
 	public void testHeaderNoExtensionToByteArray() {
 		
-		UtpPacket header = createMaxHeader(UtpPacketUtils.ST_DATA, UtpPacketUtils.NO_EXTENSION);
+		UtpPacket header = createMaxHeader(UtpPacketUtils.DATA, UtpPacketUtils.NO_EXTENSION);
 		byte[] array = header.toByteArray();
 		
-		assertEquals(UtpPacketUtils.ST_DATA, array[0]);
+		assertEquals(UtpPacketUtils.DATA, array[0]);
 		assertEquals(UtpPacketUtils.NO_EXTENSION, array[1]);
 
 		for (int i = 2; i < array.length; i++) {
@@ -33,13 +33,13 @@ public class UtpPacketTest {
 	@Test
 	public void testHeaderSelectiveAckToByteArray() {
 		
-		UtpPacket header = createMaxHeader(UtpPacketUtils.ST_DATA, UtpPacketUtils.SELECTIVE_ACK);
+		UtpPacket header = createMaxHeader(UtpPacketUtils.DATA, UtpPacketUtils.SELECTIVE_ACK);
 		
 		int extensionLength = applySelectiveAck(header, UtpPacketUtils.NO_EXTENSION);
 		
 		byte[] actual = header.toByteArray();
 		
-		assertEquals(UtpPacketUtils.ST_DATA, actual[0]);
+		assertEquals(UtpPacketUtils.DATA, actual[0]);
 		assertEquals(UtpPacketUtils.SELECTIVE_ACK, actual[1]);
 
 		// EXTENSIONLESS HEADER
@@ -66,7 +66,7 @@ public class UtpPacketTest {
 	
 	@Test
 	public void testFromByteArray() {
-		UtpPacket pkt = createMaxHeader(UtpPacketUtils.ST_DATA, UtpPacketUtils.NO_EXTENSION);
+		UtpPacket pkt = createMaxHeader(UtpPacketUtils.DATA, UtpPacketUtils.NO_EXTENSION);
 		UtpPacket fromArrayPkt = new UtpPacket();
 		fromArrayPkt.setFromByteArray(pkt.toByteArray(), 20, 0);
 		

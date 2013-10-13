@@ -1,22 +1,16 @@
 package ch.uzh.csg.utp4j.channels.impl.log;
 
-import java.io.FileNotFoundException;
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.DEBUG;
+
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.lang.management.ManagementFactory;
-
-import ch.uzh.csg.utp4j.channels.impl.alg.OutPacketBuffer;
-import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
-
-import com.sun.management.OperatingSystemMXBean;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.DEBUG;
+import ch.uzh.csg.utp4j.channels.impl.alg.OutPacketBuffer;
 
 public class UtpDataLogger {
 
@@ -30,7 +24,7 @@ public class UtpDataLogger {
 	private double windowFactor;
 	private int gain;
 	private int ackRecieved;
-	private Object sAck;
+	private String sAck;
 	private int maxWindow;
 	private long minimumTimeStamp;
 	private long timeStamp;

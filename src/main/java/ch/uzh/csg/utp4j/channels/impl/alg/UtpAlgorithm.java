@@ -1,5 +1,17 @@
 package ch.uzh.csg.utp4j.channels.impl.alg;
 
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.C_CONTROL_TARGET_MICROS;
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.MAX_BURST_SEND;
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.MAX_CWND_INCREASE_PACKETS_PER_RTT;
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.MAX_PACKET_SIZE;
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.MICROSECOND_WAIT_BETWEEN_BURSTS;
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.MINIMUM_MTU;
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.MINIMUM_TIMEOUT_MILLIS;
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.MIN_PACKET_SIZE;
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.ONLY_POSITIVE_GAIN;
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.PACKET_SIZE_MODE;
+import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.SEND_IN_BURST;
+
 import java.net.DatagramPacket;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -17,7 +29,6 @@ import ch.uzh.csg.utp4j.data.UtpHeaderExtension;
 import ch.uzh.csg.utp4j.data.UtpPacket;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
 import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
-import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.*;
 
 public class UtpAlgorithm {
 
@@ -62,6 +73,7 @@ public class UtpAlgorithm {
 
 	public void ackRecieved(UtpTimestampedPacketDTO pair) {
 		int seqNrToAck = pair.utpPacket().getAckNumber() & 0xFFFF;
+//		log.debug("Recieved ACK " + pair.utpPacket().toString());
 		timeStampNow = timeStamper.timeStamp();
 		lastAckRecieved = timeStampNow;
 		int advertisedWindo = pair.utpPacket().getWindowSize() & 0xFFFFFFFF;
@@ -72,8 +84,9 @@ public class UtpAlgorithm {
 			updateRtt(timeStampNow, seqNrToAck);
 			updateWindow(pair.utpPacket(), timeStampNow, packetSizeJustAcked, pair.utpTimeStamp());
 		} 
-
+		// TODO: With libutp, sometimes null pointer exception -> investigate. 
 		if (pair.utpPacket().getExtensions() != null) {
+			log.debug("utpPacket With Ext: " + pair.utpPacket().toString());
 			SelectiveAckHeaderExtension selAck = findSelectiveAckExtension(pair.utpPacket());
 			byte[] bitMask = selAck.getBitMask();
 			for (int i = 0; i < bitMask.length; i++) {
@@ -97,7 +110,7 @@ public class UtpAlgorithm {
 	private void updateRtt(long timestamp, int seqNrToAck) {
 		long sendTimeStamp = buffer.getSendTimeStamp(seqNrToAck);	
 		if (rttUpdateNecessary(sendTimeStamp, seqNrToAck)) {
-			long packetRtt = (timestamp-sendTimeStamp)/1000;;
+			long packetRtt = (timestamp-sendTimeStamp)/1000;
 			long delta = rtt - packetRtt;
 			rttVar += (Math.abs(delta) - rttVar)/4;
 			rtt += (packetRtt - rtt)/8;
@@ -192,6 +205,7 @@ public class UtpAlgorithm {
 		Queue<UtpTimestampedPacketDTO> toResend = buffer.getPacketsToResend(UtpAlgConfiguration.MAX_BURST_SEND);
 		for (UtpTimestampedPacketDTO utpTimestampedPacketDTO : toResend) {
 			queue.add(utpTimestampedPacketDTO.dataGram());
+//			log.debug("Resending: " + utpTimestampedPacketDTO.utpPacket().toString() );
 			utpTimestampedPacketDTO.incrementResendCounter();
 			if (utpTimestampedPacketDTO.reduceWindow()) {
 				if (reduceWindowNecessary()) {
@@ -357,7 +371,7 @@ public class UtpAlgorithm {
 		
 		StringBuilder buf = new StringBuilder();
 		for (int i = 0; (i + result.length()) < length; i++) {
-			buf.append("0");
+			buf.append('0');
 		}
 		buf.append(result);
 		return buf.toString();

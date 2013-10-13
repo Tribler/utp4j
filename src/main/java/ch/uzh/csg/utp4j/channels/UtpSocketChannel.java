@@ -3,22 +3,20 @@ package ch.uzh.csg.utp4j.channels;
 import static ch.uzh.csg.utp4j.channels.UtpSocketState.CLOSED;
 import static ch.uzh.csg.utp4j.channels.UtpSocketState.SYN_SENT;
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_USHORT;
-import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUint;
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channel;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.uzh.csg.utp4j.channels.futures.UtpCloseFuture;
 import ch.uzh.csg.utp4j.channels.futures.UtpConnectFuture;
 import ch.uzh.csg.utp4j.channels.futures.UtpReadFuture;
 import ch.uzh.csg.utp4j.channels.futures.UtpWriteFuture;
@@ -34,7 +32,7 @@ import ch.uzh.csg.utp4j.data.UtpPacketUtils;
  * @author Ivan Iljkic (i.iljkic@gmail.com)
  * 
  */
-public abstract class UtpSocketChannel implements Closeable, Channel {
+public abstract class UtpSocketChannel {
 
 	/* ID for outgoing packets */
 	private long connectionIdSending;
@@ -142,6 +140,80 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 		return connectFuture;
 	}
 
+	/**
+	 * Writes the content of the Buffer to the Channel.
+	 * 
+	 * @param src
+	 *            the buffer, it is expected to be in Reading-Mode.
+	 * @return {@link UtpWriteFuture} which will be updated by the channel
+	 */
+	public abstract UtpWriteFuture write(ByteBuffer src);
+	
+	/**
+	 * Reads the incomming data to the channel.
+	 * 
+	 * @param src
+	 *            the buffer.
+	 * @return {@link UtpWriteFuture} which will be updated by the channel
+	 */
+	public abstract UtpReadFuture read(ByteBuffer dst);
+	
+	
+	/**
+	 * Closes the channel. Also unbinds the socket if the socket is not shared,
+	 * for example with the server.
+	 */
+	public abstract UtpCloseFuture close();
+
+	/**
+	 * @return The Connection ID for Outgoing Packets
+	 */
+	public long getConnectionIdsending() {
+		return connectionIdSending;
+	}
+	
+	/**
+	 * @return true if the channel is open.
+	 */
+	public boolean isOpen() {
+		return state != CLOSED;
+	}
+	
+	public abstract boolean isReading();
+
+	public abstract boolean isWriting();
+	
+	/**
+	 * @return true, if this socket is connected to another socket. 
+	 */
+	public boolean isConnected() {
+		return getState() == UtpSocketState.CONNECTED;
+	}
+	
+	public long getConnectionIdRecieving() {
+		return connectionIdRecieving;
+	}
+	
+	public UtpSocketState getState() {
+		return state;
+	}
+	
+	public SocketAddress getRemoteAdress() {
+		return remoteAddress;
+	}
+
+	public int getAckNumber() {
+		return ackNumber;
+	}
+	
+	public int getSequenceNumber() {
+		return sequenceNumber;
+	}
+	
+	public DatagramSocket getDgSocket() {
+		return dgSocket;
+	}
+	
 	/* signal the implementation to start the reConnect Timer */
 	protected abstract void startConnectionTimeOutCounter(UtpPacket synPacket);
 
@@ -153,7 +225,7 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 		log.debug(msg + state);
 
 	}
-
+	
 	/* implementation to cancel all operations and close the socket */
 	protected abstract void abortImpl();
 
@@ -193,45 +265,6 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 
 	}
 
-	/**
-	 * Writes the content of the Buffer to the Channel.
-	 * 
-	 * @param src
-	 *            the buffer, it is expected to be in Reading-Mode.
-	 * @return {@link UtpWriteFuture} which will be updated by the channel
-	 */
-	public abstract UtpWriteFuture write(ByteBuffer src);
-
-	/**
-	 * Reads the incomming data to the channel.
-	 * 
-	 * @param src
-	 *            the buffer.
-	 * @return {@link UtpWriteFuture} which will be updated by the channel
-	 */
-	public abstract UtpReadFuture read(ByteBuffer dst);
-
-	/**
-	 * @return true if the channel is open.
-	 */
-	@Override
-	public boolean isOpen() {
-		return state != CLOSED;
-	}
-
-	/**
-	 * Closes the channel. Also unbinds the socket if the socket is not shared,
-	 * for example with the server.
-	 */
-	@Override
-	public abstract void close();
-
-	/**
-	 * @return The Connection ID for Outgoing Packets
-	 */
-	public long getConnectionIdsending() {
-		return connectionIdSending;
-	}
 
 	/* set connection ID for outgoing packets */
 	protected void setConnectionIdsending(long connectionIdSending) {
@@ -251,19 +284,8 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 	 *            How much space this socket has in its temporary recieve buffer
 	 * @return ack packet
 	 */
-	protected UtpPacket createAckPacket(UtpPacket pkt, int timedifference,
-			long advertisedWindow) {
-		UtpPacket ackPacket = new UtpPacket();
-		setAckNrFromPacketSqNr(pkt);
-		ackPacket.setAckNumber(longToUshort(getAckNumber()));
-
-		ackPacket.setTimestampDifference(timedifference);
-		ackPacket.setTimestamp(timeStamper.utpTimeStamp());
-		ackPacket.setConnectionId(longToUshort(getConnectionIdsending()));
-		ackPacket.setTypeVersion(UtpPacketUtils.ST_STATE);
-		ackPacket.setWindowSize(longToUint(advertisedWindow));
-		return ackPacket;
-	}
+	protected abstract UtpPacket createAckPacket(UtpPacket pkt, int timedifference,
+			long advertisedWindow);
 
 	/*
 	 * setting the ack current ack number to the sequence number of the packet.
@@ -276,42 +298,16 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 	 * creates a datapacket, increments seq. number the packet is ready to be
 	 * filled with data.
 	 */
-	protected UtpPacket createDataPacket() {
-		UtpPacket pkt = new UtpPacket();
-		pkt.setSequenceNumber(longToUshort(getSequenceNumber()));
-		incrementSequenceNumber();
-		pkt.setAckNumber(longToUshort(getAckNumber()));
-		pkt.setConnectionId(longToUshort(getConnectionIdsending()));
-		pkt.setTimestamp(timeStamper.utpTimeStamp());
-		return pkt;
-	}
-
-	/**
-	 * @return true, if this socket is connected to another socket. 
-	 */
-	public boolean isConnected() {
-		return getState() == UtpSocketState.CONNECTED;
-	}
-	
-	public long getConnectionIdRecieving() {
-		return connectionIdRecieving;
-	}
+	protected abstract UtpPacket createDataPacket();
 
 	protected void setConnectionIdRecieving(long connectionIdRecieving) {
 		this.connectionIdRecieving = connectionIdRecieving;
-	}
-
-	public UtpSocketState getState() {
-		return state;
 	}
 
 	protected void setState(UtpSocketState state) {
 		this.state = state;
 	}
 
-	public int getSequenceNumber() {
-		return sequenceNumber;
-	}
 
 	protected void setSequenceNumber(int sequenceNumber) {
 		this.sequenceNumber = sequenceNumber;
@@ -319,25 +315,8 @@ public abstract class UtpSocketChannel implements Closeable, Channel {
 
 	protected abstract void setRemoteAddress(SocketAddress remoteAdress);
 
-	public SocketAddress getRemoteAdress() {
-		return remoteAddress;
-	}
-
-	public int getAckNumber() {
-		return ackNumber;
-	}
-
 	protected abstract void setAckNumber(int ackNumber);
 
-	public DatagramSocket getDgSocket() {
-		return dgSocket;
-	}
-
 	protected abstract void setDgSocket(DatagramSocket dgSocket);
-
-
-	public abstract boolean isReading();
-
-	public abstract boolean isWriting();
 
 }

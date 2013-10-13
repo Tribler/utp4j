@@ -1,10 +1,10 @@
 package ch.uzh.csg.utp4j.data.bytes;
 
-import static ch.uzh.csg.utp4j.data.UtpPacketUtils.ST_DATA;
-import static ch.uzh.csg.utp4j.data.UtpPacketUtils.ST_FIN;
-import static ch.uzh.csg.utp4j.data.UtpPacketUtils.ST_RESET;
-import static ch.uzh.csg.utp4j.data.UtpPacketUtils.ST_STATE;
-import static ch.uzh.csg.utp4j.data.UtpPacketUtils.ST_SYN;
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.DATA;
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.FIN;
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.RESET;
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.STATE;
+import static ch.uzh.csg.utp4j.data.UtpPacketUtils.SYN;
 import static ch.uzh.csg.utp4j.data.UtpPacketUtils.joinByteArray;
 import static org.junit.Assert.assertEquals;
 
@@ -19,18 +19,17 @@ public class UtpPacketUtilsTest {
 	 */
 	@Test
 	public void testTypeAndVersionByte() {
-		String type0excpected = "10000";
+		String type0excpected = "1";
 		String type1excpected = "10001";
-		String type2excpected = "10010";
-		String type3excpected = "10011";
-		String type4excpected = "10100";
-		int lengthExpected = type1excpected.length();
+		String type2excpected = "100001";
+		String type3excpected = "110001";
+		String type4excpected = "1000001";
 		
-		String actual0 = toBinaryString(ST_DATA, lengthExpected);
-		String actual1 = toBinaryString(ST_FIN, lengthExpected);
-		String actual2 = toBinaryString(ST_STATE, lengthExpected);
-		String actual3 = toBinaryString(ST_RESET, lengthExpected);
-		String actual4 = toBinaryString(ST_SYN, lengthExpected);
+		String actual0 = toBinaryString(DATA, type0excpected.length());
+		String actual1 = toBinaryString(FIN, type1excpected.length());
+		String actual2 = toBinaryString(STATE, type2excpected.length());
+		String actual3 = toBinaryString(RESET, type3excpected.length());
+		String actual4 = toBinaryString(SYN,  type4excpected.length());
 		
 		assertEquals(type0excpected, actual0);
 		assertEquals(type1excpected, actual1);

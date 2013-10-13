@@ -22,7 +22,7 @@ public class UtpReadFutureImpl extends UtpReadFuture {
 				listener.setByteBuffer(buffer);
 				listener.setIOException(exp);
 				if (listener.createExtraThread()) {
-					Thread listenerThread = new Thread(listener);
+					Thread listenerThread = new Thread(listener, listener.getThreadName());
 					listenerThread.start();
 				} else {
 					listener.run();

@@ -11,7 +11,6 @@ import ch.uzh.csg.utp4j.channels.UtpServerSocketChannel;
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
 import ch.uzh.csg.utp4j.channels.futures.UtpAcceptFuture;
 import ch.uzh.csg.utp4j.channels.futures.UtpReadFuture;
-import ch.uzh.csg.utp4j.examples.SaveFileListener;
 
 public class ConfigTestRead {
 	

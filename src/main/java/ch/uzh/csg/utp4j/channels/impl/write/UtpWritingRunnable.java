@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
-import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.UtpPacket;
@@ -181,7 +180,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 			leftInBuffer =  (int) (UnsignedTypesUtil.MAX_UINT & 0xFFFFFFFF);
 		}
 		utpPacket.setWindowSize(leftInBuffer);
-		
+//		log.debug("Sending Pkt: " + utpPacket.toString());
 		byte[] utpPacketBytes = utpPacket.toByteArray();
 		DatagramPacket udpPacket = new DatagramPacket(utpPacketBytes, utpPacketBytes.length, channel.getRemoteAdress());
 		algorithm.markPacketOnfly(utpPacket, udpPacket);

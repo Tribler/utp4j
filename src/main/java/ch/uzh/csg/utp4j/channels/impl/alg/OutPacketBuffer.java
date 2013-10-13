@@ -65,6 +65,13 @@ public class OutPacketBuffer {
 					bytesJustAcked = payloadLength + UtpPacketUtils.DEF_HEADER_LENGTH;					
 				}
 				pkt.setPacketAcked(true);
+				for (UtpTimestampedPacketDTO toAck : buffer) {
+					if ((toAck.utpPacket().getSequenceNumber() & 0xFFFF) == seqNrToAck) {
+						break;
+					} else {
+						toAck.setPacketAcked(true);
+					}
+				}
 			} else {
 				System.err.println("ERROR FOUND WRONG SEQ NR: " + seqNrToAck + " but returned " + (pkt.utpPacket().getSequenceNumber() & 0xFFFF));
 			}

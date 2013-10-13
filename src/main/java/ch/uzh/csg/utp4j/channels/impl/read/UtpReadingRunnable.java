@@ -9,15 +9,12 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.uzh.csg.utp4j.channels.UtpSocketState;
 import ch.uzh.csg.utp4j.channels.impl.UtpSocketChannelImpl;
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
-import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
 import ch.uzh.csg.utp4j.data.UtpPacket;
-import ch.uzh.csg.utp4j.data.UtpPacketUtils;
 import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
 public class UtpReadingRunnable extends Thread implements Runnable {
@@ -87,7 +84,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 						handleUnexpectedPacket(timestampedPair);
 					}												
 				} 
-				/*TODO: HOWTOMEASURE RTT HERE?*/
+				/*TODO: How to measure Rtt here for dynamic timeout limit?*/
 				if (isTimedOut()) {
 					log.debug("now: " + nowtimeStamp + " last: " + lastPackedRecieved + " = " + (nowtimeStamp - lastPackedRecieved));
 					log.debug("now: " + nowtimeStamp + " start: " + startReadingTimeStamp + " = " + (nowtimeStamp - startReadingTimeStamp));
@@ -122,12 +119,16 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	
 
 	private boolean isTimedOut() {
-		boolean timedOut = nowtimeStamp - lastPackedRecieved >= 5000000;
+		/* time out after 10sec, when eof not reached */
+		boolean timedOut = nowtimeStamp - lastPackedRecieved >= 10000000;
+		/* but if remote socket has not recieved synack yet, he will try to reconnect
+		 * await that aswell */
 		boolean connectionReattemptAwaited = nowtimeStamp - startReadingTimeStamp >= 10000000;
 		return timedOut && connectionReattemptAwaited;
 	}
 
 	private boolean isLastPacket(UtpTimestampedPacketDTO timestampedPair) {
+//		log.debug("WindowSize: " + (timestampedPair.utpPacket().getWindowSize() & 0xFFFFFFFF));
 		return (timestampedPair.utpPacket().getWindowSize() & 0xFFFFFFFF) == 0;
 	}
 
@@ -166,7 +167,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		}
 	}
 	
-	private long getLeftSpaceInBuffer() throws IOException {
+	public long getLeftSpaceInBuffer() throws IOException {
 		return (skippedBuffer.getFreeSize()) * lastPayloadLength;
 	}
 
@@ -239,5 +240,4 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	public void setTimestamp(MicroSecondsTimeStamp timestamp) {
 		this.timeStamper = timestamp;
 	}
-
 }

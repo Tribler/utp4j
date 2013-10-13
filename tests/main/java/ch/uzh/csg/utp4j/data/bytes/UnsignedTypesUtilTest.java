@@ -78,7 +78,7 @@ public class UnsignedTypesUtilTest {
 			@SuppressWarnings("unused")
 			String uShortNegativeString = toBinaryString(longToUshort(-5L));
 			fail("Expected SignedNumberException, but none was thrown.");
-		} catch (SignedNumberException exp) {};
+		} catch (SignedNumberException exp) {}
 		
 		try {
 			@SuppressWarnings("unused")
@@ -107,7 +107,7 @@ public class UnsignedTypesUtilTest {
 			@SuppressWarnings("unused")
 			String uIntNegativeString = toBinaryString(longToUint(-5L));
 			fail("Expected SignedNumberException, but none was thrown.");
-		} catch (SignedNumberException exp) {};
+		} catch (SignedNumberException exp) {}
 		
 		try {
 			@SuppressWarnings("unused")
