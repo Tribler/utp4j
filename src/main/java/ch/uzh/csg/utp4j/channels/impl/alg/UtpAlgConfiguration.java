@@ -11,6 +11,11 @@ public class UtpAlgConfiguration {
 	 */
 
 	/**
+	 * Auto ack every packet that is smaller than ACK_NR from ack packet. 
+	 * Some Implementations like libutp do this. 
+	 */
+	public static boolean AUTO_ACK_SMALLER_THAN_ACK_NUMBER = false;
+	/**
 	 * if oldest mindelay sample is older than that, update it. 
 	 */
 	public static long MINIMUM_DIFFERENCE_TIMESTAMP_MICROSEC = 120000000L;
@@ -75,6 +80,7 @@ public class UtpAlgConfiguration {
 	public volatile static boolean ONLY_POSITIVE_GAIN = false;
 	
 	public volatile static boolean DEBUG = false;
+	
 
 	/**
 	 * @return information about the algorithm. This is only used for debugging 

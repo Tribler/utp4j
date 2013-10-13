@@ -61,14 +61,13 @@ public class UtpChannelReadingTest {
 		ArgumentCaptor<DatagramPacket> ackOne = ArgumentCaptor.forClass(DatagramPacket.class);
 
 		try {
-			// order of recieving the data packets -> 3,4,6,8,5,9 (fin), 7
+			// order of recieving the data packets -> 3,4,6,8,5, 7
 			channel.recievePacket(createPacket(3)); // ack 3
 			channel.recievePacket(createPacket(4)); // ack 4
 			channel.recievePacket(createPacket(6)); // ack 4, Sack 6 -> 00000001
 			channel.recievePacket(createPacket(8)); // ack 4, Sack 6, 8 -> 00000101
 			channel.recievePacket(createPacket(5)); // ack 6, sack 8 -> 00000001
-			channel.recievePacket(finPacket(9));    // ack 6, sack 8,9 -> 00000011
-			channel.recievePacket(createPacket(7)); // ack 9
+			channel.recievePacket(createPacket(7)); // ack 8
 
 			// allocating reading buffer and start test.
 			ByteBuffer buffer = ByteBuffer.allocate(30000);
@@ -77,8 +76,8 @@ public class UtpChannelReadingTest {
 			// wait for read to finish
 			Thread.sleep(1000);
 			
-			// verify 7 ack packets where send and capture them
-			verify(socket, times(7)).send(ackOne.capture());
+			// verify 6 ack packets where send and capture them
+			verify(socket, times(6)).send(ackOne.capture());
 			List<DatagramPacket> allValues = ackOne.getAllValues();
 			Iterator<DatagramPacket> iterator = allValues.iterator();
 			
@@ -88,7 +87,6 @@ public class UtpChannelReadingTest {
 			UtpPacket six = UtpPacketUtils.extractUtpPacket(iterator.next());
 			UtpPacket eight = UtpPacketUtils.extractUtpPacket(iterator.next());
 			UtpPacket five = UtpPacketUtils.extractUtpPacket(iterator.next());
-			UtpPacket nine = UtpPacketUtils.extractUtpPacket(iterator.next());
 			UtpPacket seven = UtpPacketUtils.extractUtpPacket(iterator.next());
 			
 			
@@ -108,12 +106,8 @@ public class UtpChannelReadingTest {
 			String selAckfive = "00000001" + "00000000" + "00000000" + "00000000";
 			testPacket(five, 6, selAckfive, UtpPacketUtils.STATE);
 			
-			// packet 9, the fin packet, recieved before packet 6: [Ack: 6, SACK:8,9]
-			String selAckNine = "00000011" + "00000000" + "00000000" + "00000000";
-			testPacket(nine, 6, selAckNine, UtpPacketUtils.STATE);
-			
-			// everything recieved up till packet 9, means job done: [Ack:9]
-			testPacket(seven, 9, null, UtpPacketUtils.STATE);
+			// everything recieved up till packet 8, means job done: [Ack:8]
+			testPacket(seven, 8, null, UtpPacketUtils.STATE);
 
 			
 			channel.close();
@@ -176,20 +170,12 @@ public class UtpChannelReadingTest {
 		
 	}
 
-	private DatagramPacket finPacket(int i) {
-		UtpPacket utpPacket = new UtpPacket();
-		utpPacket.setSequenceNumber(longToUshort(i));
-		utpPacket.setTypeVersion(UtpPacketUtils.FIN);
-		byte[] array = utpPacket.toByteArray();
-		DatagramPacket dgPkt = new DatagramPacket(array, array.length);
-		return dgPkt;	
-	}
-
 	public DatagramPacket createPacket(int seqNumber) {
 		UtpPacket utpPacket = new UtpPacket();
 		utpPacket.setSequenceNumber(longToUshort(seqNumber));
 		utpPacket.setTypeVersion(UtpPacketUtils.DATA);
 		utpPacket.setPayload(getPayload(seqNumber));
+		utpPacket.setWindowSize(1);
 		byte[] array = utpPacket.toByteArray();
 		DatagramPacket dgPkt = new DatagramPacket(array, array.length);
 		return dgPkt;

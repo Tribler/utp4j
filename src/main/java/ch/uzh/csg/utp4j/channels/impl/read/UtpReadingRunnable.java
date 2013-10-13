@@ -72,24 +72,27 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 				UtpTimestampedPacketDTO timestampedPair = queue.poll(UtpAlgConfiguration.TIME_WAIT_AFTER_LAST_PACKET/2, TimeUnit.MICROSECONDS);
 				nowtimeStamp = timeStamper.timeStamp();
 				if (timestampedPair != null) {
+					log.debug("Seq: " + (timestampedPair.utpPacket().getSequenceNumber() & 0xFFFF));
 					lastPackedRecieved = timestampedPair.stamp();
 					if (isLastPacket(timestampedPair)) {
-						gotLastPacket  = true;
-						log.debug("GOT LAST PACKET");
-						gotLastPacketTimeStamp = timeStamper.timeStamp();
+						prepareToEndReading();
 					}
 					if (isPacketExpected(timestampedPair.utpPacket())) {
 						handleExpectedPacket(timestampedPair);								
 					} else {
 						handleUnexpectedPacket(timestampedPair);
 					}												
-				} 
+				}
+				
 				/*TODO: How to measure Rtt here for dynamic timeout limit?*/
 				if (isTimedOut()) {
-					log.debug("now: " + nowtimeStamp + " last: " + lastPackedRecieved + " = " + (nowtimeStamp - lastPackedRecieved));
-					log.debug("now: " + nowtimeStamp + " start: " + startReadingTimeStamp + " = " + (nowtimeStamp - startReadingTimeStamp));
-
-					throw new IOException();
+					if (!hasSkippedPackets()) {
+						prepareToEndReading();							
+					} else {
+						log.debug("now: " + nowtimeStamp + " last: " + lastPackedRecieved + " = " + (nowtimeStamp - lastPackedRecieved));
+						log.debug("now: " + nowtimeStamp + " start: " + startReadingTimeStamp + " = " + (nowtimeStamp - startReadingTimeStamp));
+						throw new IOException();						
+					}
 				}
 					
 			} catch (IOException ioe) {
@@ -118,12 +121,18 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	}
 	
 
+	private void prepareToEndReading() {
+		gotLastPacket  = true;
+		log.debug("GOT LAST PACKET");
+		gotLastPacketTimeStamp = timeStamper.timeStamp();
+	}
+
 	private boolean isTimedOut() {
 		/* time out after 10sec, when eof not reached */
-		boolean timedOut = nowtimeStamp - lastPackedRecieved >= 10000000;
+		boolean timedOut = nowtimeStamp - lastPackedRecieved >= 4000000;
 		/* but if remote socket has not recieved synack yet, he will try to reconnect
 		 * await that aswell */
-		boolean connectionReattemptAwaited = nowtimeStamp - startReadingTimeStamp >= 10000000;
+		boolean connectionReattemptAwaited = nowtimeStamp - startReadingTimeStamp >= 4000000;
 		return timedOut && connectionReattemptAwaited;
 	}
 
@@ -182,13 +191,13 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		if (skippedBuffer.isEmpty()) {
 			skippedBuffer.setExpectedSequenceNumber(expected);
 		}
-		boolean alreadyAcked = expected > seqNr || seqNr - expected > PACKET_DIFF_WARP;
-		
-		boolean saneSeqNr = expected == skippedBuffer.getExpectedSequenceNumber();
 		//TODO: wrapping seq nr: expected can be 5 e.g.
 		// but buffer can recieve 65xxx, which already has been acked, since seq numbers wrapped. 
 		// current implementation puts this wrongly into the buffer. it should go in the else block
 		// possible fix: alreadyAcked = expected > seqNr || seqNr - expected > CONSTANT;
+		boolean alreadyAcked = expected > seqNr || seqNr - expected > PACKET_DIFF_WARP;
+		
+		boolean saneSeqNr = expected == skippedBuffer.getExpectedSequenceNumber();
 		if (saneSeqNr && !alreadyAcked) {
 			skippedBuffer.bufferPacket(timestampedPair);
 			SelectiveAckHeaderExtension headerExtension = skippedBuffer.createHeaderExtension();
