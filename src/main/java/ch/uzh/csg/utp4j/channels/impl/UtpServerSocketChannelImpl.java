@@ -30,7 +30,8 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
 	protected UtpAcceptFuture acceptImpl() throws IOException {
 		
 		if (!listenRunnerStarted) {
-			Thread listenRunner = new Thread(getListenRunnable());
+			Thread listenRunner = new Thread(getListenRunnable(), 
+					"listenRunnable_" + getSocket().getLocalPort());
 			listenRunner.start();
 			listenRunnerStarted = true;
 		} 
