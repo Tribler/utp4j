@@ -72,7 +72,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 				UtpTimestampedPacketDTO timestampedPair = queue.poll(UtpAlgConfiguration.TIME_WAIT_AFTER_LAST_PACKET/2, TimeUnit.MICROSECONDS);
 				nowtimeStamp = timeStamper.timeStamp();
 				if (timestampedPair != null) {
-					log.debug("Seq: " + (timestampedPair.utpPacket().getSequenceNumber() & 0xFFFF));
+//					log.debug("Seq: " + (timestampedPair.utpPacket().getSequenceNumber() & 0xFFFF));
 					lastPackedRecieved = timestampedPair.stamp();
 					if (isLastPacket(timestampedPair)) {
 						prepareToEndReading();
