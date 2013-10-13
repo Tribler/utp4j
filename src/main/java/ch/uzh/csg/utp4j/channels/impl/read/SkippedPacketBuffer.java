@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.security.acl.LastOwnerException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
@@ -17,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
-import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgorithm;
 import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
 
 public class SkippedPacketBuffer {
