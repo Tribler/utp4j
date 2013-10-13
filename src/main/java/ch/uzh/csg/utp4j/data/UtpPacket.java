@@ -2,6 +2,9 @@ package ch.uzh.csg.utp4j.data;
 
 import static ch.uzh.csg.utp4j.data.UtpPacketUtils.DEF_HEADER_LENGTH;
 import static ch.uzh.csg.utp4j.data.UtpPacketUtils.joinByteArray;
+
+import java.util.ArrayList;
+
 import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 
 /**
@@ -176,7 +179,7 @@ public class UtpPacket {
 		
 		int utpOffset = offset + UtpPacketUtils.DEF_HEADER_LENGTH;
 		if (firstExtension != 0) {
-			utpOffset += loadExtensions(array, length, offset);
+			utpOffset += loadExtensions(array);
 		}
 		
 		payload = new byte[length - utpOffset];
@@ -185,19 +188,35 @@ public class UtpPacket {
 	}
 	
 	
-	private int loadExtensions(byte[] array, int length, int offset) {
-		byte firstExtension = array[1];
-		UtpHeaderExtension extension = UtpHeaderExtension.resolve(firstExtension);
-		int extensionLength = array[21] & 0xFF;
-		byte[] bitmask = new byte[extensionLength];
-		System.arraycopy(array, 22, bitmask, 0, extensionLength-2);
+	private int loadExtensions(byte[] array) {
+		byte extensionType = array[1];
+		int extensionStartIndex = 20;
+		int totalLength = 0;
+		
+		ArrayList<UtpHeaderExtension> list = new ArrayList<UtpHeaderExtension>();
+		UtpHeaderExtension extension = UtpHeaderExtension.resolve(extensionType);
+	
+		while (extension != null) {
+			int extensionLength = array[extensionStartIndex+1] & 0xFF;
+			byte[] bitmask = new byte[extensionLength];
+			System.arraycopy(array, extensionStartIndex+2, bitmask, 0, extensionLength);
+			extension.setNextExtension(array[extensionStartIndex]);
+			extension.setBitMask(bitmask);
+			list.add(extension);
+			totalLength = extensionLength+2;
+			int nextPossibleExtensionIndex = extensionLength+2+extensionStartIndex;
+			// packet is enough big
+			if (array.length > nextPossibleExtensionIndex) {
+				extension = UtpHeaderExtension.resolve(array[nextPossibleExtensionIndex]);
+				extensionStartIndex = nextPossibleExtensionIndex;				
+			} else { // packet end reached. 
+				extension = null;
+			}
+		}
 
-		extension.setNextExtension(array[20]);
-		extension.setBitMask(bitmask);
-
-		UtpHeaderExtension[] extensions = {extension};
+		UtpHeaderExtension[] extensions = list.toArray(new UtpHeaderExtension[list.size()]);
 		setExtensions(extensions);
-		return extension.getLength();
+		return totalLength;
 	}
 
 
@@ -228,6 +247,7 @@ public class UtpPacket {
 		}
 		
 	}
+	
 	
     @Override
     public int hashCode() {
