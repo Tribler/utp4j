@@ -247,6 +247,24 @@ public class UtpPacket {
 		}
 		
 	}
+	@Override
+	public String toString() {
+		String ret = "[Type: " + (typeVersion & 0xFF) + "] " + 
+					"[FirstExt: " + (firstExtension & 0xFF) + "] " +
+					"[ConnId: "	+ (connectionId & 0xFFFF) + "] " + 
+					"[Wnd: " + (windowSize & 0xFFFFFFFF) + " " + 
+					"[Seq: " + (sequenceNumber & 0xFFFF) + "] " + 
+					"[Ack: " +	(ackNumber & 0xFFFF) + "] ";
+		
+		if (extensions != null) {
+			for (int i = 0; i< extensions.length; i++) {
+				ret += "[Ext_" + i + ": " + (extensions[i].getNextExtension() & 0xFF) + " " + extensions[i].getLength() + "] ";
+			}
+		}
+		return ret;
+		
+
+	}
 	
 	
     @Override
