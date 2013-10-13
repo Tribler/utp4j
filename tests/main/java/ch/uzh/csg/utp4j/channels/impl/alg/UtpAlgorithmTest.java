@@ -53,12 +53,6 @@ public class UtpAlgorithmTest {
 		assertEquals(547, alg.sizeOfNextPacket());
 		
 	}
-	
-	@Test
-	public void testSelectiveAck() {
-		
-	}
-	
 
 	
 }
