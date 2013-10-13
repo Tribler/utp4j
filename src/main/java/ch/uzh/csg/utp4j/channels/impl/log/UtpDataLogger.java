@@ -30,7 +30,7 @@ public class UtpDataLogger {
 	private double windowFactor;
 	private int gain;
 	private int ackRecieved;
-	private Object sAck;
+	private String sAck;
 	private int maxWindow;
 	private long minimumTimeStamp;
 	private long timeStamp;
