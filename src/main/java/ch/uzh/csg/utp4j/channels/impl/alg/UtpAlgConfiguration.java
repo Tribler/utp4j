@@ -4,11 +4,20 @@ public class UtpAlgConfiguration {
 
 	public static final int MAX_CONNECTION_ATTEMPTS = 5;
 	public static final int CONNECTION_ATTEMPT_INTERVALL_MILLIS = 5000;
+	
 
 	/**
 	 * TWEAKING SECTION
 	 */
 
+	/**
+	 * if oldest mindelay sample is older than that, update it. 
+	 */
+	public static long MINIMUM_DIFFERENCE_TIMESTAMP_MICROSEC = 120000000L;
+
+	/**
+	 * timeout 
+	 */
 	public static int MINIMUM_TIMEOUT_MILLIS = 500;
 
 	/**
