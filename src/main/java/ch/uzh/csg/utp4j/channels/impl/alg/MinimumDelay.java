@@ -7,16 +7,14 @@ public class MinimumDelay {
 	
 	private long theirTimeStamp = 0;
 	private long theirMinDelay = 0;
-	
-	private static long MINIMUM_DIFFERENCE_TIMESTAMP_MICROSEC = 120000000L;
-	
+		
 	public long getCorrectedMinDelay() {
 		return minDelay;
 	}
 
 	public void updateOurDelay(long difference, long timestamp) {
 
-		if ((ourTimeStamp - this.ourTimeStamp >= MINIMUM_DIFFERENCE_TIMESTAMP_MICROSEC) || (this.ourTimeStamp == 0 && this.minDelay == 0)) {
+		if ((timestamp - this.ourTimeStamp >= UtpAlgConfiguration.MINIMUM_DIFFERENCE_TIMESTAMP_MICROSEC) || (this.ourTimeStamp == 0 && this.minDelay == 0)) {
 			this.ourTimeStamp = timestamp;
 			this.minDelay = difference;
 		} else {
@@ -29,14 +27,14 @@ public class MinimumDelay {
 	}
 
 	public void updateTheirDelay(long theirDifference, long timeStampNow) {
-		if ((timeStampNow - this.theirTimeStamp >= MINIMUM_DIFFERENCE_TIMESTAMP_MICROSEC) || (this.theirTimeStamp == 0 && this.theirMinDelay == 0)) {
+		if ((timeStampNow - this.theirTimeStamp >= UtpAlgConfiguration.MINIMUM_DIFFERENCE_TIMESTAMP_MICROSEC) || (this.theirTimeStamp == 0 && this.theirMinDelay == 0)) {
 			theirMinDelay = theirDifference;
 			this.theirTimeStamp = timeStampNow;
 		} else {
 			if (theirDifference < theirMinDelay) {
 				theirTimeStamp = timeStampNow;
-				theirMinDelay = theirDifference;
 				minDelay += (theirMinDelay - theirDifference);
+				theirMinDelay = theirDifference;
 			}
 		}
 	}
