@@ -128,6 +128,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	}
 
 	private boolean isLastPacket(UtpTimestampedPacketDTO timestampedPair) {
+//		log.debug("WindowSize: " + (timestampedPair.utpPacket().getWindowSize() & 0xFFFFFFFF));
 		return (timestampedPair.utpPacket().getWindowSize() & 0xFFFFFFFF) == 0;
 	}
 
