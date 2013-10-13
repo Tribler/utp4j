@@ -21,7 +21,7 @@ public class BinaryToStringTestHelper {
 		
 		StringBuilder buf = new StringBuilder();
 		for (int i = 0; (i + result.length()) < length; i++) {
-			buf.append("0");
+			buf.append('0');
 		}
 		buf.append(result);
 		return buf.toString();
