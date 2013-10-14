@@ -78,7 +78,7 @@ public class UtpAlgorithmTest {
 		
 		UtpAlgorithm algorithm = new UtpAlgorithm(stamper,  new InetSocketAddress(51235));
 		
-		// Add some packets
+		// Add some packets, 4...14
 		UtpTimestampedPacketDTO pkt = createPacket(3);
 		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
 		pkt = createPacket(4);
@@ -104,9 +104,9 @@ public class UtpAlgorithmTest {
 		pkt = createPacket(14);
 		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
 		
-		// now 7 unacked packets: 4,5,6,7,8,9. 
+		// now 11 unacked packets: 3,...,13,14 
 		// ack with following: ACK:5, SACK: 7,8,9,10,11,12,13,14 -> should trigger resend 6
-		// because 4 is beeing autoacked, 7,8,9,10,11,12,13,14 beeing acked by selective ack. 
+		// because 3,4,5 is beeing autoacked, 7,8,9,10,11,12,13,14 beeing acked by selective ack. 
 		// ACK:5,SACK:7,8,9,10,11,12,13,14 bitpattern: 11111111 -> least significant bit is always ACK+2
 		// in this case its 7. 
 		byte[] selAck = {(byte) 255, (byte) 0, (byte) 0, (byte) 0};
@@ -132,8 +132,13 @@ public class UtpAlgorithmTest {
 		algorithm.ackRecieved(ack6);
 		algorithm.removeAcked();
 		
+		// everything is now acked
 		leftElements = algorithm.getLeftElements();
 		assertEquals("", leftElements);
+		
+		// no packets to resend
+		packetsToResend = algorithm.getPacketsToResend();
+		assertEquals(0, packetsToResend.size());
 		
 		
 	}
