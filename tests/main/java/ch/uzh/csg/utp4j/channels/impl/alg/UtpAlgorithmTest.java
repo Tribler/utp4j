@@ -1,15 +1,25 @@
 package ch.uzh.csg.utp4j.channels.impl.alg;
 
+import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.SocketException;
+import java.util.Queue;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
+import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
+import ch.uzh.csg.utp4j.data.UtpHeaderExtension;
+import ch.uzh.csg.utp4j.data.UtpPacket;
+import ch.uzh.csg.utp4j.data.UtpPacketUtils;
 
 @RunWith(org.mockito.runners.MockitoJUnitRunner.class)
 public class UtpAlgorithmTest {
@@ -58,5 +68,103 @@ public class UtpAlgorithmTest {
 		assertEquals(150, alg.sizeOfNextPacket());
 	}
 
+	@Test
+	public void testAcking() throws SocketException {
+		UtpAlgConfiguration.AUTO_ACK_SMALLER_THAN_ACK_NUMBER = true;
+		UtpAlgConfiguration.MIN_SKIP_PACKET_BEFORE_RESEND = 3;
+		
+		MicroSecondsTimeStamp stamper = mock(MicroSecondsTimeStamp.class);
+		when(stamper.timeStamp()).thenReturn(0L);
+		
+		UtpAlgorithm algorithm = new UtpAlgorithm(stamper,  new InetSocketAddress(51235));
+		
+		// Add some packets
+		UtpTimestampedPacketDTO pkt = createPacket(3);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(4);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(5);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(6);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(7);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(8);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(9);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(10);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(11);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(12);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(13);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(14);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		
+		// now 7 unacked packets: 4,5,6,7,8,9. 
+		// ack with following: ACK:5, SACK: 7,8,9,10,11,12,13,14 -> should trigger resend 6
+		// because 4 is beeing autoacked, 7,8,9,10,11,12,13,14 beeing acked by selective ack. 
+		// ACK:5,SACK:7,8,9,10,11,12,13,14 bitpattern: 11111111 -> least significant bit is always ACK+2
+		// in this case its 7. 
+		byte[] selAck = {(byte) 255, (byte) 0, (byte) 0, (byte) 0};
+		UtpTimestampedPacketDTO ackPacket = createSelAckPacket(5, selAck);
+		algorithm.ackRecieved(ackPacket);
+		
+		// now 3,4,5 should be removed
+		algorithm.removeAcked();
+		String leftElements = algorithm.getLeftElements();
+		assertEquals("6 7 8 9 10 11 12 13 14", leftElements);
+		
+		// 3 past 6 are acked, trigger an resend of 6
+		Queue<DatagramPacket> packetsToResend = algorithm.getPacketsToResend();
+		assertEquals(1, packetsToResend.size());
+		assertEquals(6, (UtpPacketUtils.extractUtpPacket(packetsToResend.remove()).getSequenceNumber() & 0xFFFF));
+		
+		// 6 beeing acked now. 
+		UtpTimestampedPacketDTO ack6 = createSelAckPacket(6, null);
+		// no extension... 
+		ack6.utpPacket().setFirstExtension((byte) 0);
+		ack6.utpPacket().setExtensions(null);
+		
+		algorithm.ackRecieved(ack6);
+		algorithm.removeAcked();
+		
+		leftElements = algorithm.getLeftElements();
+		assertEquals("", leftElements);
+		
+		
+	}
+	
+	private UtpTimestampedPacketDTO createSelAckPacket(int i, byte[] selAck) throws SocketException {
+		UtpTimestampedPacketDTO ack = createPacket(2); 
+		ack.utpPacket().setAckNumber((short) (i & 0xFFFF));
+		
+		SelectiveAckHeaderExtension selAckExtension = new SelectiveAckHeaderExtension();
+		selAckExtension.setBitMask(selAck);
+		selAckExtension.setNextExtension((byte) 0);
+		ack.utpPacket().setFirstExtension(UtpPacketUtils.SELECTIVE_ACK);
+		
+		SelectiveAckHeaderExtension[] extensions = { selAckExtension };
+		ack.utpPacket().setExtensions(extensions);
+		
+		return ack;
+		
+	}
+
+
+	private UtpTimestampedPacketDTO createPacket(int sequenceNumber) throws SocketException {
+		UtpPacket pkt = new UtpPacket();
+		pkt.setSequenceNumber(longToUshort(sequenceNumber));
+		pkt.setPayload(new byte[50]);
+		byte[] array = { (byte) 1 };
+		SocketAddress addr = new InetSocketAddress(111);
+		DatagramPacket mockDgPkt = new DatagramPacket(array, 1, addr);
+		UtpTimestampedPacketDTO toReturn = new UtpTimestampedPacketDTO(mockDgPkt, pkt, 1L, 0);
+		
+		return toReturn;
+	}
 	
 }

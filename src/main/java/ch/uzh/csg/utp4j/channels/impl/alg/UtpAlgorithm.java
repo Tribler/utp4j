@@ -58,7 +58,8 @@ public class UtpAlgorithm {
 	private long timeStampNow;
 	private long lastAckRecieved;
 	
-	private Queue<Long> ourLastDelays = new LinkedList<Long>();
+	private int resendedPackets = 0;
+	private int totalPackets = 0;
 	
 	private final static Logger log = LoggerFactory.getLogger(UtpAlgorithm.class);
 
@@ -82,22 +83,32 @@ public class UtpAlgorithm {
 		int advertisedWindo = pair.utpPacket().getWindowSize() & 0xFFFFFFFF;
 		updateAdvertisedWindowSize(advertisedWindo);
 		logger.ackRecieved(seqNrToAck);
-		int packetSizeJustAcked = buffer.markPacketAcked(seqNrToAck, timeStampNow);
+		int packetSizeJustAcked = buffer.markPacketAcked(seqNrToAck, timeStampNow, 
+				UtpAlgConfiguration.AUTO_ACK_SMALLER_THAN_ACK_NUMBER);
 		if (packetSizeJustAcked > 0) {
 			updateRtt(timeStampNow, seqNrToAck);
 			updateWindow(pair.utpPacket(), timeStampNow, packetSizeJustAcked, pair.utpTimeStamp());
 		} 
 		// TODO: With libutp, sometimes null pointer exception -> investigate. 
 		if (pair.utpPacket().getExtensions() != null) {
-			log.debug("utpPacket With Ext: " + pair.utpPacket().toString());
-			SelectiveAckHeaderExtension selAck = findSelectiveAckExtension(pair.utpPacket());
-			byte[] bitMask = selAck.getBitMask();
+//			log.debug("utpPacket With Ext: " + pair.utpPacket().toString());
+			SelectiveAckHeaderExtension selectiveAckExtension = findSelectiveAckExtension(pair.utpPacket());
+			byte[] bitMask = selectiveAckExtension.getBitMask();
+			// For each byte in the selective Ack header extension
 			for (int i = 0; i < bitMask.length; i++) {
-				for (int j = 2; j < 9; j++) {
+				// each bit in the extension, from 2 to 9, because least significant
+				// bit is ACK+2, most significant bit is ack+9 -> loop [2,9]
+				for (int j = 2; j < 10; j++) {
 					if (SelectiveAckHeaderExtension.isBitMarked(bitMask[i], j)) {
+						// j-th bit of i-th byte + seqNrToAck equals our selective-Ack-number.
+						// example: 
+						// ack:5, sack: 8 -> i = 0, j =3 -> 0*8+3+5 = 8. 
+						// bitpattern in this case would be 00000010, bit_index 1 from right side, added 2 to it equals 3
+						// thats why we start with j=2. most significant bit is index 7, j would be 9 then. 
 						int sackSeqNr = i*8 + j + seqNrToAck;
 						logger.sAck(sackSeqNr);
-						packetSizeJustAcked = buffer.markPacketAcked(sackSeqNr, timeStampNow);
+						// dont ack smaller seq numbers in case of Selective ack !!!!!
+						packetSizeJustAcked = buffer.markPacketAcked(sackSeqNr, timeStampNow, false);
 						if (packetSizeJustAcked > 0) {
 							updateRtt(timeStampNow, sackSeqNr);
 							updateWindow(pair.utpPacket(), timeStampNow, packetSizeJustAcked, pair.utpTimeStamp());
@@ -222,6 +233,7 @@ public class UtpAlgorithm {
 				utpTimestampedPacketDTO.setReduceWindow(true);
 			}
 		}
+		resendedPackets += queue.size();
 		return queue;
 	}
 
@@ -308,6 +320,7 @@ public class UtpAlgorithm {
 		buffer.bufferPacket(pkt);
 		incrementAckNumber();
 		addPacketToCurrentWindow(utpPacket);
+		totalPackets++;
 
 	}
 
@@ -426,7 +439,8 @@ public class UtpAlgorithm {
 
 	public void end(int bytesSend, boolean successfull) {
 		if (successfull) {
-			logger.end(bytesSend);			
+			logger.end(bytesSend);
+			log.debug("Total packets send: " + totalPackets + ", Total Packets Resend: " + resendedPackets);
 		}
 	}
 	

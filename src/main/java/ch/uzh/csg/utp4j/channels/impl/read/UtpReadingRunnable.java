@@ -29,7 +29,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	private boolean isRunning;
 	private MicroSecondsTimeStamp timeStamper;
 	private long totalPayloadLength = 0;
-	private long gotLastPacketTimeStamp;
+	private long lastPacketTimestamp;
 	private int lastPayloadLength;
 	private UtpReadFutureImpl readFuture;
 	private long nowtimeStamp;
@@ -75,7 +75,9 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 //					log.debug("Seq: " + (timestampedPair.utpPacket().getSequenceNumber() & 0xFFFF));
 					lastPackedRecieved = timestampedPair.stamp();
 					if (isLastPacket(timestampedPair)) {
-						prepareToEndReading();
+						gotLastPacket  = true;
+						log.debug("GOT LAST PACKET");
+						lastPacketTimestamp = timeStamper.timeStamp();
 					}
 					if (isPacketExpected(timestampedPair.utpPacket())) {
 						handleExpectedPacket(timestampedPair);								
@@ -87,7 +89,8 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 				/*TODO: How to measure Rtt here for dynamic timeout limit?*/
 				if (isTimedOut()) {
 					if (!hasSkippedPackets()) {
-						prepareToEndReading();							
+						gotLastPacket  = true;
+						log.debug("ENDING READING, NO MORE INCOMMING DATA");
 					} else {
 						log.debug("now: " + nowtimeStamp + " last: " + lastPackedRecieved + " = " + (nowtimeStamp - lastPackedRecieved));
 						log.debug("now: " + nowtimeStamp + " start: " + startReadingTimeStamp + " = " + (nowtimeStamp - startReadingTimeStamp));
@@ -120,13 +123,6 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 
 	}
 	
-
-	private void prepareToEndReading() {
-		gotLastPacket  = true;
-		log.debug("GOT LAST PACKET");
-		gotLastPacketTimeStamp = timeStamper.timeStamp();
-	}
-
 	private boolean isTimedOut() {
 		/* time out after 10sec, when eof not reached */
 		boolean timedOut = nowtimeStamp - lastPackedRecieved >= 4000000;
@@ -234,7 +230,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	}
 		
 	private boolean timeAwaitedAfterLastPacket() {
-		return (timeStamper.timeStamp() - gotLastPacketTimeStamp) > UtpAlgConfiguration.TIME_WAIT_AFTER_LAST_PACKET 
+		return (timeStamper.timeStamp() - lastPacketTimestamp) > UtpAlgConfiguration.TIME_WAIT_AFTER_LAST_PACKET 
 				&& gotLastPacket;
 	}
 

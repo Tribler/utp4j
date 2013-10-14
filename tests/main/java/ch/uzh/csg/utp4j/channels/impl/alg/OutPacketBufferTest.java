@@ -47,9 +47,9 @@ public class OutPacketBufferTest {
 		assertEquals(8*(PAYLOAD_LENGTH + UtpPacketUtils.DEF_HEADER_LENGTH), buffer.getBytesOnfly());
 		
 		// mark 4,5,6 acked
-		buffer.markPacketAcked(4, 1);
-		buffer.markPacketAcked(5, 1);
-		buffer.markPacketAcked(6, 1);
+		buffer.markPacketAcked(4, 1, false);
+		buffer.markPacketAcked(5, 1, false);
+		buffer.markPacketAcked(6, 1, false);
 		buffer.removeAcked();
 		
 		// since 3 not yet acked, buffer should not remove packets
@@ -63,9 +63,9 @@ public class OutPacketBufferTest {
 		assertEquals(3, three.utpPacket().getSequenceNumber() & 0xFFFF);
 		
 		// ack for seqNr=8,9,10 recieved, 
-		buffer.markPacketAcked(8, 1);
-		buffer.markPacketAcked(9, 1);
-		buffer.markPacketAcked(10, 1);
+		buffer.markPacketAcked(8, 1, false);
+		buffer.markPacketAcked(9, 1, false);
+		buffer.markPacketAcked(10, 1, false);
 		
 		// still no removal
 		buffer.removeAcked();
@@ -83,7 +83,7 @@ public class OutPacketBufferTest {
 
 		
 		// seqNr=3 is now here
-		buffer.markPacketAcked(3, 1);
+		buffer.markPacketAcked(3, 1, false);
 		buffer.removeAcked();
 		// 3,4,5,6 are gone from the buffer, 7,8,9,10 still here
 		assertEquals(4*(PAYLOAD_LENGTH + UtpPacketUtils.DEF_HEADER_LENGTH), buffer.getBytesOnfly());
@@ -94,7 +94,7 @@ public class OutPacketBufferTest {
 
 		
 		// ackNr=7 finally arrives
-		buffer.markPacketAcked(7, 1);
+		buffer.markPacketAcked(7, 1, false);
 		buffer.removeAcked();
 		
 		// nothing left in the buffer

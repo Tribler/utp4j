@@ -54,7 +54,7 @@ public class OutPacketBuffer {
 		return buffer.isEmpty();
 	}
 
-	public int markPacketAcked(int seqNrToAck, long timestamp) {
+	public int markPacketAcked(int seqNrToAck, long timestamp, boolean ackSmallerThanThisSeq) {
 		int bytesJustAcked = -1;
 		UtpTimestampedPacketDTO pkt = findPacket(seqNrToAck);
 		if (pkt != null) {
@@ -66,7 +66,7 @@ public class OutPacketBuffer {
 							+ UtpPacketUtils.DEF_HEADER_LENGTH;
 				}
 				pkt.setPacketAcked(true);
-				if (UtpAlgConfiguration.AUTO_ACK_SMALLER_THAN_ACK_NUMBER) {
+				if (ackSmallerThanThisSeq) {
 					for (UtpTimestampedPacketDTO toAck : buffer) {
 						if ((toAck.utpPacket().getSequenceNumber() & 0xFFFF) == seqNrToAck) {
 							break;
@@ -220,7 +220,7 @@ public class OutPacketBuffer {
 		for (UtpTimestampedPacketDTO el : buffer) {
 			returnString += " " + (el.utpPacket().getSequenceNumber() & 0xFFFF);
 		}
-		return returnString;
+		return returnString.trim();
 	}
 
 	public long getOldestUnackedTimestamp() {
