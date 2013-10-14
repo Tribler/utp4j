@@ -23,7 +23,7 @@ public class UtpAlgorithmTest {
 		UtpAlgConfiguration.PACKET_SIZE_MODE = PacketSizeModus.DYNAMIC_LINEAR;
 		UtpAlgConfiguration.C_CONTROL_TARGET_MICROS = c_target;
 		MinimumDelay mockMinDelay = mock(MinimumDelay.class);
-		when(mockMinDelay.getCorrectedMinDelay()).thenReturn((long) c_target/2);
+		when(mockMinDelay.getRecentAverageDelay()).thenReturn((long) c_target/2);
 		
 		/* when delay is 50ms, then packetsize = 
 		 * (delay/max_delay)*(max_packet-min_packet)+min_packet */
@@ -33,22 +33,22 @@ public class UtpAlgorithmTest {
 		assertEquals(811, alg.sizeOfNextPacket());
 		
 		mockMinDelay = mock(MinimumDelay.class);
-		when(mockMinDelay.getCorrectedMinDelay()).thenReturn((long) c_target);
+		when(mockMinDelay.getRecentAverageDelay()).thenReturn((long) c_target);
 		alg.setMinDelay(mockMinDelay);
 		assertEquals(150, alg.sizeOfNextPacket());
 		
 		mockMinDelay = mock(MinimumDelay.class);
-		when(mockMinDelay.getCorrectedMinDelay()).thenReturn(0L);
+		when(mockMinDelay.getRecentAverageDelay()).thenReturn(0L);
 		alg.setMinDelay(mockMinDelay);
 		assertEquals(1472, alg.sizeOfNextPacket());
 		
 		mockMinDelay = mock(MinimumDelay.class);
-		when(mockMinDelay.getCorrectedMinDelay()).thenReturn((long) c_target/10*3);
+		when(mockMinDelay.getRecentAverageDelay()).thenReturn((long) c_target/10*3);
 		alg.setMinDelay(mockMinDelay);
 		assertEquals(1076, alg.sizeOfNextPacket());
 		
 		mockMinDelay = mock(MinimumDelay.class);
-		when(mockMinDelay.getCorrectedMinDelay()).thenReturn((long) c_target/10*7);
+		when(mockMinDelay.getRecentAverageDelay()).thenReturn((long) c_target/10*7);
 		alg.setMinDelay(mockMinDelay);
 		assertEquals(547, alg.sizeOfNextPacket());
 		

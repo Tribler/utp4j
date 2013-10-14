@@ -16,6 +16,7 @@ import java.net.DatagramPacket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 import org.slf4j.Logger;
@@ -56,6 +57,8 @@ public class UtpAlgorithm {
 	private long lastTimeWindowReduced;
 	private long timeStampNow;
 	private long lastAckRecieved;
+	
+	private Queue<Long> ourLastDelays = new LinkedList<Long>();
 	
 	private final static Logger log = LoggerFactory.getLogger(UtpAlgorithm.class);
 
@@ -149,6 +152,7 @@ public class UtpAlgorithm {
 		logger.theirMinDelay(minDelay.getTheirMinDelay());
 		
 		long ourDelay = ourDifference - minDelay.getCorrectedMinDelay();
+		minDelay.addSample(ourDelay);
 		logger.minDelay(minDelay.getCorrectedMinDelay());
 		logger.ourDelay(ourDelay);
 		
@@ -179,6 +183,7 @@ public class UtpAlgorithm {
 			lastZeroWindow = timeStampNow;
 		}
 	}
+
 
 
 	private void updateTheirDelay(long theirDifference) {
@@ -289,7 +294,7 @@ public class UtpAlgorithm {
 
 	private int calculateDynamicLinearPacketSize() {
 		int packetSizeDelta = MAX_PACKET_SIZE - MIN_PACKET_SIZE;
-		long minDelayOffTarget = C_CONTROL_TARGET_MICROS - minDelay.getCorrectedMinDelay();
+		long minDelayOffTarget = C_CONTROL_TARGET_MICROS - minDelay.getRecentAverageDelay();
 		double packetSizeFactor = ((double) minDelayOffTarget)/((double) C_CONTROL_TARGET_MICROS);
 		double packetSize = MIN_PACKET_SIZE + packetSizeFactor*packetSizeDelta;
 		return (int) Math.ceil(packetSize);
