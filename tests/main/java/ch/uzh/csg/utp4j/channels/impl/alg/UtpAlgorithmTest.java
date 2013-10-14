@@ -19,7 +19,7 @@ public class UtpAlgorithmTest {
 	 */
 	@Test
 	public void testDynamicPacketSize() {
-		int c_target = 100000;
+		int c_target = 100000;		
 		UtpAlgConfiguration.PACKET_SIZE_MODE = PacketSizeModus.DYNAMIC_LINEAR;
 		UtpAlgConfiguration.C_CONTROL_TARGET_MICROS = c_target;
 		MinimumDelay mockMinDelay = mock(MinimumDelay.class);
@@ -52,6 +52,10 @@ public class UtpAlgorithmTest {
 		alg.setMinDelay(mockMinDelay);
 		assertEquals(547, alg.sizeOfNextPacket());
 		
+		mockMinDelay = mock(MinimumDelay.class);
+		when(mockMinDelay.getRecentAverageDelay()).thenReturn((long) c_target/10*12);
+		alg.setMinDelay(mockMinDelay);
+		assertEquals(150, alg.sizeOfNextPacket());
 	}
 
 	

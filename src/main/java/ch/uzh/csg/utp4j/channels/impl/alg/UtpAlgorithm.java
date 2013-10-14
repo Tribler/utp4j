@@ -295,6 +295,7 @@ public class UtpAlgorithm {
 	private int calculateDynamicLinearPacketSize() {
 		int packetSizeDelta = MAX_PACKET_SIZE - MIN_PACKET_SIZE;
 		long minDelayOffTarget = C_CONTROL_TARGET_MICROS - minDelay.getRecentAverageDelay();
+		minDelayOffTarget = minDelayOffTarget < 0 ? 0 : minDelayOffTarget;
 		double packetSizeFactor = ((double) minDelayOffTarget)/((double) C_CONTROL_TARGET_MICROS);
 		double packetSize = MIN_PACKET_SIZE + packetSizeFactor*packetSizeDelta;
 		return (int) Math.ceil(packetSize);

@@ -14,7 +14,7 @@ public class UtpAlgConfiguration {
 	 * Auto ack every packet that is smaller than ACK_NR from ack packet. 
 	 * Some Implementations like libutp do this. 
 	 */
-	public static boolean AUTO_ACK_SMALLER_THAN_ACK_NUMBER = false;
+	public static boolean AUTO_ACK_SMALLER_THAN_ACK_NUMBER = true;
 	/**
 	 * if oldest mindelay sample is older than that, update it. 
 	 */

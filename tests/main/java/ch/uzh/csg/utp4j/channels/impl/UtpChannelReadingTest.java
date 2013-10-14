@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
 import ch.uzh.csg.utp4j.channels.UtpSocketState;
+import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.UtpHeaderExtension;
 import ch.uzh.csg.utp4j.data.UtpPacket;
@@ -36,6 +37,8 @@ public class UtpChannelReadingTest {
 
 	@Test
 	public void test() throws InterruptedException {
+		
+		UtpAlgConfiguration.AUTO_ACK_SMALLER_THAN_ACK_NUMBER = false;
 		
 		//mocking stuff
 		UtpSocketChannelImpl channel = new UtpSocketChannelImpl();
