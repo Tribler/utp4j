@@ -52,7 +52,7 @@ public class UtpAlgorithm {
 	private int advertisedWindowSize;
 	private boolean advertisedWindowSizeSet = false;
 
-	private UtpDataLogger logger = new UtpDataLogger();
+	private UtpDataLogger statisticLogger = new UtpDataLogger();
 
 	private long lastTimeWindowReduced;
 	private long timeStampNow;
@@ -82,7 +82,7 @@ public class UtpAlgorithm {
 		lastAckRecieved = timeStampNow;
 		int advertisedWindo = pair.utpPacket().getWindowSize() & 0xFFFFFFFF;
 		updateAdvertisedWindowSize(advertisedWindo);
-		logger.ackRecieved(seqNrToAck);
+		statisticLogger.ackRecieved(seqNrToAck);
 		int packetSizeJustAcked = buffer.markPacketAcked(seqNrToAck, timeStampNow, 
 				UtpAlgConfiguration.AUTO_ACK_SMALLER_THAN_ACK_NUMBER);
 		if (packetSizeJustAcked > 0) {
@@ -112,7 +112,7 @@ public class UtpAlgorithm {
 						// bitpattern in this case would be 00000010, bit_index 1 from right side, added 2 to it equals 3
 						// thats why we start with j=2. most significant bit is index 7, j would be 9 then. 
 						int sackSeqNr = i*8 + j + seqNrToAck;
-						logger.sAck(sackSeqNr);
+						statisticLogger.sAck(sackSeqNr);
 						// dont ack smaller seq numbers in case of Selective ack !!!!!
 						packetSizeJustAcked = buffer.markPacketAcked(sackSeqNr, timeStampNow, false);
 						if (packetSizeJustAcked > 0 && !windowAlreadyUpdated) {
@@ -124,7 +124,7 @@ public class UtpAlgorithm {
 				}
 			}
 		}
-		logger.next();
+		statisticLogger.next();
 		
 	}
 		
@@ -135,9 +135,9 @@ public class UtpAlgorithm {
 			long delta = rtt - packetRtt;
 			rttVar += (Math.abs(delta) - rttVar)/4;
 			rtt += (packetRtt - rtt)/8;
-			logger.pktRtt(packetRtt);
-			logger.rttVar(rttVar);
-			logger.rtt(rtt);
+			statisticLogger.pktRtt(packetRtt);
+			statisticLogger.rttVar(rttVar);
+			statisticLogger.rtt(rtt);
 		}
 	}
 
@@ -155,46 +155,46 @@ public class UtpAlgorithm {
 		
 	}	
 	private void updateWindow(UtpPacket utpPacket, long timestamp, int packetSizeJustAcked, int utpRecieved) {
-		logger.microSecTimeStamp(timeStampNow);
+		statisticLogger.microSecTimeStamp(timeStampNow);
 		currentWindow = buffer.getBytesOnfly();
-		logger.currentWindow(currentWindow);
+		statisticLogger.currentWindow(currentWindow);
 		
 		long ourDifference = utpPacket.getTimestampDifference() & 0xFFFFFFFF;
-		logger.ourDifference(ourDifference);
+		statisticLogger.ourDifference(ourDifference);
 		updateOurDelay(ourDifference);
 		
 		int theirDifference = timeStamper.utpDifference(utpRecieved, utpPacket.getTimestamp());
 		
-		logger.theirDifference(theirDifference);
+		statisticLogger.theirDifference(theirDifference);
 		updateTheirDelay(theirDifference);
-		logger.theirMinDelay(minDelay.getTheirMinDelay());
+		statisticLogger.theirMinDelay(minDelay.getTheirMinDelay());
 		
 		long ourDelay = ourDifference - minDelay.getCorrectedMinDelay();
 		minDelay.addSample(ourDelay);
-		logger.minDelay(minDelay.getCorrectedMinDelay());
-		logger.ourDelay(ourDelay);
+		statisticLogger.minDelay(minDelay.getCorrectedMinDelay());
+		statisticLogger.ourDelay(ourDelay);
 		
 		long offTarget = C_CONTROL_TARGET_MICROS - ourDelay;
-		logger.offTarget(offTarget);
+		statisticLogger.offTarget(offTarget);
 		double delayFactor = ((double) offTarget) / ((double) C_CONTROL_TARGET_MICROS);
-		logger.delayFactor(delayFactor);
+		statisticLogger.delayFactor(delayFactor);
 		double windowFactor = (Math.min((double)packetSizeJustAcked, (double)maxWindow)) / (Math.max((double)maxWindow, (double)packetSizeJustAcked));
-		logger.windowFactor(windowFactor);
+		statisticLogger.windowFactor(windowFactor);
 		int gain = (int) (MAX_CWND_INCREASE_PACKETS_PER_RTT * delayFactor * windowFactor);
 		
 		if (ONLY_POSITIVE_GAIN && gain < 0) {
 			gain = 0;
 		}
 		
-		logger.gain(gain);
+		statisticLogger.gain(gain);
 		maxWindow += gain;
 		if (maxWindow < 0) {
 			maxWindow = 0;
 		}
 		
 //		log.debug("current:max " + currentWindow + ":" + maxWindow);
-		logger.maxWindow(maxWindow);
-		logger.advertisedWindow(advertisedWindowSize);
+		statisticLogger.maxWindow(maxWindow);
+		statisticLogger.advertisedWindow(advertisedWindowSize);
 		buffer.setResendtimeOutMicros(getEstimatedRttMicros());
 		
 		if (maxWindow == 0) {
@@ -449,7 +449,7 @@ public class UtpAlgorithm {
 
 	public void end(int bytesSend, boolean successfull) {
 		if (successfull) {
-			logger.end(bytesSend);
+			statisticLogger.end(bytesSend);
 			log.debug("Total packets send: " + totalPackets + ", Total Packets Resend: " + resendedPackets);
 		}
 	}
