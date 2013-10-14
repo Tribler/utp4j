@@ -90,11 +90,17 @@ public class UtpAlgorithm {
 			updateWindow(pair.utpPacket(), timeStampNow, packetSizeJustAcked, pair.utpTimeStamp());
 		} 
 		// TODO: With libutp, sometimes null pointer exception -> investigate. 
-		if (pair.utpPacket().getExtensions() != null) {
 //			log.debug("utpPacket With Ext: " + pair.utpPacket().toString());
-			SelectiveAckHeaderExtension selectiveAckExtension = findSelectiveAckExtension(pair.utpPacket());
-			byte[] bitMask = selectiveAckExtension.getBitMask();
+		SelectiveAckHeaderExtension selectiveAckExtension = findSelectiveAckExtension(pair.utpPacket());
+		if (selectiveAckExtension != null) {
+			
+			// if a new packed is acked by selectiveAck, we will 
+			// only update this one. if more than one is acked newly,
+			// ignore it, because it will corrupt our measurements
+			boolean windowAlreadyUpdated = false;
+			
 			// For each byte in the selective Ack header extension
+			byte[] bitMask = selectiveAckExtension.getBitMask();
 			for (int i = 0; i < bitMask.length; i++) {
 				// each bit in the extension, from 2 to 9, because least significant
 				// bit is ACK+2, most significant bit is ack+9 -> loop [2,9]
@@ -109,7 +115,8 @@ public class UtpAlgorithm {
 						logger.sAck(sackSeqNr);
 						// dont ack smaller seq numbers in case of Selective ack !!!!!
 						packetSizeJustAcked = buffer.markPacketAcked(sackSeqNr, timeStampNow, false);
-						if (packetSizeJustAcked > 0) {
+						if (packetSizeJustAcked > 0 && !windowAlreadyUpdated) {
+							windowAlreadyUpdated = true;
 							updateRtt(timeStampNow, sackSeqNr);
 							updateWindow(pair.utpPacket(), timeStampNow, packetSizeJustAcked, pair.utpTimeStamp());
 						} 
@@ -252,6 +259,9 @@ public class UtpAlgorithm {
 	private SelectiveAckHeaderExtension findSelectiveAckExtension(
 			UtpPacket utpPacket) {
 		UtpHeaderExtension[] extensions = utpPacket.getExtensions();
+		if (extensions == null) {
+			return null;
+		}
  		for (int i = 0; i < extensions.length; i++) {
  			if (extensions[i] instanceof SelectiveAckHeaderExtension) {
  				return (SelectiveAckHeaderExtension) extensions[i];
