@@ -5,7 +5,7 @@
 
 echo "
 reset
-set terminal wxt enhanced
+set terminal postscript eps enhanced solid 'Helvetica' 10
 set datafile separator ';'
 set yrange [0:600000]
 set y2range [0:120000]
@@ -14,10 +14,9 @@ set xlabel 'time [{/Symbol m}s]'
 set ylabel 'MaxWindow [B]'
 set y2label 'OurDelay [{/Symbol m}s]'
 set y2tics
-set rmargin screen 0.93
 set format x '%15.0f'
 set key left top
-set output '$1.wxt'
+set output '$1.eps'
 f(x) = $2
-plot '$1' every 2::1 using 1:18 lc rgb 'green' axes x1y1 title 'MaxWindow','$1' every 2::1 using 1:6 lc rgb 'red' axes x1y2 title 'OurDelay', f(x) lc rgb 'blue' axes x1y2 title 'C\_CONTROL\_TARGET'
+plot '$1' every 2::1 using 1:6 lc rgb 'red' axes x1y2 title 'our delay', '$1' every 2::1 using 1:18 lc rgb 'green' axes x1y1 title 'max window', f(x) lc rgb 'blue' axes x1y2 title 'target delay'
 " > plot.gp && gnuplot plot.gp
