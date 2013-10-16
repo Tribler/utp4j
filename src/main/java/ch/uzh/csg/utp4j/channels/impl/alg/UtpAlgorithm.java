@@ -112,6 +112,10 @@ public class UtpAlgorithm {
 						// bitpattern in this case would be 00000010, bit_index 1 from right side, added 2 to it equals 3
 						// thats why we start with j=2. most significant bit is index 7, j would be 9 then. 
 						int sackSeqNr = i*8 + j + seqNrToAck;
+						// sackSeqNr can overflow too !!
+						if (sackSeqNr > UnsignedTypesUtil.MAX_USHORT) {
+							sackSeqNr -= UnsignedTypesUtil.MAX_USHORT;
+						}
 						statisticLogger.sAck(sackSeqNr);
 						// dont ack smaller seq numbers in case of Selective ack !!!!!
 						packetSizeJustAcked = buffer.markPacketAcked(sackSeqNr, timeStampNow, false);
@@ -316,7 +320,7 @@ public class UtpAlgorithm {
 
 	private int calculateDynamicLinearPacketSize() {
 		int packetSizeDelta = MAX_PACKET_SIZE - MIN_PACKET_SIZE;
-		long minDelayOffTarget = C_CONTROL_TARGET_MICROS - minDelay.getRecentAverageDelay();
+		long minDelayOffTarget = C_CONTROL_TARGET_MICROS - minDelay.getRecentAverageDelay();;
 		minDelayOffTarget = minDelayOffTarget < 0 ? 0 : minDelayOffTarget;
 		double packetSizeFactor = ((double) minDelayOffTarget)/((double) C_CONTROL_TARGET_MICROS);
 		double packetSize = MIN_PACKET_SIZE + packetSizeFactor*packetSizeDelta;

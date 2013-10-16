@@ -363,10 +363,10 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 		return (writer != null ? writer.isRunning() : false);
 	}
 
-	public void ackAlreadyAcked(UtpPacket utpPacket, int timestampDifference,
+	public void ackAlreadyAcked(int expectingSeqNumber, int timestampDifference,
 			long windowSize) throws IOException {
 		UtpPacket ackPacket = new UtpPacket();
-		ackPacket.setAckNumber(utpPacket.getSequenceNumber());
+		ackPacket.setAckNumber(longToUshort(expectingSeqNumber));
 
 		ackPacket.setTimestampDifference(timestampDifference);
 		ackPacket.setTimestamp(timeStamper.utpTimeStamp());
