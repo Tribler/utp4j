@@ -65,6 +65,8 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 	private ScheduledExecutorService retryConnectionTimeScheduler;
 	private int connectionAttempts = 0;
 
+	private int eofPacket;
+
 
 	private static final Logger log = LoggerFactory
 			.getLogger(UtpSocketChannelImpl.class);
@@ -111,6 +113,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 			} else {
 				freeBuffer = UtpAlgConfiguration.MAX_PACKET_SIZE;
 			}
+			this.eofPacket = finPacket.getSequenceNumber() & 0xFFFF;
 			ackPacket(finPacket, timeStamper.utpDifference(finPacket.getTimestamp()), freeBuffer);
 		} catch (IOException exp) {
 			exp.printStackTrace();
@@ -304,17 +307,15 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 		return readFuture;
 	}
 
-	public void selectiveAckPacket(UtpPacket utpPacket,
-			SelectiveAckHeaderExtension headerExtension,
+	public void selectiveAckPacket(SelectiveAckHeaderExtension headerExtension,
 			int timestampDifference, long advertisedWindow) throws IOException {
-		UtpPacket sack = createSelectiveAckPacket(utpPacket, headerExtension,
+		UtpPacket sack = createSelectiveAckPacket(headerExtension,
 				timestampDifference, advertisedWindow);
 		sendPacket(sack);
 
 	}
 
-	private UtpPacket createSelectiveAckPacket(UtpPacket utpPacket,
-			SelectiveAckHeaderExtension headerExtension,
+	private UtpPacket createSelectiveAckPacket(SelectiveAckHeaderExtension headerExtension,
 			int timestampDifference, long advertisedWindow) {
 		UtpPacket ackPacket = new UtpPacket();
 		ackPacket.setAckNumber(longToUshort(getAckNumber()));
@@ -363,11 +364,12 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 		return (writer != null ? writer.isRunning() : false);
 	}
 
-	public void ackAlreadyAcked(int expectingSeqNumber, int timestampDifference,
+	public void ackAlreadyAcked(SelectiveAckHeaderExtension extension, int timestampDifference,
 			long windowSize) throws IOException {
 		UtpPacket ackPacket = new UtpPacket();
-		ackPacket.setAckNumber(longToUshort(expectingSeqNumber));
-
+		ackPacket.setAckNumber(longToUshort(getAckNumber()));
+		SelectiveAckHeaderExtension[] extensions = { extension };
+		ackPacket.setExtensions(extensions);
 		ackPacket.setTimestampDifference(timestampDifference);
 		ackPacket.setTimestamp(timeStamper.utpTimeStamp());
 		ackPacket.setConnectionId(longToUshort(getConnectionIdsending()));
@@ -407,6 +409,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 
 	@Override
 	public void setAckNumber(int ackNumber) {
+//		log.debug("ack nubmer set to: " + ackNumber);
 		this.ackNumber = ackNumber;
 	}
 
@@ -488,7 +491,9 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 	protected UtpPacket createAckPacket(UtpPacket pkt, int timedifference,
 			long advertisedWindow) {
 		UtpPacket ackPacket = new UtpPacket();
-		setAckNrFromPacketSqNr(pkt);
+		if (pkt.getTypeVersion() != FIN) {
+			setAckNrFromPacketSqNr(pkt);			
+		}
 		ackPacket.setAckNumber(longToUshort(getAckNumber()));
 
 		ackPacket.setTimestampDifference(timedifference);

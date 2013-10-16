@@ -161,6 +161,7 @@ public class OutPacketBuffer {
 		for (UtpTimestampedPacketDTO unackedPkt : unacked) {
 			if (resendRequired(unackedPkt) && toReturn.size() <= maxResend) {
 				toReturn.add(unackedPkt);
+//				log.debug("Resending: " + (unackedPkt.utpPacket().getSequenceNumber() & 0xFFFF));
 				updateResendTimeStamps(unackedPkt);
 			}
 			unackedPkt.setAckedAfterMeCounter(0);
