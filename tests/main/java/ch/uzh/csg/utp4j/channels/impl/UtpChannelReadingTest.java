@@ -39,6 +39,7 @@ public class UtpChannelReadingTest {
 	public void test() throws InterruptedException {
 		
 		UtpAlgConfiguration.AUTO_ACK_SMALLER_THAN_ACK_NUMBER = false;
+		UtpAlgConfiguration.SKIP_PACKETS_UNTIL_ACK = 1;
 		
 		//mocking stuff
 		UtpSocketChannelImpl channel = new UtpSocketChannelImpl();
@@ -146,7 +147,7 @@ public class UtpChannelReadingTest {
 			
 			
 		} catch (IOException e) {
-			// expecting now exception. 
+			// expecting no exception. 
 			fail("Exception occured but was not expected");
 			e.printStackTrace();
 		} 		
