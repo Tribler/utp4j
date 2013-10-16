@@ -210,10 +210,12 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		boolean alreadyAcked = expected > seqNr || seqNr - expected > PACKET_DIFF_WARP;
 		
 		boolean saneSeqNr = expected == skippedBuffer.getExpectedSequenceNumber();
-		if (saneSeqNr && !alreadyAcked && ackThisPacket()) {
+		if (saneSeqNr && !alreadyAcked) {
 			skippedBuffer.bufferPacket(timestampedPair);
-			SelectiveAckHeaderExtension headerExtension = skippedBuffer.createHeaderExtension();
-			channel.selectiveAckPacket(timestampedPair.utpPacket(), headerExtension, getTimestampDifference(timestampedPair), getLeftSpaceInBuffer());	
+			if (ackThisPacket()) {
+				SelectiveAckHeaderExtension headerExtension = skippedBuffer.createHeaderExtension();
+				channel.selectiveAckPacket(timestampedPair.utpPacket(), headerExtension, getTimestampDifference(timestampedPair), getLeftSpaceInBuffer());					
+			}
 		} else if (ackThisPacket()){
 			channel.ackAlreadyAcked(timestampedPair.utpPacket(), getTimestampDifference(timestampedPair), getLeftSpaceInBuffer());
 		}
