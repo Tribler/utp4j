@@ -62,8 +62,12 @@ public class MinimumDelay {
 		for (long delay : ourLastDelays) {
 			sum += delay;
 		}
-		long averageDelay = sum/ourLastDelays.size();
-		return averageDelay;
+		long sampleSize = ourLastDelays.size();
+		if (sampleSize == 0) {
+			return 0L;
+		} else {
+			return sum/sampleSize;
+		}
 	}
 
 }
