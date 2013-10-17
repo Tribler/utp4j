@@ -158,6 +158,47 @@ public class UtpAlgorithmTest {
 		return ack;
 		
 	}
+	
+	@Test
+	public void testResendNoTriggerReduceWindow() throws SocketException {
+		UtpAlgConfiguration.AUTO_ACK_SMALLER_THAN_ACK_NUMBER = true;
+		UtpAlgConfiguration.MIN_SKIP_PACKET_BEFORE_RESEND = 3;
+		
+		int maxWindow = 100000;
+		
+		MicroSecondsTimeStamp stamper = mock(MicroSecondsTimeStamp.class);
+		when(stamper.timeStamp()).thenReturn(0L);
+		
+		UtpAlgorithm algorithm = new UtpAlgorithm(stamper,  new InetSocketAddress(51235));
+		
+		UtpTimestampedPacketDTO pkt = createPacket(5);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(6);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(7);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(8);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		pkt = createPacket(9);
+		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
+		
+		// packets 5,6,7,8,9 on fly
+		// now will ACK:5, SACK: 7,8,9 
+		// SACK bits as follow: 00000111 000... ... ...000
+		// this means, 3 packets past 6 have been acked. 
+		// should trigger fast resend of 6. 
+		// maxWindow should not be multiplied with 0.5.
+		byte[] selAck = { (byte) 7, 0, 0, 0};
+		UtpTimestampedPacketDTO sack = createSelAckPacket(5, selAck);
+		algorithm.ackRecieved(sack);		
+		algorithm.setMaxWindow(maxWindow);
+		
+		Queue<DatagramPacket> queue = algorithm.getPacketsToResend();
+		assertEquals(1, queue.size());
+		
+		assertEquals(maxWindow, algorithm.getMaxWindow());
+		
+	}
 
 
 	private UtpTimestampedPacketDTO createPacket(int sequenceNumber) throws SocketException {

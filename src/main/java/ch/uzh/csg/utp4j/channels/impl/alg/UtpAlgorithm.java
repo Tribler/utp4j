@@ -199,7 +199,7 @@ public class UtpAlgorithm {
 //		log.debug("current:max " + currentWindow + ":" + maxWindow);
 		statisticLogger.maxWindow(maxWindow);
 		statisticLogger.advertisedWindow(advertisedWindowSize);
-		buffer.setResendtimeOutMicros(getEstimatedRttMicros());
+		buffer.setResendtimeOutMicros(getTimeOutMicros());
 		
 		if (maxWindow == 0) {
 			lastZeroWindow = timeStampNow;
@@ -240,8 +240,6 @@ public class UtpAlgorithm {
 					maxWindow *= 0.5;					
 				}
 				utpTimestampedPacketDTO.setReduceWindow(false);
-			} else {
-				utpTimestampedPacketDTO.setReduceWindow(true);
 			}
 		}
 		resendedPackets += queue.size();
@@ -469,6 +467,16 @@ public class UtpAlgorithm {
 			return true;
 		}
 		return false;
+	}
+
+
+	public void setMaxWindow(int window) {
+		this.maxWindow = window;
+	}
+
+
+	public int getMaxWindow() {
+		return maxWindow;
 	}
 	
 }
