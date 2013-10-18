@@ -478,5 +478,11 @@ public class UtpAlgorithm {
 	public int getMaxWindow() {
 		return maxWindow;
 	}
+
+
+	public int getCurrentWindow() {
+		return currentWindow;
+		
+	}
 	
 }

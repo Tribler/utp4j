@@ -199,18 +199,88 @@ public class UtpAlgorithmTest {
 		assertEquals(maxWindow, algorithm.getMaxWindow());
 		
 	}
+	
+	@Test
+	public void testPacketSending() throws SocketException {
+		MicroSecondsTimeStamp stamper = mock(MicroSecondsTimeStamp.class);
+		when(stamper.timeStamp()).thenReturn(0L);
+		UtpAlgorithm algorithm = new UtpAlgorithm(stamper,  new InetSocketAddress(51235));
+		UtpAlgConfiguration.SEND_IN_BURST = true;
+		UtpAlgConfiguration.MAX_BURST_SEND = 3;
+		
+		int packetLength = 1000;
+		
+		// make room for 10 packets. 
+		algorithm.setMaxWindow(packetLength*10);
+		
+		// mark 5 packets on fly, will be ~5100 bytes of currentWindow
+		UtpTimestampedPacketDTO pkt5 = createPacket(5, packetLength);
+		UtpTimestampedPacketDTO pkt6 = createPacket(6, packetLength);
+		UtpTimestampedPacketDTO pkt7 = createPacket(7, packetLength);
+		UtpTimestampedPacketDTO pkt8 = createPacket(8, packetLength);
+		UtpTimestampedPacketDTO pkt9 = createPacket(9, packetLength);
 
-
-	private UtpTimestampedPacketDTO createPacket(int sequenceNumber) throws SocketException {
+		algorithm.markPacketOnfly(pkt5.utpPacket(), pkt5.dataGram());
+		algorithm.markPacketOnfly(pkt6.utpPacket(), pkt6.dataGram());
+		algorithm.markPacketOnfly(pkt7.utpPacket(), pkt7.dataGram());
+		algorithm.markPacketOnfly(pkt8.utpPacket(), pkt8.dataGram());
+		algorithm.markPacketOnfly(pkt9.utpPacket(), pkt9.dataGram());
+		
+		assertEquals(5*(UtpPacketUtils.DEF_HEADER_LENGTH + packetLength), algorithm.getCurrentWindow());
+		
+		// our current window is smaller than max window. MAX_BURST_SEND times invocating should trigger a true
+		for (int i = 0; i < UtpAlgConfiguration.MAX_BURST_SEND; i++) {
+			assertEquals(true, algorithm.canSendNextPacket());
+		}
+		
+		// now we cannot send a packet anymore
+		assertEquals(false, algorithm.canSendNextPacket());
+		
+		// now again we can send 3 packets... 
+		for (int i = 0; i < UtpAlgConfiguration.MAX_BURST_SEND; i++) {
+			assertEquals(true, algorithm.canSendNextPacket());
+		}
+		// and now false. 
+		assertEquals(false, algorithm.canSendNextPacket());
+		
+		// lets reduce maxwindow to 4* packet length, no packets can be send now.
+		algorithm.setMaxWindow(packetLength * 4);
+		for (int i = 0; i < UtpAlgConfiguration.MAX_BURST_SEND; i++) {
+			assertEquals(false, algorithm.canSendNextPacket());
+		} 
+		
+		// we still cannot send packets...
+		for (int i = 0; i < UtpAlgConfiguration.MAX_BURST_SEND; i++) {
+			assertEquals(false, algorithm.canSendNextPacket());
+		} 
+		
+		// increase max window again. 
+		algorithm.setMaxWindow(10*packetLength);
+		
+		// send 3 packets in one burst. 
+		for (int i = 0; i < UtpAlgConfiguration.MAX_BURST_SEND; i++) {
+			assertEquals(true, algorithm.canSendNextPacket());
+		} 
+		
+		// current burst full, next invocation should be false. 
+		assertEquals(false, algorithm.canSendNextPacket());
+		
+	}
+	
+	private UtpTimestampedPacketDTO createPacket(int sequenceNumber, int packetLength) throws SocketException {
 		UtpPacket pkt = new UtpPacket();
 		pkt.setSequenceNumber(longToUshort(sequenceNumber));
-		pkt.setPayload(new byte[50]);
-		byte[] array = { (byte) 1 };
+		pkt.setPayload(new byte[packetLength]);
 		SocketAddress addr = new InetSocketAddress(111);
-		DatagramPacket mockDgPkt = new DatagramPacket(array, 1, addr);
+		DatagramPacket mockDgPkt = new DatagramPacket(pkt.toByteArray(), 1, addr);
 		UtpTimestampedPacketDTO toReturn = new UtpTimestampedPacketDTO(mockDgPkt, pkt, 1L, 0);
 		
 		return toReturn;
+	}
+
+
+	private UtpTimestampedPacketDTO createPacket(int sequenceNumber) throws SocketException {
+		return createPacket(sequenceNumber, 1);
 	}
 	
 }
