@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import ch.uzh.csg.utp4j.channels.UtpSocketChannel;
 import ch.uzh.csg.utp4j.channels.futures.UtpConnectFuture;
 import ch.uzh.csg.utp4j.channels.futures.UtpWriteFuture;
-import ch.uzh.csg.utp4j.channels.impl.log.CpuLoadMeasure;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 
 public class ConfigTestWrite {
@@ -37,7 +36,7 @@ public class ConfigTestWrite {
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
 		
-		String testPlan = "testPlan/testplan.csv";
+		String testPlan = "testPlan/testplan2.csv";
 		String testDataFile = "testData/sc S01E01.avi";
 		MicroSecondsTimeStamp timeStamper = new MicroSecondsTimeStamp();
 		

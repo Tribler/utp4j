@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.channels.impl.log.UtpDataLogger;
+import ch.uzh.csg.utp4j.channels.impl.log.UtpNopLogger;
+import ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticLogger;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
 import ch.uzh.csg.utp4j.data.UtpHeaderExtension;
@@ -54,7 +56,7 @@ public class UtpAlgorithm {
 	private int advertisedWindowSize;
 	private boolean advertisedWindowSizeSet = false;
 
-	private UtpDataLogger statisticLogger = new UtpDataLogger();
+	private UtpStatisticLogger statisticLogger;
 
 	private long lastTimeWindowReduced;
 	private long timeStampNow;
@@ -75,6 +77,11 @@ public class UtpAlgorithm {
 		buffer.setRemoteAdress(addr);
 		log.debug(UtpAlgConfiguration.getString());
 		timeStampNow = timeStamper.timeStamp();
+		if (UtpAlgConfiguration.DEBUG) {
+			statisticLogger = new UtpDataLogger();
+		} else {
+			statisticLogger = new UtpNopLogger();
+		}
 	}
 
 
