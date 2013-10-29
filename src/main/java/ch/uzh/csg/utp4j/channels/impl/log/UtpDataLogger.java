@@ -43,89 +43,69 @@ public class UtpDataLogger implements UtpStatisticLogger {
 	private final static Logger log = LoggerFactory
 			.getLogger(OutPacketBuffer.class);
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#currentWindow(int)
-	 */
+
 	@Override
 	public void currentWindow(int currentWindow) {
 		this.currentWindow = currentWindow;
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#ourDifference(long)
-	 */
+
 	@Override
 	public void ourDifference(long difference) {
 		this.difference = difference;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#minDelay(long)
-	 */
+
 	@Override
 	public void minDelay(long minDelay) {
 		this.minDelay = minDelay;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#ourDelay(long)
-	 */
+
 	@Override
 	public void ourDelay(long ourDelay) {
 		this.ourDelay = ourDelay;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#offTarget(long)
-	 */
+
 	@Override
 	public void offTarget(long offTarget) {
 		this.offTarget = offTarget;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#delayFactor(double)
-	 */
+
 	@Override
 	public void delayFactor(double delayFactor) {
 		this.delayFactor = delayFactor;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#windowFactor(double)
-	 */
+
 	@Override
 	public void windowFactor(double windowFactor) {
 		this.windowFactor = windowFactor;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#gain(int)
-	 */
+
 	@Override
 	public void gain(int gain) {
 		this.gain = gain;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#ackRecieved(int)
-	 */
+
 	@Override
 	public void ackRecieved(int seqNrToAck) {
 		this.ackRecieved = seqNrToAck;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#sAck(int)
-	 */
+
 	@Override
 	public void sAck(int sackSeqNr) {
 		if (sAck != null) {
@@ -144,9 +124,7 @@ public class UtpDataLogger implements UtpStatisticLogger {
 		minimumTimeStamp = 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#next()
-	 */
+
 	@Override
 	public void next() {
 		if (DEBUG && loggerOn) {
@@ -179,9 +157,7 @@ public class UtpDataLogger implements UtpStatisticLogger {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#maxWindow(int)
-	 */
+
 	@Override
 	public void maxWindow(int maxWindow) {
 		this.maxWindow = maxWindow;
@@ -211,9 +187,7 @@ public class UtpDataLogger implements UtpStatisticLogger {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#end(int)
-	 */
+
 	@Override
 	public void end(int bytesLength) {
 		if (DEBUG && loggerOn) {
@@ -242,9 +216,7 @@ public class UtpDataLogger implements UtpStatisticLogger {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#microSecTimeStamp(long)
-	 */
+
 	@Override
 	public void microSecTimeStamp(long logTimeStampMillisec) {
 		if (minimumTimeStamp == 0) {
@@ -254,63 +226,49 @@ public class UtpDataLogger implements UtpStatisticLogger {
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#pktRtt(long)
-	 */
+
 	@Override
 	public void pktRtt(long packetRtt) {
 		this.packetRtt = packetRtt;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#rttVar(long)
-	 */
+
 	@Override
 	public void rttVar(long rttVar) {
 		this.rttVar = rttVar;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#rtt(long)
-	 */
+
 	@Override
 	public void rtt(long rtt) {
 		this.rtt = rtt;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#advertisedWindow(int)
-	 */
+
 	@Override
 	public void advertisedWindow(int advertisedWindowSize) {
 		this.advertisedWindow = advertisedWindowSize;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#theirDifference(int)
-	 */
+
 	@Override
 	public void theirDifference(int theirDifference) {
 		this.theirDifference = theirDifference;
 
 	}
 
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#theirMinDelay(long)
-	 */
+
 	@Override
 	public void theirMinDelay(long theirMinDelay) {
 		this.theirMinDelay = theirMinDelay;
 
 	}
 	
-	/* (non-Javadoc)
-	 * @see ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticInterface#bytesSend(int)
-	 */
+
 	@Override
 	public void bytesSend(int bytesSend){
 		this.bytesSend = bytesSend;
