@@ -60,6 +60,7 @@ public class UtpAlgorithm {
 	
 	private int resendedPackets = 0;
 	private int totalPackets = 0;
+	private long lastMaxedOutWindow;
 	
 	private final static Logger log = LoggerFactory.getLogger(UtpAlgorithm.class);
 
@@ -161,6 +162,11 @@ public class UtpAlgorithm {
 	private void updateWindow(UtpPacket utpPacket, long timestamp, int packetSizeJustAcked, int utpRecieved) {
 		statisticLogger.microSecTimeStamp(timeStampNow);
 		currentWindow = buffer.getBytesOnfly();
+		
+		if (isWondowFull()) {
+			lastMaxedOutWindow = timeStampNow;
+		}
+		
 		statisticLogger.currentWindow(currentWindow);
 		
 		long ourDifference = utpPacket.getTimestampDifference() & 0xFFFFFFFF;
@@ -186,7 +192,7 @@ public class UtpAlgorithm {
 		statisticLogger.windowFactor(windowFactor);
 		int gain = (int) (MAX_CWND_INCREASE_PACKETS_PER_RTT * delayFactor * windowFactor);
 		
-		if (ONLY_POSITIVE_GAIN && gain < 0) {
+		if (setGainToZero(gain)) {
 			gain = 0;
 		}
 		
@@ -204,8 +210,23 @@ public class UtpAlgorithm {
 		if (maxWindow == 0) {
 			lastZeroWindow = timeStampNow;
 		}
+//		maxWindow = 10000;
 	}
 
+
+
+	private boolean setGainToZero(int gain) {
+		// if i have ever reached lastMaxWindow then check if its longer than 1kk micros
+		// if not, true
+		boolean lastMaxWindowNeverReached 
+			= (lastMaxedOutWindow != 0 
+				&& (lastMaxedOutWindow - timeStampNow >= 1000000)) ||
+				lastMaxedOutWindow == 0;
+		if (lastMaxWindowNeverReached) {
+			log.debug("last maxed window: setting gain to 0");
+		}
+		return (ONLY_POSITIVE_GAIN && gain < 0) || lastMaxWindowNeverReached;
+	}
 
 
 	private void updateTheirDelay(long theirDifference) {
@@ -275,8 +296,8 @@ public class UtpAlgorithm {
 	
 	
 	public boolean canSendNextPacket() {
-		if (timeStampNow - lastZeroWindow > getTimeOutMicros() && lastZeroWindow != 0) {
-			log.debug("Reducing window");
+		if (timeStampNow - lastZeroWindow > getTimeOutMicros() && lastZeroWindow != 0 && maxWindow == 0) {
+			log.debug("setting window to one packet size. current window is:" + currentWindow);
 			maxWindow = MAX_PACKET_SIZE;
 		}
 		boolean windowNotFull = !isWondowFull();
@@ -445,7 +466,7 @@ public class UtpAlgorithm {
 
 	private boolean continueImmidiately(
 			long timeOutInMicroSeconds, long oldestTimeStamp) {
-		return timeOutInMicroSeconds < 0 || oldestTimeStamp == 0;
+		return timeOutInMicroSeconds < 0 || (oldestTimeStamp == 0 && maxWindow > 0);
 	}
 
 

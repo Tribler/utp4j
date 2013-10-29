@@ -130,11 +130,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 	private boolean checkForAcks() {
 		BlockingQueue<UtpTimestampedPacketDTO> queue = channel.getDataGramQueue();
 		try {
-			if (queue.peek() != null) {
-				processAcks(queue);
-			} else {
-				waitAndProcessAcks(queue);
-			}
+			waitAndProcessAcks(queue);
 		} catch (InterruptedException ie) {
 			return false;
 		}
