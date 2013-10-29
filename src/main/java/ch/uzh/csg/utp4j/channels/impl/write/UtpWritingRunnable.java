@@ -44,6 +44,7 @@ public class UtpWritingRunnable extends Thread implements Runnable {
 	public void run() {
 		algorithm.initiateAckPosition(channel.getSequenceNumber());
 		algorithm.setTimeStamper(timeStamper);
+		algorithm.setByteBuffer(buffer);
 		isRunning = true;
 		IOException possibleExp = null;
 		boolean exceptionOccured = false;

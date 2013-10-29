@@ -34,8 +34,9 @@ public class UtpDataLogger {
 	private int advertisedWindow;
 	private int theirDifference;
 	private long theirMinDelay;
+	private int bytesSend;
 
-	private boolean loggerOn = false;
+	private boolean loggerOn = true;
 	private RandomAccessFile logFile;
 	private FileChannel fileChannel;
 
@@ -99,7 +100,7 @@ public class UtpDataLogger {
 		openFile();
 		writeEntry("TimeMicros;AckRecieved;CurrentWidow_Bytes;Difference_Micros;MinDelay_Micros;OurDelay_Micros;Their_Difference_Micros;"
 				+ "Their_MinDelay_Micros;Their_Delay_Micros;OffTarget_Micros;DelayFactor;WindowFactor;Gain_Bytes;PacketRtt_Millis;"
-				+ "RttVar_Millis;Rtt_Millis;AdvertisedWindow_Bytes;MaxWindow_Bytes;SACK\n");
+				+ "RttVar_Millis;Rtt_Millis;AdvertisedWindow_Bytes;MaxWindow_Bytes;BytesSend;SACK\n");
 		minimumTimeStamp = 0;
 	}
 
@@ -122,7 +123,8 @@ public class UtpDataLogger {
 			logEntry += rttVar + ";";
 			logEntry += rtt + ";";
 			logEntry += advertisedWindow + ";";
-			logEntry += maxWindow;
+			logEntry += maxWindow + ";";
+			logEntry += bytesSend;
 			if (sAck != null) {
 				logEntry += ";(" + sAck + ")\n";
 			} else {
@@ -224,6 +226,10 @@ public class UtpDataLogger {
 	public void theirMinDelay(long theirMinDelay) {
 		this.theirMinDelay = theirMinDelay;
 
+	}
+	
+	public void bytesSend(int bytesSend){
+		this.bytesSend = bytesSend;
 	}
 
 }

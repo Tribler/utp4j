@@ -62,7 +62,7 @@ public class ConfigTestPlanReader {
 		testRun++;
 		Date date = new Date();
 		String dateString = format.format(date);
-		String logname = "auto/auto_" + dateString + "_run_" + testRun;
+		String logname = "auto/auto_run_" + testRun + "_" + dateString;
 		UtpDataLogger.LOG_NAME = logname + ".csv";
 		String parameters = testParameters.remove();
 		lastParameters = parameters;

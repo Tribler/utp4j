@@ -15,6 +15,7 @@ import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.SEND_IN_BUR
 import java.net.DatagramPacket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -44,6 +45,7 @@ public class UtpAlgorithm {
 	private int currentAckPosition = 0;
 	private int currentBurstSend = 0;
 	private long lastZeroWindow;
+	private ByteBuffer bBuffer;
 
 	private long rtt;
 	private long rttVar = 0;
@@ -210,6 +212,12 @@ public class UtpAlgorithm {
 		if (maxWindow == 0) {
 			lastZeroWindow = timeStampNow;
 		}
+		// get bytes successfully transmitted: 
+		// this is the position of the bytebuffer (comes from programmer)
+		// substracted by the amount of bytes on fly (these are not yet acked)
+		int bytesSend = bBuffer.position() - buffer.getBytesOnfly();
+		statisticLogger.bytesSend(bytesSend);
+		
 //		maxWindow = 10000;
 	}
 
@@ -504,6 +512,10 @@ public class UtpAlgorithm {
 	public int getCurrentWindow() {
 		return currentWindow;
 		
+	}
+	
+	public void setByteBuffer(ByteBuffer bBuffer) {
+		this.bBuffer = bBuffer;
 	}
 	
 }
