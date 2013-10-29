@@ -5,6 +5,7 @@ import java.util.Queue;
 
 public class MinimumDelay {
 
+	private static final int DELAY_SAMPLE_SIZE = 50;
 	private long ourTimeStamp = 0;
 	private long minDelay = 0;
 
@@ -50,7 +51,7 @@ public class MinimumDelay {
 	}
 
 	public void addSample(long ourDelay) {
-		while (ourLastDelays .size() > 50) {
+		while (ourLastDelays .size() > DELAY_SAMPLE_SIZE) {
 			ourLastDelays.poll();
 		}
 		ourLastDelays.add(ourDelay);

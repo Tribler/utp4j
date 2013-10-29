@@ -130,7 +130,8 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	}
 	
 	private boolean isTimedOut() {
-		/* time out after 10sec, when eof not reached */
+		//TODO: extract constants...
+		/* time out after 4sec, when eof not reached */
 		boolean timedOut = nowtimeStamp - lastPackedRecieved >= 4000000;
 		/* but if remote socket has not recieved synack yet, he will try to reconnect
 		 * await that aswell */

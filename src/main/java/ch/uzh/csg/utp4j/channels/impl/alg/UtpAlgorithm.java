@@ -235,7 +235,7 @@ public class UtpAlgorithm {
 		// if not, true
 		boolean lastMaxWindowNeverReached 
 			= (lastMaxedOutWindow != 0 
-				&& (lastMaxedOutWindow - timeStampNow >= 1000000)) ||
+				&& (lastMaxedOutWindow - timeStampNow >= UtpAlgConfiguration.MINIMUM_DELTA_TO_MAX_WINDOW_MICROS)) ||
 				lastMaxedOutWindow == 0;
 		if (lastMaxWindowNeverReached) {
 			log.debug("last maxed window: setting gain to 0");
