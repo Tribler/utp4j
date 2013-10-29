@@ -9,6 +9,7 @@ import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.util.Queue;
 
 import org.junit.Test;
@@ -77,6 +78,8 @@ public class UtpAlgorithmTest {
 		when(stamper.timeStamp()).thenReturn(0L);
 		
 		UtpAlgorithm algorithm = new UtpAlgorithm(stamper,  new InetSocketAddress(51235));
+		ByteBuffer bufferMock = mock(ByteBuffer.class);
+		algorithm.setByteBuffer(bufferMock);
 		
 		// Add some packets, 4...14
 		UtpTimestampedPacketDTO pkt = createPacket(3);
@@ -170,6 +173,8 @@ public class UtpAlgorithmTest {
 		when(stamper.timeStamp()).thenReturn(0L);
 		
 		UtpAlgorithm algorithm = new UtpAlgorithm(stamper,  new InetSocketAddress(51235));
+		ByteBuffer bufferMock = mock(ByteBuffer.class);
+		algorithm.setByteBuffer(bufferMock);
 		
 		UtpTimestampedPacketDTO pkt = createPacket(5);
 		algorithm.markPacketOnfly(pkt.utpPacket(), pkt.dataGram());
