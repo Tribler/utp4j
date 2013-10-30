@@ -38,6 +38,9 @@ public class ConfigTestWrite {
 		
 		String testPlan = "testPlan/testplan2.csv";
 		String testDataFile = "testData/sc S01E01.avi";
+		boolean waitOnManualInput = true;
+		
+		
 		MicroSecondsTimeStamp timeStamper = new MicroSecondsTimeStamp();
 		
 		CpuLoadMeasure cpuLoad = new CpuLoadMeasure();
@@ -62,6 +65,12 @@ public class ConfigTestWrite {
 
 			UtpSocketChannel chanel = UtpSocketChannel.open();
 			int bytesToSend = buffer.position();
+			
+			if (waitOnManualInput) {
+				System.out.println("Press any key to continue...");
+				 System.in.read();
+			}
+			
 //			UtpConnectFuture cFuture = chanel.connect(new InetSocketAddress("192.168.1.40", 13344));
 			UtpConnectFuture cFuture = chanel.connect(new InetSocketAddress("localhost", 13344));
 //			UtpConnectFuture cFuture = chanel.connect(new InetSocketAddress("192.168.1.44", 13344));
