@@ -83,6 +83,10 @@ public class UtpAlgorithm {
 			statisticLogger = new UtpNopLogger();
 		}
 	}
+	
+	public void setOutPacketBuffer(OutPacketBuffer outBuffer) {
+		this.buffer = outBuffer;
+	}
 
 
 	public void ackRecieved(UtpTimestampedPacketDTO pair) {
@@ -472,16 +476,16 @@ public class UtpAlgorithm {
 		if (continueImmidiately(timeOutInMicroSeconds, oldestTimeStamp)) {
 			return 0L;
 		}
-		if (!isWondowFull()) {
+		if (!isWondowFull() || maxWindow == 0) {
 			return MICROSECOND_WAIT_BETWEEN_BURSTS;
-		} 
+		}
 		return timeOutInMicroSeconds;
 	}
 
 
 	private boolean continueImmidiately(
 			long timeOutInMicroSeconds, long oldestTimeStamp) {
-		return timeOutInMicroSeconds < 0 || (oldestTimeStamp == 0 && maxWindow > 0);
+		return timeOutInMicroSeconds < 0 && (oldestTimeStamp != 0);
 	}
 
 
@@ -523,6 +527,16 @@ public class UtpAlgorithm {
 	
 	public void setByteBuffer(ByteBuffer bBuffer) {
 		this.bBuffer = bBuffer;
+	}
+
+	public void setCurrentWindow(int i) {
+		this.currentWindow = i;
+		
+	}
+
+	public void setEstimatedRtt(int i) {
+		this.rtt = i;
+		
 	}
 	
 }

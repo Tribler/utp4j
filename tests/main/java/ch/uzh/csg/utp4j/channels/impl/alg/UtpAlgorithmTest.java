@@ -272,6 +272,68 @@ public class UtpAlgorithmTest {
 		
 	}
 	
+	@Test
+	public void testWaitingTime() {
+		/*Behaviour should be:
+		 * 
+		 * timeout time when next packet will timeout, but only if window is full. else waiting time micros.
+		 * immidiately when packet has timed out. else waiting time micros
+		 * when buffer empty, maxWindow 0 => waiting time
+		 * when buffer non empty, maxwindow = 0; nontimeout => waiting time. 
+		 *  when buffer non empty, maxwindow = 0; timedout = immidiately
+		 */
+		UtpAlgConfiguration.MINIMUM_TIMEOUT_MILLIS = 500;
+		MicroSecondsTimeStamp stamper = mock(MicroSecondsTimeStamp.class);
+		when(stamper.timeStamp()).thenReturn(1000000L); // returns 1s
+		UtpAlgorithm algorithm = new UtpAlgorithm(stamper,  new InetSocketAddress(51235));
+		algorithm.setEstimatedRtt(0);
+		
+		OutPacketBuffer outBuffer = mock(OutPacketBuffer.class);
+		when(outBuffer.getOldestUnackedTimestamp()).thenReturn(600000L);
+		when(outBuffer.getBytesOnfly()).thenReturn(20000); // 20 kB onfly
+		algorithm.setCurrentWindow(20000);
+		algorithm.setOutPacketBuffer(outBuffer);
+		
+		algorithm.setMaxWindow(20000); // maxWindow 20kB -> window is full.
+		
+		// Situation: window full. waiting time should be to next timeout: 
+		//since rtt and rtt_var is 0: timeout delta is 500'000: 
+		// oldest + 500k = 1'100'000 is the time when next timeout happens.
+		long waitingTime = algorithm.getWaitingTimeMicroSeconds();
+		
+		assertEquals(100000, waitingTime);
+		
+		// now current window is below 20k. 
+		when(outBuffer.getBytesOnfly()).thenReturn(10000); // 20 kB onfly
+		algorithm.setCurrentWindow(10000);
+		
+		waitingTime = algorithm.getWaitingTimeMicroSeconds();
+		assertEquals(UtpAlgConfiguration.MICROSECOND_WAIT_BETWEEN_BURSTS, waitingTime);
+		
+		// now test when a packet has timed out. 
+		
+		when(outBuffer.getOldestUnackedTimestamp()).thenReturn(10000L);
+		when(stamper.timeStamp()).thenReturn(700000L);
+		// oldest is 10'000, timeout is in 10'000 + 500'000 = 510'000. now is 700'000 => timeout. 
+		waitingTime = algorithm.getWaitingTimeMicroSeconds();
+		assertEquals(0, waitingTime);
+		
+		// current window 20k, nonempty, nontimeout but down to max_window 0. should keep waiting normally.
+		algorithm.setCurrentWindow(20000);
+		algorithm.setMaxWindow(0);
+		when(outBuffer.getOldestUnackedTimestamp()).thenReturn(100000L);
+		when(stamper.timeStamp()).thenReturn(500000L);
+		waitingTime = algorithm.getWaitingTimeMicroSeconds();
+		assertEquals(UtpAlgConfiguration.MICROSECOND_WAIT_BETWEEN_BURSTS, waitingTime);
+		
+		// same scenario but timed out. 100'000 + timeout = 600'000 => timed out since 100'000
+		// continue immidiately
+		when(stamper.timeStamp()).thenReturn(700000L);
+		when(outBuffer.getOldestUnackedTimestamp()).thenReturn(100000L);
+		waitingTime = algorithm.getWaitingTimeMicroSeconds();
+		assertEquals(0L, waitingTime);
+	}
+	
 	private UtpTimestampedPacketDTO createPacket(int sequenceNumber, int packetLength) throws SocketException {
 		UtpPacket pkt = new UtpPacket();
 		pkt.setSequenceNumber(longToUshort(sequenceNumber));
