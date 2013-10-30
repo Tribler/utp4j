@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.channels.impl.log.UtpDataLogger;
+import ch.uzh.csg.utp4j.channels.impl.log.UtpNopLogger;
+import ch.uzh.csg.utp4j.channels.impl.log.UtpStatisticLogger;
 import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
 import ch.uzh.csg.utp4j.data.UtpHeaderExtension;
@@ -54,7 +56,7 @@ public class UtpAlgorithm {
 	private int advertisedWindowSize;
 	private boolean advertisedWindowSizeSet = false;
 
-	private UtpDataLogger statisticLogger = new UtpDataLogger();
+	private UtpStatisticLogger statisticLogger;
 
 	private long lastTimeWindowReduced;
 	private long timeStampNow;
@@ -75,6 +77,15 @@ public class UtpAlgorithm {
 		buffer.setRemoteAdress(addr);
 		log.debug(UtpAlgConfiguration.getString());
 		timeStampNow = timeStamper.timeStamp();
+		if (UtpAlgConfiguration.DEBUG) {
+			statisticLogger = new UtpDataLogger();
+		} else {
+			statisticLogger = new UtpNopLogger();
+		}
+	}
+	
+	public void setOutPacketBuffer(OutPacketBuffer outBuffer) {
+		this.buffer = outBuffer;
 	}
 
 
@@ -228,7 +239,7 @@ public class UtpAlgorithm {
 		// if not, true
 		boolean lastMaxWindowNeverReached 
 			= (lastMaxedOutWindow != 0 
-				&& (lastMaxedOutWindow - timeStampNow >= 1000000)) ||
+				&& (lastMaxedOutWindow - timeStampNow >= UtpAlgConfiguration.MINIMUM_DELTA_TO_MAX_WINDOW_MICROS)) ||
 				lastMaxedOutWindow == 0;
 		if (lastMaxWindowNeverReached) {
 			log.debug("last maxed window: setting gain to 0");
@@ -465,16 +476,16 @@ public class UtpAlgorithm {
 		if (continueImmidiately(timeOutInMicroSeconds, oldestTimeStamp)) {
 			return 0L;
 		}
-		if (!isWondowFull()) {
+		if (!isWondowFull() || maxWindow == 0) {
 			return MICROSECOND_WAIT_BETWEEN_BURSTS;
-		} 
+		}
 		return timeOutInMicroSeconds;
 	}
 
 
 	private boolean continueImmidiately(
 			long timeOutInMicroSeconds, long oldestTimeStamp) {
-		return timeOutInMicroSeconds < 0 || (oldestTimeStamp == 0 && maxWindow > 0);
+		return timeOutInMicroSeconds < 0 && (oldestTimeStamp != 0);
 	}
 
 
@@ -516,6 +527,16 @@ public class UtpAlgorithm {
 	
 	public void setByteBuffer(ByteBuffer bBuffer) {
 		this.bBuffer = bBuffer;
+	}
+
+	public void setCurrentWindow(int i) {
+		this.currentWindow = i;
+		
+	}
+
+	public void setEstimatedRtt(int i) {
+		this.rtt = i;
+		
 	}
 	
 }

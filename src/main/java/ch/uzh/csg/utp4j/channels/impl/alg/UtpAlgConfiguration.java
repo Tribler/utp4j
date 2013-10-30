@@ -4,6 +4,8 @@ public class UtpAlgConfiguration {
 
 	public static final int MAX_CONNECTION_ATTEMPTS = 5;
 	public static final int CONNECTION_ATTEMPT_INTERVALL_MILLIS = 5000;
+	
+	public static long MINIMUM_DELTA_TO_MAX_WINDOW_MICROS = 1000000;
 	// ack every second packets
 	public static int SKIP_PACKETS_UNTIL_ACK = 2;
 	

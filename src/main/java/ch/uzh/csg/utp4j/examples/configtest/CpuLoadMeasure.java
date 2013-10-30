@@ -1,4 +1,4 @@
-package ch.uzh.csg.utp4j.channels.impl.log;
+package ch.uzh.csg.utp4j.examples.configtest;
 
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;

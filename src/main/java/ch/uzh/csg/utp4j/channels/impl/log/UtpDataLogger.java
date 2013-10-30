@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import ch.uzh.csg.utp4j.channels.impl.alg.OutPacketBuffer;
 
-public class UtpDataLogger {
+public class UtpDataLogger implements UtpStatisticLogger {
 
 	public static String LOG_NAME = "log.csv";
 	private int currentWindow;
@@ -43,50 +43,70 @@ public class UtpDataLogger {
 	private final static Logger log = LoggerFactory
 			.getLogger(OutPacketBuffer.class);
 
+
+	@Override
 	public void currentWindow(int currentWindow) {
 		this.currentWindow = currentWindow;
 	}
 
+
+	@Override
 	public void ourDifference(long difference) {
 		this.difference = difference;
 
 	}
 
+
+	@Override
 	public void minDelay(long minDelay) {
 		this.minDelay = minDelay;
 
 	}
 
+
+	@Override
 	public void ourDelay(long ourDelay) {
 		this.ourDelay = ourDelay;
 
 	}
 
+
+	@Override
 	public void offTarget(long offTarget) {
 		this.offTarget = offTarget;
 
 	}
 
+
+	@Override
 	public void delayFactor(double delayFactor) {
 		this.delayFactor = delayFactor;
 
 	}
 
+
+	@Override
 	public void windowFactor(double windowFactor) {
 		this.windowFactor = windowFactor;
 
 	}
 
+
+	@Override
 	public void gain(int gain) {
 		this.gain = gain;
 
 	}
 
+
+	@Override
 	public void ackRecieved(int seqNrToAck) {
 		this.ackRecieved = seqNrToAck;
 
 	}
 
+
+	@Override
 	public void sAck(int sackSeqNr) {
 		if (sAck != null) {
 			sAck += " " + sackSeqNr;
@@ -104,6 +124,8 @@ public class UtpDataLogger {
 		minimumTimeStamp = 0;
 	}
 
+
+	@Override
 	public void next() {
 		if (DEBUG && loggerOn) {
 			String logEntry = "" + (timeStamp - minimumTimeStamp) + ";";
@@ -135,6 +157,8 @@ public class UtpDataLogger {
 		}
 	}
 
+
+	@Override
 	public void maxWindow(int maxWindow) {
 		this.maxWindow = maxWindow;
 
@@ -163,6 +187,8 @@ public class UtpDataLogger {
 		}
 	}
 
+
+	@Override
 	public void end(int bytesLength) {
 		if (DEBUG && loggerOn) {
 			closeFile();
@@ -190,6 +216,8 @@ public class UtpDataLogger {
 		}
 	}
 
+
+	@Override
 	public void microSecTimeStamp(long logTimeStampMillisec) {
 		if (minimumTimeStamp == 0) {
 			minimumTimeStamp = logTimeStampMillisec;
@@ -198,36 +226,50 @@ public class UtpDataLogger {
 
 	}
 
+
+	@Override
 	public void pktRtt(long packetRtt) {
 		this.packetRtt = packetRtt;
 
 	}
 
+
+	@Override
 	public void rttVar(long rttVar) {
 		this.rttVar = rttVar;
 
 	}
 
+
+	@Override
 	public void rtt(long rtt) {
 		this.rtt = rtt;
 
 	}
 
+
+	@Override
 	public void advertisedWindow(int advertisedWindowSize) {
 		this.advertisedWindow = advertisedWindowSize;
 
 	}
 
+
+	@Override
 	public void theirDifference(int theirDifference) {
 		this.theirDifference = theirDifference;
 
 	}
 
+
+	@Override
 	public void theirMinDelay(long theirMinDelay) {
 		this.theirMinDelay = theirMinDelay;
 
 	}
 	
+
+	@Override
 	public void bytesSend(int bytesSend){
 		this.bytesSend = bytesSend;
 	}

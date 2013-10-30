@@ -76,7 +76,7 @@ public class OutPacketBuffer {
 					}
 				}
 			} else {
-				System.err.println("ERROR FOUND WRONG SEQ NR: " + seqNrToAck
+				log.error("ERROR FOUND WRONG SEQ NR: " + seqNrToAck
 						+ " but returned "
 						+ (pkt.utpPacket().getSequenceNumber() & 0xFFFF));
 			}
@@ -93,10 +93,6 @@ public class OutPacketBuffer {
 				// overflow in seq nr
 				index += UnsignedTypesUtil.MAX_USHORT;
 			}
-			// bug
-			// if (index >= buffer.size()) {
-			// return null;
-			// }
 
 			if (index < buffer.size()
 					&& (buffer.get(index).utpPacket().getSequenceNumber() & 0xFFFF) == seqNrToAck) {
@@ -115,12 +111,6 @@ public class OutPacketBuffer {
 
 		return null;
 
-		// for (UtpTimestampedPacketDTO pkt : buffer) {
-		// if ((pkt.utpPacket().getSequenceNumber() & 0xFFFF) == seqNrToAck) {
-		// return pkt;
-		// }
-		// }
-		// return null;
 	}
 
 	public void removeAcked() {
@@ -176,6 +166,10 @@ public class OutPacketBuffer {
 		unackedPkt.utpPacket().setTimestamp(timeStamper.utpTimeStamp());
 		byte[] newBytes = unackedPkt.utpPacket().toByteArray();
 		// TB: why create new datagram packet, can't it be reused?
+		// TODO: ukackedPacket.datagram.getData()[x] = newtimestamp[0]
+		// 		 ukackedPacket.datagram.getData()[x + 1] = newtimestamp[1]
+		// 		 ukackedPacket.datagram.getData()[x + 2] = newtimestamp[2]
+		// 		 ukackedPacket.datagram.getData()[x + 3] = newtimestamp[3]
 		unackedPkt.setDgPacket(new DatagramPacket(newBytes, newBytes.length,
 				addr));
 		long timeStamp = timeStamper.timeStamp();
@@ -216,6 +210,7 @@ public class OutPacketBuffer {
 		return delta > resendTimeOutMicros;
 	}
 
+	// helper method
 	public String getSequenceOfLeft() {
 		String returnString = "";
 		for (UtpTimestampedPacketDTO el : buffer) {
@@ -233,8 +228,8 @@ public class OutPacketBuffer {
 				}
 			}
 			return timeStamp;
-		} else
-			return 0L;
+		}
+		return 0L;
 	}
 
 	public long getSendTimeStamp(int seqNrToAck) {
