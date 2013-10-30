@@ -68,14 +68,14 @@ public class UtpAlgConfiguration {
 	/**
 	 * Reduce burst sending artificially
 	 */
-	public volatile static int MAX_BURST_SEND = 2;
+	public volatile static int MAX_BURST_SEND = 5;
 
 	/**
 	 * Minimum number of acks past seqNr=x to trigger a resend of seqNr=x;
 	 */
 	public volatile static int MIN_SKIP_PACKET_BEFORE_RESEND = 3;
 
-	public volatile static long MICROSECOND_WAIT_BETWEEN_BURSTS = 18000;
+	public volatile static long MICROSECOND_WAIT_BETWEEN_BURSTS = 28000;
 
 	public volatile static long TIME_WAIT_AFTER_LAST_PACKET = 3000000;
 
