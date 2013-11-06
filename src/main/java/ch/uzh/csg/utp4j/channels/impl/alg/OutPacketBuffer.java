@@ -37,6 +37,7 @@ public class OutPacketBuffer {
 
 	private MicroSecondsTimeStamp timeStamper;
 	private SocketAddress addr;
+	private long currentTime;
 
 	public OutPacketBuffer(MicroSecondsTimeStamp stamper) {
 		timeStamper = stamper;
@@ -135,6 +136,7 @@ public class OutPacketBuffer {
 
 	public Queue<UtpTimestampedPacketDTO> getPacketsToResend(int maxResend)
 			throws SocketException {
+		currentTime = timeStamper.timeStamp();
 		Queue<UtpTimestampedPacketDTO> unacked = new LinkedList<UtpTimestampedPacketDTO>();
 		for (UtpTimestampedPacketDTO pkt : buffer) {
 			if (!pkt.isPacketAcked()) {
@@ -172,8 +174,7 @@ public class OutPacketBuffer {
 		// 		 ukackedPacket.datagram.getData()[x + 3] = newtimestamp[3]
 		unackedPkt.setDgPacket(new DatagramPacket(newBytes, newBytes.length,
 				addr));
-		long timeStamp = timeStamper.timeStamp();
-		unackedPkt.setStamp(timeStamp);
+		unackedPkt.setStamp(currentTime);
 	}
 
 	private boolean resendRequired(UtpTimestampedPacketDTO unackedPkt) {
@@ -201,8 +202,7 @@ public class OutPacketBuffer {
 	}
 
 	private boolean isTimedOut(UtpTimestampedPacketDTO utpTimestampedPacketDTO) {
-		long currentTimestamp = timeStamper.timeStamp();
-		long delta = currentTimestamp - utpTimestampedPacketDTO.stamp();
+		long delta = currentTime - utpTimestampedPacketDTO.stamp();
 		// if (delta > timeOutMicroSec) {
 		// log.debug("timed out so resending: " +
 		// (utpTimestampedPacketDTO.utpPacket().getSequenceNumber() & 0xFFFF));
