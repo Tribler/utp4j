@@ -57,5 +57,5 @@ utp4j is licensed under the Apache 2.0 [license].
 
 
 [tp]: http://www.bittorrent.org/beps/bep_0029.html
-[ledbat]: : http://datatracker.ietf.org/wg/ledbat/charter/
+[ledbat]: http://datatracker.ietf.org/wg/ledbat/charter/
 [license]: http://www.apache.org/licenses/LICENSE-2.0.html
