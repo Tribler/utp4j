@@ -1,3 +1,17 @@
+/* Copyright 2013 Ivan Iljkic
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy of
+* the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations under
+* the License.
+*/
 package ch.uzh.csg.utp4j.channels.impl.alg;
 
 import java.net.DatagramPacket;
@@ -16,6 +30,11 @@ import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Out buffer that handles outgoing packets. 
+ * @author Ivan Iljkic (i.iljkic@gmail.com)
+ *
+ */
 public class OutPacketBuffer {
 
 	private static int size = 3000;
@@ -43,6 +62,10 @@ public class OutPacketBuffer {
 		timeStamper = stamper;
 	}
 
+	/**
+	 * Puts a packet in the buffer.
+	 * @param the packet.
+	 */
 	public void bufferPacket(UtpTimestampedPacketDTO pkt) {
 		buffer.add(pkt);
 		if (pkt.utpPacket().getPayload() != null) {
@@ -54,7 +77,13 @@ public class OutPacketBuffer {
 	public boolean isEmpty() {
 		return buffer.isEmpty();
 	}
-
+	/**
+	 * Used to tell the buffer that packet was acked
+	 * @param seqNrToAck the sequence number that has been acked
+	 * @param timestamp now time stamp
+	 * @param ackSmallerThanThisSeq if true, ack all packets lower than this sequence number, if false, only ack this sequence number.
+	 * @return bytes acked. negative there was no packed with that sequence number. 
+	 */
 	public int markPacketAcked(int seqNrToAck, long timestamp, boolean ackSmallerThanThisSeq) {
 		int bytesJustAcked = -1;
 		UtpTimestampedPacketDTO pkt = findPacket(seqNrToAck);
@@ -113,7 +142,10 @@ public class OutPacketBuffer {
 		return null;
 
 	}
-
+	
+	/**
+	 * Removes all acked packets up to the first unacked packet.
+	 */
 	public void removeAcked() {
 		ArrayList<UtpTimestampedPacketDTO> toRemove = new ArrayList<UtpTimestampedPacketDTO>(
 				size);
@@ -134,6 +166,12 @@ public class OutPacketBuffer {
 		buffer.removeAll(toRemove);
 	}
 
+	/**
+	 * Returns all packets that timed out or that should be resend by fast resend.
+	 * @param maxResend maximum number of packets to resend.
+	 * @return Queue with all packets that must be resend. 
+	 * @throws SocketException
+	 */
 	public Queue<UtpTimestampedPacketDTO> getPacketsToResend(int maxResend)
 			throws SocketException {
 		currentTime = timeStamper.timeStamp();
@@ -219,6 +257,9 @@ public class OutPacketBuffer {
 		return returnString.trim();
 	}
 
+	/**
+	 * @return the timestamp of the oldest unacked packet. 
+	 */
 	public long getOldestUnackedTimestamp() {
 		if (!buffer.isEmpty()) {
 			long timeStamp = Long.MAX_VALUE;
@@ -231,7 +272,11 @@ public class OutPacketBuffer {
 		}
 		return 0L;
 	}
-
+	
+	/**
+	 * Returns the timestamp when this packet was send. 
+	 * @param seqNrToAck the seq. number. 
+	 */
 	public long getSendTimeStamp(int seqNrToAck) {
 		UtpTimestampedPacketDTO pkt = findPacket(seqNrToAck);
 		if (pkt != null) {
@@ -244,7 +289,10 @@ public class OutPacketBuffer {
 		this.addr = addr;
 
 	}
-
+	/**
+	 * @param seqNrToAck packet with that sequence number.
+	 * @return the number how many times this pkt was resend. 
+	 */
 	public int getResendCounter(int seqNrToAck) {
 		UtpTimestampedPacketDTO pkt = findPacket(seqNrToAck);
 		if (pkt != null) {

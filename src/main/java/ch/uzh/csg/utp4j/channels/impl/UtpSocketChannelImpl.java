@@ -1,3 +1,17 @@
+/* Copyright 2013 Ivan Iljkic
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy of
+* the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations under
+* the License.
+*/
 package ch.uzh.csg.utp4j.channels.impl;
 
 import static ch.uzh.csg.utp4j.channels.UtpSocketState.CLOSED;
@@ -29,6 +43,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.xml.crypto.dsig.keyinfo.RetrievalMethod;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +67,11 @@ import ch.uzh.csg.utp4j.data.UtpHeaderExtension;
 import ch.uzh.csg.utp4j.data.UtpPacket;
 import ch.uzh.csg.utp4j.data.UtpPacketUtils;
 
+/**
+ * Implements and hides implementation details from the superclass.
+ * @author Ivan Iljkic (i.iljkic@gmail.com)
+ *
+ */
 public class UtpSocketChannelImpl extends UtpSocketChannel implements
 		UtpPacketRecievable {
 
@@ -70,7 +91,10 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 
 	private static final Logger log = LoggerFactory
 			.getLogger(UtpSocketChannelImpl.class);
-
+	
+	/*
+	 * Handles packet.
+	 */
 	@Override
 	public void recievePacket(DatagramPacket udpPacket) {
 		
@@ -91,15 +115,6 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 			sendResetPacket(udpPacket.getSocketAddress());
 		}
 			
-
-		// if (UtpPacketUtils.isSynPkt(udpPacket)) {
-		// handleIncommingConnectionRequest(udpPacket);
-		// } else if (getState() == UtpSocketState.SYN_SENT) {
-		// handleSynSendAck(udpPacket);
-		// } else if (acceptDataPackets()) {
-		// handlePacket(udpPacket);
-		//
-		// }
 	}
 
 	private void handleFinPacket(DatagramPacket udpPacket) {
@@ -124,8 +139,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 	}
 
 	private void handleResetPacket(DatagramPacket udpPacket) {
-		// TODO Auto-generated method stub
-		
+		this.close();
 	}
 
 	private boolean isSynAckPacket(DatagramPacket udpPacket) {
@@ -174,14 +188,23 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 				timeStamper.timeStamp(), timeStamper.utpTimeStamp()));
 
 	}
-
+	/**
+	 * Sends an ack. 
+	 * @param utpPacket the packet that should be acked
+	 * @param timestampDifference timestamp difference for tha ack packet
+	 * @param windowSize the remaining buffer size. 
+	 * @throws IOException
+	 */
 	public void ackPacket(UtpPacket utpPacket, int timestampDifference,
 			long windowSize) throws IOException {
 		UtpPacket ackPacket = createAckPacket(utpPacket, timestampDifference,
 				windowSize);
 		sendPacket(ackPacket);
 	}
-
+	
+	/**
+	 * setting up a random sequence number. 
+	 */
 	public void setupRandomSeqNumber() {
 		Random rnd = new Random();
 		int max = (int) (MAX_USHORT - 1);
@@ -225,10 +248,9 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 
 	private void sendResetPacket(SocketAddress addr) {
 		log.debug("Sending RST packet");
-		// TODO Auto-generated method stub
-		
-	}
 
+	}
+	
 	private boolean acceptSyn(DatagramPacket udpPacket) {
 		UtpPacket pkt = extractUtpPacket(udpPacket);
 		return getState() == CLOSED 
@@ -283,11 +305,19 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 	public BlockingQueue<UtpTimestampedPacketDTO> getDataGramQueue() {
 		return queue;
 	}
-
+	
+	/**
+	 * Returns a Data packet with specified header fields already set. 
+	 * @return
+	 */
 	public UtpPacket getNextDataPacket() {
 		return createDataPacket();
 	}
 
+	/**
+	 * Returns predefined fin packet
+	 * @return fin packet.
+	 */
 	public UtpPacket getFinPacket() {
 		UtpPacket fin = createDataPacket();
 		fin.setTypeVersion(FIN);
@@ -306,7 +336,14 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 		reader.start();
 		return readFuture;
 	}
-
+	
+	/**
+	 * Creates an Selective Ack packet
+	 * @param headerExtension the header extension where the SACK data is stored
+	 * @param timestampDifference timestamp difference for the ack pcket.
+	 * @param advertisedWindow remaining buffer size.
+	 * @throws IOException
+	 */
 	public void selectiveAckPacket(SelectiveAckHeaderExtension headerExtension,
 			int timestampDifference, long advertisedWindow) throws IOException {
 		UtpPacket sack = createSelectiveAckPacket(headerExtension,
@@ -430,7 +467,10 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 	public void removeWriter() {
 		writer = null;
 	}
-
+	
+	/*
+	 * Start a connection time out counter which will frequently resend the syn packet.
+	 */
 	@Override
 	protected void startConnectionTimeOutCounter(UtpPacket synPacket) {
 		retryConnectionTimeScheduler = Executors
@@ -444,7 +484,11 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 				UtpAlgConfiguration.CONNECTION_ATTEMPT_INTERVALL_MILLIS,
 				TimeUnit.MILLISECONDS);
 	}
-
+	
+	/**
+	 * Called by the time out counter {@see ConnectionTimeOutRunnable}
+	 * @param exception, is optional.
+	 */
 	public void connectionFailed(IOException exp) {
 		log.debug("got failing message");
 		setSequenceNumber(DEF_SEQ_START);
@@ -457,6 +501,10 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 
 	}
 
+	/**
+	 * Resends syn packet. called by {@see ConnectionTimeOutRunnable}
+	 * @param synPacket 
+	 */
 	public void resendSynPacket(UtpPacket synPacket) {
 		stateLock.lock();
 		try {
@@ -487,7 +535,9 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 		this.timeStamper = stamp;
 
 	}
-	
+	/*
+	 * Creates an ACK packet. 
+	 */
 	protected UtpPacket createAckPacket(UtpPacket pkt, int timedifference,
 			long advertisedWindow) {
 		UtpPacket ackPacket = new UtpPacket();

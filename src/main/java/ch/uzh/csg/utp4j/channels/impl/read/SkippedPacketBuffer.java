@@ -1,3 +1,17 @@
+/* Copyright 2013 Ivan Iljkic
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy of
+* the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations under
+* the License.
+*/
 package ch.uzh.csg.utp4j.channels.impl.read;
 
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_USHORT;
@@ -18,6 +32,11 @@ import ch.uzh.csg.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration;
 import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
 
+/**
+ * This buffer handles packets that arrived out of order. 
+ * @author Ivan Iljkic (i.iljkic@gmail.com)
+ *
+ */
 public class SkippedPacketBuffer {
 
 	private static final int SIZE = 2000;
@@ -29,6 +48,11 @@ public class SkippedPacketBuffer {
 	
 	private static final Logger log = LoggerFactory.getLogger(SkippedPacketBuffer.class);
 
+	/**
+	 * puts the packet in the buffer. 
+	 * @param pkt the packet with meta data. 
+	 * @throws IOException
+	 */
 	public void bufferPacket(UtpTimestampedPacketDTO pkt) throws IOException {
 		int sequenceNumber = pkt.utpPacket().getSequenceNumber() & 0xFFFF;
 		int position = sequenceNumber - expectedSequenceNumber;

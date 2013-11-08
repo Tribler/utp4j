@@ -1,3 +1,17 @@
+/* Copyright 2013 Ivan Iljkic
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy of
+* the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations under
+* the License.
+*/
 package ch.uzh.csg.utp4j.data;
 
 import static ch.uzh.csg.utp4j.data.UtpPacketUtils.DEF_HEADER_LENGTH;
@@ -106,7 +120,9 @@ public class UtpPacket {
 		this.ackNumber = ackNumber;
 	}
 
-	
+	/**
+	 * Returns a byte array version of this packet.
+	 */
 	public byte[] toByteArray() {
 		
 		if (!hasExtensions()) {
@@ -157,12 +173,22 @@ public class UtpPacket {
 		return length;
 	}
 	
+	/**
+	 * returns the total packet length.
+	 * @return bytes.
+	 */
 	public int getPacketLength() {
 		byte[] pl = getPayload();
 		int plLength = pl != null ? pl.length : 0;
 		return DEF_HEADER_LENGTH + getTotalLengthOfExtensions() + plLength;
 	}
 	
+	/**
+	 * Sets the packet data from the array
+	 * @param array the array
+	 * @param length total packet length
+	 * @param offset the packet starts here
+	 */
 	public void setFromByteArray(byte[] array, int length, int offset) {
 		if (array == null) {
 			return;

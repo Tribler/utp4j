@@ -1,3 +1,17 @@
+/* Copyright 2013 Ivan Iljkic
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy of
+* the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations under
+* the License.
+*/
 package ch.uzh.csg.utp4j.channels.impl.alg;
 
 import static ch.uzh.csg.utp4j.channels.impl.alg.UtpAlgConfiguration.C_CONTROL_TARGET_MICROS;
@@ -88,7 +102,10 @@ public class UtpAlgorithm {
 		this.buffer = outBuffer;
 	}
 
-
+	/**
+	 * handles the acking of the packet. 
+	 * @param pair packet with the meta data. 
+	 */
 	public void ackRecieved(UtpTimestampedPacketDTO pair) {
 		int seqNrToAck = pair.utpPacket().getAckNumber() & 0xFFFF;
 //		log.debug("Recieved ACK " + pair.utpPacket().toString());
@@ -265,7 +282,10 @@ public class UtpAlgorithm {
 	private void updateOurDelay(long difference) {
 		minDelay.updateOurDelay(difference, timeStampNow);
 	}
-
+	/**
+	 * Checks if packets must be resend based on the fast resend mechanism or a transmission timeout. 
+	 * @return All packets that must be resend
+	 */
 	public Queue<DatagramPacket> getPacketsToResend() throws SocketException {
 		timeStampNow = timeStamper.timeStamp();
 		Queue<DatagramPacket> queue = new LinkedList<DatagramPacket>();
@@ -313,7 +333,9 @@ public class UtpAlgorithm {
 	}
 
 	
-	
+	/**
+	 * Returns true if a packet can NOW be send
+	 */
 	public boolean canSendNextPacket() {
 		if (timeStampNow - lastZeroWindow > getTimeOutMicros() && lastZeroWindow != 0 && maxWindow == 0) {
 			log.debug("setting window to one packet size. current window is:" + currentWindow);
@@ -346,7 +368,10 @@ public class UtpAlgorithm {
 				&& advertisedWindowSizeSet) ? advertisedWindowSize : maxWindow;
 		return currentWindow >= maximumWindow;
 	}
-	
+	/**
+	 * Returns the size of the next packet, depending on {@see PacketSizeModus}
+	 * @return bytes. 
+	 */
 	public int sizeOfNextPacket() {
 		if (PACKET_SIZE_MODE.equals(PacketSizeModus.DYNAMIC_LINEAR)) {
 			return calculateDynamicLinearPacketSize();
@@ -366,6 +391,11 @@ public class UtpAlgorithm {
 	}
 
 
+	/**
+	 * Inform the algorithm that this packet just was send
+	 * @param utpPacket utp packet version
+	 * @param dgPacket Datagram of first parameter. 
+	 */
 	public void markPacketOnfly(UtpPacket utpPacket, DatagramPacket dgPacket) {
 		timeStampNow = timeStamper.timeStamp();
 		UtpTimestampedPacketDTO pkt = new UtpTimestampedPacketDTO(dgPacket, utpPacket, timeStampNow, 0);
@@ -385,6 +415,9 @@ public class UtpAlgorithm {
 		
 	}
 
+	/**
+	 * informs the algorithm that the fin packet was send.
+	 */
 	public void markFinOnfly(UtpPacket fin) {
 		timeStampNow = timeStamper.timeStamp();
 		byte[] finBytes = fin.toByteArray();
@@ -419,7 +452,9 @@ public class UtpAlgorithm {
 		this.timeStamper = timeStamper;
 		
 	}
-	
+	/**
+	 * sets the current ack position based on the sequence number
+	 */
 	public void initiateAckPosition(int sequenceNumber) {
 		if (sequenceNumber == 0) {
 			throw new IllegalArgumentException("sequence number cannot be 0");
@@ -468,6 +503,10 @@ public class UtpAlgorithm {
 	}
 
 
+	/**
+	 * Returns the number of micro seconds the writing thread should wait at most based on: timed out packets and window utilisation 
+	 * @return micro seconds. 
+	 */
 	public long getWaitingTimeMicroSeconds() {
 		long oldestTimeStamp = buffer.getOldestUnackedTimestamp();
 		long nextTimeOut = oldestTimeStamp + getTimeOutMicros();
@@ -488,7 +527,11 @@ public class UtpAlgorithm {
 		return timeOutInMicroSeconds < 0 && (oldestTimeStamp != 0);
 	}
 
-
+	/**
+	 * terminates. 
+	 * @param bytesSend
+	 * @param successfull
+	 */
 	public void end(int bytesSend, boolean successfull) {
 		if (successfull) {
 			statisticLogger.end(bytesSend);
@@ -500,7 +543,9 @@ public class UtpAlgorithm {
 		currentBurstSend = 0;
 	}
 
-
+	/**
+	 * returns true when a socket timeout happened. (the reciever does not answer anymore)
+	 */
 	public boolean isTimedOut() {
 		if (timeStampNow - lastAckRecieved > getTimeOutMicros()*5 && lastAckRecieved != 0) {
 			log.debug("Timed out!");

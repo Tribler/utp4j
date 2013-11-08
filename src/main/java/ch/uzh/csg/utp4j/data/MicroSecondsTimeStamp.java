@@ -1,15 +1,37 @@
+/* Copyright 2013 Ivan Iljkic
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy of
+* the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations under
+* the License.
+*/
 package ch.uzh.csg.utp4j.data;
 
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.MAX_UINT;
 import static ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil.longToUint;
 import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
 import ch.uzh.csg.utp4j.data.bytes.exceptions.ByteOverflowException;
-
+/**
+ * Implements micro second accuracy timestamps for uTP headers and to measure time elapsed. 
+ * @author Ivan Iljkic (i.iljkic@gmail.com)
+ *
+ */
 public class MicroSecondsTimeStamp {
 
 	private static long initDateMillis = System.currentTimeMillis();
 	private static long startNs = System.nanoTime();
 	
+	/**
+	 * Returns a uTP time stamp for packet headers. 
+	 * @return timestamp
+	 */
 	public int utpTimeStamp() {
 		int returnStamp;
 		//TODO: if performance issues, try bitwise & operator since constant MAX_UINT equals 0xFFFFFF
@@ -24,10 +46,20 @@ public class MicroSecondsTimeStamp {
 		return returnStamp;
 	}
 	
+	/**
+	 * Calculates the Difference of the uTP timestamp between now and parameter. 
+	 * @param othertimestamp timestamp
+	 * @return difference 
+	 */
 	public int utpDifference(int othertimestamp) {
 		return utpDifference(utpTimeStamp(), othertimestamp);
 	}
-	
+	/**
+	 * calculates the utp Difference of timestamps (this - other)
+	 * @param thisTimeStamp
+	 * @param othertimestamp
+	 * @return difference. 
+	 */
 	public int utpDifference(int thisTimeStamp, int othertimestamp) {
 		int nowTime = thisTimeStamp;
 		long nowTimeL = nowTime & 0xFFFFFFFF;
@@ -41,7 +73,9 @@ public class MicroSecondsTimeStamp {
 	}
 	
 
-	
+	/**
+	 * @return timestamp with micro second resulution
+	 */
 	public long timeStamp() {
 		
 		long currentNs = System.nanoTime();

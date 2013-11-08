@@ -1,3 +1,17 @@
+/* Copyright 2013 Ivan Iljkic
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy of
+* the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations under
+* the License.
+*/
 package ch.uzh.csg.utp4j.channels.impl.read;
 
 import java.io.IOException;
@@ -16,7 +30,11 @@ import ch.uzh.csg.utp4j.data.MicroSecondsTimeStamp;
 import ch.uzh.csg.utp4j.data.SelectiveAckHeaderExtension;
 import ch.uzh.csg.utp4j.data.UtpPacket;
 import ch.uzh.csg.utp4j.data.bytes.UnsignedTypesUtil;
-
+/**
+ * Reads incomming data. 
+ * @author Ivan Iljkic (i.iljkic@gmail.com)
+ *
+ */
 public class UtpReadingRunnable extends Thread implements Runnable {
 	
 	private static final int PACKET_DIFF_WARP = 50000;
@@ -199,6 +217,10 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		return false;
 	}
 
+	/**
+	 * Returns the average space available in the buffer in Bytes.
+	 * @return bytes
+	 */
 	public long getLeftSpaceInBuffer() throws IOException {
 		return (skippedBuffer.getFreeSize()) * lastPayloadLength;
 	}
@@ -238,6 +260,11 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		}
 	}
 	
+	/**
+	 * True if this packet is expected. 
+	 * @param utpPacket packet
+	 * @return
+	 */
 	public boolean isPacketExpected(UtpPacket utpPacket) {
 		int seqNumberFromPacket = utpPacket.getSequenceNumber() & 0xFFFF;
 //		log.debug("Expected Sequence Number == " + getExpectedSeqNr());

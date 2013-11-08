@@ -1,3 +1,17 @@
+/* Copyright 2013 Ivan Iljkic
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy of
+* the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations under
+* the License.
+*/
 package ch.uzh.csg.utp4j.channels.impl;
 
 import java.io.IOException;
@@ -25,7 +39,11 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
 	private Queue<UtpAcceptFutureImpl> acceptQueue = new LinkedList<UtpAcceptFutureImpl>();
 	private Map<Integer, ConnectionIdTriplet> connectionIds = new HashMap<Integer, ConnectionIdTriplet>();
 	private boolean listenRunnerStarted = false;
-
+	
+	
+	/*
+	 * implements accept.
+	 */
 	@Override
 	protected UtpAcceptFuture acceptImpl() throws IOException {
 		
@@ -48,6 +66,9 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
 		return null;
 	}
 	
+	/*  
+	 * handles syn packet. 
+	 */
 	private void synRecieved(DatagramPacket packet) {
 		if (handleDoubleSyn(packet)) {
 			return;
@@ -75,6 +96,9 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
 		}
 	}
 		
+	/*
+	 * handles double syn....
+	 */
 	private boolean handleDoubleSyn(DatagramPacket packet) {
 		UtpPacket pkt = UtpPacketUtils.extractUtpPacket(packet);
 		int connId = pkt.getConnectionId();
@@ -87,7 +111,10 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
 		
 		return false;
 	}
-
+	
+	/*
+	 * handles the recieving of a pkt. if is a syn packet, the server takes care of it, otherwise it will be passed to the channel. 
+	 */
 	@Override
 	public void recievePacket(DatagramPacket packet) {
 		if (UtpPacketUtils.isSynPkt(packet)) {
@@ -108,7 +135,10 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
 	public void setListenRunnable(UtpRecieveRunnable listenRunnable) {
 		this.listenRunnable = listenRunnable;
 	}
-
+	
+	/*
+	 * registers a channel.
+	 */
 	private boolean registerChannel(UtpSocketChannelImpl channel) {
 		ConnectionIdTriplet triplet = new ConnectionIdTriplet(
 				channel, channel.getConnectionIdRecieving(), channel.getConnectionIdsending());
@@ -123,11 +153,17 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
 		return false;
 	}
 	
+	/*
+	 * true if channel reg. is required. 
+	 */
 	private boolean isChannelRegistrationNecessary(UtpSocketChannelImpl channel) {
 		return connectionIds.get(channel.getConnectionIdRecieving()) == null
 				&& channel.getState() != UtpSocketState.SYN_ACKING_FAILED;
 	}
-
+	
+	/**
+	 * closes this server. 
+	 */
 	@Override
 	public void close() {
 		if (connectionIds.isEmpty()) {
@@ -136,7 +172,11 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
 			throw new CannotCloseServerException(connectionIds.values());
 		}
 	}
-
+	
+	/**
+	 * Unregisters the channel. 
+	 * @param utpSocketChannelImpl
+	 */
 	public void unregister(UtpSocketChannelImpl utpSocketChannelImpl) {
 		connectionIds.remove((int) utpSocketChannelImpl.getConnectionIdRecieving() & 0xFFFF);
 	}
