@@ -1,8 +1,8 @@
 #utp4j - Micro Transport Protocol for Java
 
-[uTP][tp] is a implementation of the [LEDBAT][ledbat] algorithm. uTP is a BitTorrent 
+[uTP][tp] is an implementation of the [LEDBAT][ledbat] algorithm. uTP is a BitTorrent 
 standard and build on top of UDP, as such, it implements its own mechanisms for reliable ordered 
-delivery. utp4J is (still :() an experimental uTP implementation in Java, currently only suited for scientific purposes. I wrote this library as a part of my Bsc thesis at the University of Zurich and i'd like to continue developing it with the intention of releasing a stable version some day. 
+delivery. utp4J is (still :( ) an experimental uTP implementation in Java, currently only suited for scientific purposes. I wrote this library as a part of my Bsc thesis at the University of Zurich and i'd like to continue developing it with the intention of releasing a stable version some day. 
 
 ## Interface
 utp4j follows the same approach like java.nio. If you ever have worked with nio, you will be familiar with utp4j soon. Developers only need to know about a few classes in order to use utp4j efficiently. 
@@ -55,10 +55,14 @@ There are a lot of research papers regarding LEDBAT. Because it is still an expe
 * High CPU consumption
 * Probably some minor bugs.
 
+##Appreciation 
+I'd like to thank all members of the [Communication Systems Group][csg] at the University Zurich for the opportunity, the provided test hardware, the room and patience.
+Special thanks to Thomas and Danni for all the constructive feedback, advices and tipps. 
+
 ## License
 utp4j is licensed under the Apache 2.0 [license]. 
 
-
+[csg]: http://www.csg.uzh.ch/
 [tp]: http://www.bittorrent.org/beps/bep_0029.html
 [ledbat]: http://datatracker.ietf.org/wg/ledbat/charter/
 [license]: http://www.apache.org/licenses/LICENSE-2.0.html

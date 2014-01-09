@@ -47,6 +47,6 @@
   		<version>1.7.5</version>
   	</dependency>
   </dependencies>
-  <!--  exclude the package ch.uzh.csg.utp4j.channels.impl.log from the final build -->
-  <!-- exculde ch.uzh.csg.utp4j.examples as well -->
+  <!--  exclude the package net.utp4j.channels.impl.log from the final build -->
+  <!-- exculde net.utp4j.examples as well -->
 </project>
