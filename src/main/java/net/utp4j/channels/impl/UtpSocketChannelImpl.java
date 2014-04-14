@@ -36,14 +36,17 @@ import java.net.DatagramSocket;
 import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import javax.xml.crypto.dsig.keyinfo.RetrievalMethod;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -460,8 +463,14 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 		this.remoteAddress = remoteAdress;
 	}
 
-	public void removeReader() {
+	public void returnFromReading() {
 		reader = null;
+		//TODO: dispatch:
+		if (!isWriting()) {
+			this.state = UtpSocketState.CONNECTED;
+		} else {
+			
+		}
 	}
 
 	public void removeWriter() {

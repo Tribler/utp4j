@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import net.utp4j.channels.impl.UtpSocketChannelImpl;
 import net.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import net.utp4j.channels.impl.alg.UtpAlgConfiguration;
+import net.utp4j.channels.impl.close.UtpCloseFutureImpl;
 import net.utp4j.data.MicroSecondsTimeStamp;
 import net.utp4j.data.SelectiveAckHeaderExtension;
 import net.utp4j.data.UtpPacket;
@@ -143,7 +144,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 		log.debug("PAYLOAD LENGHT " + totalPayloadLength);
 		log.debug("READER OUT");
 
-		channel.removeReader();
+		channel.returnFromReading();
 
 	}
 	

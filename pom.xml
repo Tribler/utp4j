@@ -6,7 +6,6 @@
   <name>Utp4J</name>
   <description>Micro Transport Protocol for Java</description>
   <build>
-    <testSourceDirectory>tests/main/java</testSourceDirectory>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -17,11 +16,6 @@
         </configuration>
       </plugin>
     </plugins>
-    <resources>
-    	<resource>
-    		<directory>resources</directory>
-    	</resource>
-    </resources>
   </build>
   <dependencies>
   	<dependency>

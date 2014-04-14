@@ -50,5 +50,5 @@ public enum UtpSocketState {
 		 * Indicates that a fin was recieved. 
 		 */
 		GOT_FIN,
-
+		
 }
