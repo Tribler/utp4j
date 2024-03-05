@@ -49,10 +49,19 @@ public class ConfigTestWrite {
 	 * @throws InterruptedException 
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
-		
-		String testPlan = "testPlan/testplan2.csv";
-		String testDataFile = "testData/sc S01E01.avi";
-		boolean waitOnManualInput = true;
+		if (args.length < 2) {
+			System.out.println("Error - usage: configwritetest <path/to/testplan> <path/to/testfile> [server ip:port]");
+			return;
+		}
+
+
+		String testPlan = args[0];
+		String testDataFile = args[1];
+		String ip = "localhost";
+		if (args.length > 2) {
+			ip = args[2];
+		}
+		boolean waitOnManualInput = false;
 		
 		
 		MicroSecondsTimeStamp timeStamper = new MicroSecondsTimeStamp();
@@ -86,7 +95,7 @@ public class ConfigTestWrite {
 			}
 			
 //			UtpConnectFuture cFuture = chanel.connect(new InetSocketAddress("192.168.1.40", 13344));
-			UtpConnectFuture cFuture = chanel.connect(new InetSocketAddress("localhost", 13344));
+			UtpConnectFuture cFuture = chanel.connect(new InetSocketAddress(ip, 13344));
 //			UtpConnectFuture cFuture = chanel.connect(new InetSocketAddress("192.168.1.44", 13344));
 			
 			cFuture.block();
@@ -113,7 +122,7 @@ public class ConfigTestWrite {
 			chanel.close();
 			buffer.clear();
 			cpuLoad.reset();
-			Thread.sleep(15000);
+			Thread.sleep(1000);
 			
 		}
 		closeLog();
@@ -160,12 +169,9 @@ public class ConfigTestWrite {
 	
 	/* Transmission Rate calculus */
 	private static String calculateRate(int bytesToSend, long start, long end) {
-		long seconds = (end - start)/1000000;
-		long sendRate = 0;
-		if (seconds != 0) {
-			sendRate = (bytesToSend/1024)/seconds;
-		}
-		return sendRate + "kB/sec";
+		double seconds = (double)(end - start)/1000000d;
+		double sendRate = ((double)bytesToSend/1024d)/seconds;
+		return Math.round(sendRate) + "kB/sec";
 	}
 
 
