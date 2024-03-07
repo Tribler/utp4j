@@ -199,7 +199,9 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
             int timeStamp = timeStamper.utpTimeStamp();
             setRemoteAddress(udpPacket.getSocketAddress());
             setConnectionIdsFromPacket(utpPacket);
-            setupRandomSeqNumber();
+//            setupRandomSeqNumber();
+            // Fix #1 ArrayIndexOutOfBoundsException
+            setSequenceNumber(DEF_SEQ_START);
             setAckNrFromPacketSqNr(utpPacket);
             printState("[Syn recieved] ");
             int timestampDifference = timeStamper.utpDifference(timeStamp,
