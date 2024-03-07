@@ -98,8 +98,8 @@ public class SkippedPacketBufferTest {
 		assertEquals((int) MAX_USHORT, max.utpPacket().getSequenceNumber() & 0xFFFF);
 		assertEquals(1, one.utpPacket().getSequenceNumber() & 0xFFFF);
 		assertEquals(2, two.utpPacket().getSequenceNumber() & 0xFFFF);
-		
-		assertEquals(true, buffer.isEmpty());
+
+        assertTrue(buffer.isEmpty());
 
 		
 	}
@@ -131,8 +131,8 @@ public class SkippedPacketBufferTest {
 		assertEquals(2, two.utpPacket().getSequenceNumber() & 0xFFFF);
 		assertEquals(3, three.utpPacket().getSequenceNumber() & 0xFFFF);
 		assertEquals(4, four.utpPacket().getSequenceNumber() & 0xFFFF);
-		
-		assertEquals(true, buffer.isEmpty());
+
+        assertTrue(buffer.isEmpty());
 
 		
 	}
@@ -169,7 +169,7 @@ public class SkippedPacketBufferTest {
 		Queue<UtpTimestampedPacketDTO> noPackets = buffer.getAllUntillNextMissing();
 
 		assertEquals(0, noPackets.size());
-		assertEquals(true, buffer.isEmpty());
+        assertTrue(buffer.isEmpty());
 
 		
 	}
@@ -205,7 +205,7 @@ public class SkippedPacketBufferTest {
 		buffer.reindex(2);
 		Queue<UtpTimestampedPacketDTO> noPackets = buffer.getAllUntillNextMissing();
 		assertEquals(0, noPackets.size());
-		assertEquals(true, buffer.isEmpty());
+        assertTrue(buffer.isEmpty());
 
 	}
 	
@@ -271,7 +271,7 @@ public class SkippedPacketBufferTest {
 		buffer.reindex(16);
 		Queue<UtpTimestampedPacketDTO> noPackets = buffer.getAllUntillNextMissing();
 		assertEquals(0, noPackets.size());
-		assertEquals(true, buffer.isEmpty());
+        assertTrue(buffer.isEmpty());
 		
 	}
 	
@@ -334,7 +334,7 @@ public class SkippedPacketBufferTest {
 		buffer.reindex(9);
 		Queue<UtpTimestampedPacketDTO> noPackets = buffer.getAllUntillNextMissing();
 		assertEquals(0, noPackets.size());
-		assertEquals(true, buffer.isEmpty());
+        assertTrue(buffer.isEmpty());
 	}
 	//TB: failure?
 	@Test

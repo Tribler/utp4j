@@ -70,7 +70,7 @@ public class UtpAlgorithm {
 	private int advertisedWindowSize;
 	private boolean advertisedWindowSizeSet = false;
 
-	private UtpStatisticLogger statisticLogger;
+	private final UtpStatisticLogger statisticLogger;
 
 	private long lastTimeWindowReduced;
 	private long timeStampNow;
@@ -85,7 +85,7 @@ public class UtpAlgorithm {
 	
 	public UtpAlgorithm(MicroSecondsTimeStamp timestamper, SocketAddress addr) {
 		maxWindow = MAX_CWND_INCREASE_PACKETS_PER_RTT;
-		rtt = MINIMUM_TIMEOUT_MILLIS*2;
+		rtt = MINIMUM_TIMEOUT_MILLIS* 2L;
 		timeStamper = timestamper;
 		buffer = new OutPacketBuffer(timestamper);
 		buffer.setRemoteAdress(addr);
@@ -218,7 +218,7 @@ public class UtpAlgorithm {
 		statisticLogger.offTarget(offTarget);
 		double delayFactor = ((double) offTarget) / ((double) C_CONTROL_TARGET_MICROS);
 		statisticLogger.delayFactor(delayFactor);
-		double windowFactor = (Math.min((double)packetSizeJustAcked, (double)maxWindow)) / (Math.max((double)maxWindow, (double)packetSizeJustAcked));
+		double windowFactor = (Math.min(packetSizeJustAcked, (double)maxWindow)) / (Math.max(maxWindow, (double)packetSizeJustAcked));
 		statisticLogger.windowFactor(windowFactor);
 		int gain = (int) (MAX_CWND_INCREASE_PACKETS_PER_RTT * delayFactor * windowFactor);
 		
@@ -255,9 +255,7 @@ public class UtpAlgorithm {
 		// if i have ever reached lastMaxWindow then check if its longer than 1kk micros
 		// if not, true
 		boolean lastMaxWindowNeverReached 
-			= (lastMaxedOutWindow != 0 
-				&& (lastMaxedOutWindow - timeStampNow >= UtpAlgConfiguration.MINIMUM_DELTA_TO_MAX_WINDOW_MICROS)) ||
-				lastMaxedOutWindow == 0;
+			= lastMaxedOutWindow == 0 || (lastMaxedOutWindow - timeStampNow >= UtpAlgConfiguration.MINIMUM_DELTA_TO_MAX_WINDOW_MICROS);
 		if (lastMaxWindowNeverReached) {
 			log.debug("last maxed window: setting gain to 0");
 		}
@@ -271,7 +269,7 @@ public class UtpAlgorithm {
 
 
 	private long getTimeOutMicros() {
-		return Math.max(getEstimatedRttMicros(), MINIMUM_TIMEOUT_MILLIS*1000);
+		return Math.max(getEstimatedRttMicros(), MINIMUM_TIMEOUT_MILLIS* 1000L);
 	}
 	
 	private long getEstimatedRttMicros() {
@@ -383,8 +381,8 @@ public class UtpAlgorithm {
 
 	private int calculateDynamicLinearPacketSize() {
 		int packetSizeDelta = MAX_PACKET_SIZE - MIN_PACKET_SIZE;
-		long minDelayOffTarget = C_CONTROL_TARGET_MICROS - minDelay.getRecentAverageDelay();;
-		minDelayOffTarget = minDelayOffTarget < 0 ? 0 : minDelayOffTarget;
+		long minDelayOffTarget = C_CONTROL_TARGET_MICROS - minDelay.getRecentAverageDelay();
+        minDelayOffTarget = minDelayOffTarget < 0 ? 0 : minDelayOffTarget;
 		double packetSizeFactor = ((double) minDelayOffTarget)/((double) C_CONTROL_TARGET_MICROS);
 		double packetSize = MIN_PACKET_SIZE + packetSizeFactor*packetSizeDelta;
 		return (int) Math.ceil(packetSize);

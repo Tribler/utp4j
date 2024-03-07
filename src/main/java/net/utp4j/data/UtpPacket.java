@@ -134,10 +134,8 @@ public class UtpPacket {
 		int headerLength = offset + getTotalLengthOfExtensions();
 		byte[] header = new byte[headerLength];
 		byte[] extensionlessArray = getExtensionlessByteArray();
-		
-		for (int i = 0; i< extensionlessArray.length; i++) {
-			header[i] = extensionlessArray[i];
-		}
+
+        System.arraycopy(extensionlessArray, 0, header, 0, extensionlessArray.length);
 		
 		for (int i = 0; i < extensions.length; i++) {
 			byte[] extenionBytes = extensions[i].toByteArray();
@@ -255,11 +253,10 @@ public class UtpPacket {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof UtpPacket)) {
+		if (!(obj instanceof UtpPacket pkt)) {
 			return false;
 		} else {
-			UtpPacket pkt = (UtpPacket) obj;
-			
+
 			byte[] their = pkt.toByteArray();
 			byte[] mine = this.toByteArray();
 			

@@ -11,6 +11,6 @@ public interface UtpPacketRecievable {
 	 * Recieve that packet. 
 	 * @param packet
 	 */
-	public void recievePacket(DatagramPacket packet);
+    void recievePacket(DatagramPacket packet);
 
 }

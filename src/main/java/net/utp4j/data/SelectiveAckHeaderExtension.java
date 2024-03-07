@@ -75,10 +75,9 @@ public class SelectiveAckHeaderExtension extends UtpHeaderExtension {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof SelectiveAckHeaderExtension)) {
+		if (!(obj instanceof SelectiveAckHeaderExtension s)) {
 			return false;
-		} 
-		SelectiveAckHeaderExtension s = (SelectiveAckHeaderExtension) obj;
+		}
 		return Arrays.equals(toByteArray(), s.toByteArray());
 	}
 	
@@ -88,9 +87,7 @@ public class SelectiveAckHeaderExtension extends UtpHeaderExtension {
 		byte[] array = new byte[2 + bitMask.length];
 		array[0] = nextExtension;
 		array[1] = longToUbyte(bitMask.length);
-		for (int i = 0; i < bitMask.length; i++) {
-			array[i + 2] = bitMask[i];
-		}
+        System.arraycopy(bitMask, 0, array, 2, bitMask.length);
 		return array;
 	}
 }

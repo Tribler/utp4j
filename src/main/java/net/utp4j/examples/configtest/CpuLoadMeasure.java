@@ -23,10 +23,10 @@ import com.sun.management.OperatingSystemMXBean;
 @SuppressWarnings("restriction")
 public class CpuLoadMeasure implements Runnable {
 
-	private OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
+	private final OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
 	
-	private volatile ArrayList<Double> measurements = new ArrayList<>();
-	private volatile Semaphore semaphore = new Semaphore(1);
+	private final ArrayList<Double> measurements = new ArrayList<>();
+	private final Semaphore semaphore = new Semaphore(1);
 
 	
 	

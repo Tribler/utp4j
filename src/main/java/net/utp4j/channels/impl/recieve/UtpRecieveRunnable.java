@@ -33,8 +33,8 @@ import org.slf4j.LoggerFactory;
 public class UtpRecieveRunnable extends Thread implements Runnable {
 
 
-	private DatagramSocket socket;
-	private UtpPacketRecievable packetReciever;
+	private final DatagramSocket socket;
+	private final UtpPacketRecievable packetReciever;
 	private boolean graceFullInterrupt = false;
 	
 	private final static Logger log = LoggerFactory.getLogger(UtpRecieveRunnable.class);

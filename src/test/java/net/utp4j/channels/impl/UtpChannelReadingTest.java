@@ -159,7 +159,7 @@ public class UtpChannelReadingTest {
 			/*
 			 * check buffer is now empty
 			 */
-			assertEquals(false, buffer.hasRemaining());
+            assertFalse(buffer.hasRemaining());
 			
 			
 		} catch (IOException e) {

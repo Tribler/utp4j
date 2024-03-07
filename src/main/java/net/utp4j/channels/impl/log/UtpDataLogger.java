@@ -55,7 +55,7 @@ public class UtpDataLogger implements UtpStatisticLogger {
 	private long theirMinDelay;
 	private int bytesSend;
 
-	private boolean loggerOn = true;
+	private final boolean loggerOn = true;
 	private RandomAccessFile logFile;
 	private FileChannel fileChannel;
 
@@ -147,7 +147,7 @@ public class UtpDataLogger implements UtpStatisticLogger {
 	@Override
 	public void next() {
 		if (DEBUG && loggerOn) {
-			String logEntry = "" + (timeStamp - minimumTimeStamp) + ";";
+			String logEntry = (timeStamp - minimumTimeStamp) + ";";
 			logEntry += ackRecieved + ";";
 			logEntry += currentWindow + ";";
 			logEntry += difference + ";";

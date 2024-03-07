@@ -25,8 +25,8 @@ import net.utp4j.data.bytes.exceptions.ByteOverflowException;
  */
 public class MicroSecondsTimeStamp {
 
-	private static long initDateMillis = System.currentTimeMillis();
-	private static long startNs = System.nanoTime();
+	private static final long initDateMillis = System.currentTimeMillis();
+	private static final long startNs = System.nanoTime();
 	
 	/**
 	 * Returns a uTP time stamp for packet headers. 

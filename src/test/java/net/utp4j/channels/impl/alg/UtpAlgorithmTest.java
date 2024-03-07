@@ -256,28 +256,28 @@ public class UtpAlgorithmTest {
 		
 		// our current window is smaller than max window. MAX_BURST_SEND times invocating should trigger a true
 		for (int i = 0; i < UtpAlgConfiguration.MAX_BURST_SEND; i++) {
-			assertEquals(true, algorithm.canSendNextPacket());
+            assertTrue(algorithm.canSendNextPacket());
 		}
 		
 		// now we cannot send a packet anymore
-		assertEquals(false, algorithm.canSendNextPacket());
+        assertFalse(algorithm.canSendNextPacket());
 		
 		// now again we can send 3 packets... 
 		for (int i = 0; i < UtpAlgConfiguration.MAX_BURST_SEND; i++) {
-			assertEquals(true, algorithm.canSendNextPacket());
+            assertTrue(algorithm.canSendNextPacket());
 		}
 		// and now false. 
-		assertEquals(false, algorithm.canSendNextPacket());
+        assertFalse(algorithm.canSendNextPacket());
 		
 		// lets reduce maxwindow to 4* packet length, no packets can be send now.
 		algorithm.setMaxWindow(packetLength * 4);
 		for (int i = 0; i < UtpAlgConfiguration.MAX_BURST_SEND; i++) {
-			assertEquals(false, algorithm.canSendNextPacket());
+            assertFalse(algorithm.canSendNextPacket());
 		} 
 		
 		// we still cannot send packets...
 		for (int i = 0; i < UtpAlgConfiguration.MAX_BURST_SEND; i++) {
-			assertEquals(false, algorithm.canSendNextPacket());
+            assertFalse(algorithm.canSendNextPacket());
 		} 
 		
 		// increase max window again. 
@@ -285,11 +285,11 @@ public class UtpAlgorithmTest {
 		
 		// send 3 packets in one burst. 
 		for (int i = 0; i < UtpAlgConfiguration.MAX_BURST_SEND; i++) {
-			assertEquals(true, algorithm.canSendNextPacket());
+            assertTrue(algorithm.canSendNextPacket());
 		} 
 		
 		// current burst full, next invocation should be false. 
-		assertEquals(false, algorithm.canSendNextPacket());
+        assertFalse(algorithm.canSendNextPacket());
 		
 	}
 	

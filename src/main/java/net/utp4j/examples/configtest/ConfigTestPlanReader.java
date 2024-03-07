@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -35,11 +36,11 @@ import net.utp4j.channels.impl.log.UtpDataLogger;
 
 public class ConfigTestPlanReader {
 
-	private String fileLocation;
-	private Deque<String> testParameters = new LinkedList<String>();
+	private final String fileLocation;
+	private final Deque<String> testParameters = new LinkedList<String>();
 	private int testRun = 0;
 	private String lastParameters;
-	private SimpleDateFormat format = new SimpleDateFormat("dd_MM_hh_mm_ss");
+	private final SimpleDateFormat format = new SimpleDateFormat("dd_MM_hh_mm_ss");
 	
 	private static final Logger log = LoggerFactory.getLogger(ConfigTestPlanReader.class);
 
@@ -54,7 +55,7 @@ public class ConfigTestPlanReader {
 		String line;
 
 		fis = new FileInputStream(fileLocation);
-		br = new BufferedReader(new InputStreamReader(fis, Charset.forName("UTF-8")));
+		br = new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8));
 		boolean skipLine = true;
 		while ((line = br.readLine()) != null) {
 			if (!skipLine) {

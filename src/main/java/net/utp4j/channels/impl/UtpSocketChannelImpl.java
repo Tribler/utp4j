@@ -78,12 +78,12 @@ import net.utp4j.data.UtpPacketUtils;
 public class UtpSocketChannelImpl extends UtpSocketChannel implements
 		UtpPacketRecievable {
 
-	private volatile BlockingQueue<UtpTimestampedPacketDTO> queue = new LinkedBlockingQueue<UtpTimestampedPacketDTO>();
+	private final BlockingQueue<UtpTimestampedPacketDTO> queue = new LinkedBlockingQueue<UtpTimestampedPacketDTO>();
 
 	private UtpRecieveRunnable reciever;
 	private UtpWritingRunnable writer;
 	private UtpReadingRunnable reader;
-	private Object sendLock = new Object();
+	private final Object sendLock = new Object();
 
 	private UtpServerSocketChannelImpl server;
 	private ScheduledExecutorService retryConnectionTimeScheduler;
@@ -230,7 +230,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 					utpPacket.getTimestamp());
 			UtpPacket ackPacket = createAckPacket(utpPacket,
 					timestampDifference,
-					UtpAlgConfiguration.MAX_PACKET_SIZE * 1000);
+					UtpAlgConfiguration.MAX_PACKET_SIZE * 1000L);
 			try {
 				log.debug("sending syn ack");
 				sendPacket(ackPacket);
@@ -396,12 +396,12 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
 
 	@Override
 	public boolean isReading() {
-		return (reader != null ? reader.isRunning() : false);
+		return (reader != null && reader.isRunning());
 	}
 
 	@Override
 	public boolean isWriting() {
-		return (writer != null ? writer.isRunning() : false);
+		return (writer != null && writer.isRunning());
 	}
 
 	public void ackAlreadyAcked(SelectiveAckHeaderExtension extension, int timestampDifference,

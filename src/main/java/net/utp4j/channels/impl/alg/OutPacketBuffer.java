@@ -37,8 +37,8 @@ import org.slf4j.LoggerFactory;
  */
 public class OutPacketBuffer {
 
-	private static int size = 3000;
-	private ArrayList<UtpTimestampedPacketDTO> buffer = new ArrayList<UtpTimestampedPacketDTO>(
+	private static final int size = 3000;
+	private final ArrayList<UtpTimestampedPacketDTO> buffer = new ArrayList<UtpTimestampedPacketDTO>(
 			size);
 	private int bytesOnFly = 0;
 	private long resendTimeOutMicros;
@@ -54,7 +54,7 @@ public class OutPacketBuffer {
 		this.resendTimeOutMicros = timeOutMicroSec;
 	}
 
-	private MicroSecondsTimeStamp timeStamper;
+	private final MicroSecondsTimeStamp timeStamper;
 	private SocketAddress addr;
 	private long currentTime;
 

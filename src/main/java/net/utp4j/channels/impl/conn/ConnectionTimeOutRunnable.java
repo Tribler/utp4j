@@ -25,9 +25,9 @@ import net.utp4j.data.UtpPacket;
  */
 public class ConnectionTimeOutRunnable implements Runnable {
 
-	private UtpPacket synPacket;
-	private UtpSocketChannelImpl channel;
-	private volatile ReentrantLock lock;
+	private final UtpPacket synPacket;
+	private final UtpSocketChannelImpl channel;
+	private final ReentrantLock lock;
 
 	public ConnectionTimeOutRunnable(UtpPacket packet,
 			UtpSocketChannelImpl channel, ReentrantLock lock) {

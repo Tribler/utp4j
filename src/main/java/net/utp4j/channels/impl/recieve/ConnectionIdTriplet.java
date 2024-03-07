@@ -46,10 +46,9 @@ public class ConnectionIdTriplet {
 			return false;
 		} else if (this == other) {
 			return true;
-		} else if (!(other instanceof ConnectionIdTriplet)) {
+		} else if (!(other instanceof ConnectionIdTriplet otherTriplet)) {
 			return false;
 		} else {
-			ConnectionIdTriplet otherTriplet = (ConnectionIdTriplet) other;
 			return this.inComming == otherTriplet.getInComming() &&
 				   this.outGoing == otherTriplet.getOutGoing();
 		}

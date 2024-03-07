@@ -189,20 +189,20 @@ public class SkippedPacketBuffer {
 			ByteBuffer bbuffer = ByteBuffer.allocate(100000);
 			bbuffer.put((new SimpleDateFormat("dd_MM_hh_mm_ss")).format(new Date()).getBytes());
 			bbuffer.put((string + "\n").getBytes());
-			bbuffer.put(("SIZE: " + 	Integer.toString(SIZE) + "\n").getBytes());
-			bbuffer.put(("count: " + 	Integer.toString(elementCount) + "\n").getBytes());
-			bbuffer.put(("expect: " + 	Integer.toString(expectedSequenceNumber) + "\n").getBytes());
-			bbuffer.put(("lastSeq: " + 	Integer.toString(debug_lastSeqNumber) + "\n").getBytes());
-			bbuffer.put(("lastPos: " + 	Integer.toString(debug_lastPosition) + "\n").getBytes());
+			bbuffer.put(("SIZE: " + SIZE + "\n").getBytes());
+			bbuffer.put(("count: " + elementCount + "\n").getBytes());
+			bbuffer.put(("expect: " + expectedSequenceNumber + "\n").getBytes());
+			bbuffer.put(("lastSeq: " + debug_lastSeqNumber + "\n").getBytes());
+			bbuffer.put(("lastPos: " + debug_lastPosition + "\n").getBytes());
 	
 			for (int i = 0; i < SIZE; i++) {
 				String seq;
 				if (buffer[i] == null) {
 					seq = "_; ";
 				} else {
-					seq = Integer.toString((buffer[i].utpPacket().getSequenceNumber() & 0xFFFF)) + "; ";
+					seq = (buffer[i].utpPacket().getSequenceNumber() & 0xFFFF) + "; ";
 				}
-				bbuffer.put((Integer.toString(i) + " -> " + seq).getBytes());
+				bbuffer.put((i + " -> " + seq).getBytes());
 				if (i % 50 == 0) {
 					bbuffer.put("\n".getBytes());
 				}

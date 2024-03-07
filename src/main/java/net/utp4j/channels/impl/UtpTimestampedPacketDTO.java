@@ -28,8 +28,8 @@ public class UtpTimestampedPacketDTO {
 
 	private DatagramPacket packet;
 	private Long timestamp;
-	private UtpPacket utpPacket;
-	private int utpTimeStamp;
+	private final UtpPacket utpPacket;
+	private final int utpTimeStamp;
 	private int ackedAfterMeCounter = 0;
 	private boolean isPacketAcked = false;
 	private boolean reduceWindow;

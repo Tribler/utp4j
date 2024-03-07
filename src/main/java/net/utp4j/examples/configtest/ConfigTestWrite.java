@@ -34,12 +34,12 @@ import net.utp4j.channels.futures.UtpWriteFuture;
 import net.utp4j.data.MicroSecondsTimeStamp;
 
 public class ConfigTestWrite {
-	private static 	ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+	private static final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 	
 	private static FileChannel fChannel;
 	private static RandomAccessFile aFile;
-	private static long CPU_LOAD_CHECK_INTERVALL_MILLIS = 50;
-	private static NumberFormat percentFormat = NumberFormat.getPercentInstance(Locale.US);
+	private static final long CPU_LOAD_CHECK_INTERVALL_MILLIS = 50;
+	private static final NumberFormat percentFormat = NumberFormat.getPercentInstance(Locale.US);
 	
 	private static final Logger log = LoggerFactory.getLogger(ConfigTestWrite.class);
 

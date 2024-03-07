@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class OutPacketBufferTest {
 
-    private static int PAYLOAD_LENGTH = 1300;
+    private static final int PAYLOAD_LENGTH = 1300;
 
     @Test
     public void test() throws SocketException {
@@ -58,7 +58,7 @@ public class OutPacketBufferTest {
 
 
         // CHECK bytes on fly
-        assertEquals(false, buffer.isEmpty());
+        assertFalse(buffer.isEmpty());
         assertEquals(8 * (PAYLOAD_LENGTH + UtpPacketUtils.DEF_HEADER_LENGTH), buffer.getBytesOnfly());
 
         // mark 4,5,6 acked
@@ -68,7 +68,7 @@ public class OutPacketBufferTest {
         buffer.removeAcked();
 
         // since 3 not yet acked, buffer should not remove packets
-        assertEquals(false, buffer.isEmpty());
+        assertFalse(buffer.isEmpty());
         assertEquals(8 * (PAYLOAD_LENGTH + UtpPacketUtils.DEF_HEADER_LENGTH), buffer.getBytesOnfly());
 
         // now packet 3 should be triggeret to resend
@@ -85,7 +85,7 @@ public class OutPacketBufferTest {
         // still no removal
         buffer.removeAcked();
 
-        assertEquals(false, buffer.isEmpty());
+        assertFalse(buffer.isEmpty());
         assertEquals(8 * (PAYLOAD_LENGTH + UtpPacketUtils.DEF_HEADER_LENGTH), buffer.getBytesOnfly());
 
         // 6 should be resend now, because we already resend 3
@@ -114,11 +114,11 @@ public class OutPacketBufferTest {
 
         // nothing left in the buffer
         assertEquals(0, buffer.getBytesOnfly());
-        assertEquals(true, buffer.isEmpty());
+        assertTrue(buffer.isEmpty());
 
         // and nothing to resend
         packetsToResend = buffer.getPacketsToResend(50);
-        assertEquals(true, packetsToResend.isEmpty());
+        assertTrue(packetsToResend.isEmpty());
     }
 
 

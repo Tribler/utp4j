@@ -27,7 +27,7 @@ import net.utp4j.channels.impl.recieve.ConnectionIdTriplet;
  */
 public class CannotCloseServerException extends RuntimeException {
 
-	private Collection<UtpSocketChannel> openChannels = new LinkedList<UtpSocketChannel>();
+	private final Collection<UtpSocketChannel> openChannels = new LinkedList<UtpSocketChannel>();
 	
 	public CannotCloseServerException(Collection<ConnectionIdTriplet> values) {
 		for (ConnectionIdTriplet connectionIdTriplet : values) {

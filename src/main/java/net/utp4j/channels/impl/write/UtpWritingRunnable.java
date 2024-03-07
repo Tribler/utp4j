@@ -38,14 +38,14 @@ import net.utp4j.data.bytes.UnsignedTypesUtil;
  */
 public class UtpWritingRunnable extends Thread implements Runnable {
 	
-	private ByteBuffer buffer;
+	private final ByteBuffer buffer;
 	private volatile boolean graceFullInterrupt;
-	private UtpSocketChannelImpl channel;
+	private final UtpSocketChannelImpl channel;
 	private boolean isRunning = false;
-	private UtpAlgorithm algorithm;
+	private final UtpAlgorithm algorithm;
 	private IOException possibleException = null;
-	private MicroSecondsTimeStamp timeStamper;
-	private UtpWriteFutureImpl future;
+	private final MicroSecondsTimeStamp timeStamper;
+	private final UtpWriteFutureImpl future;
 	
 	private final static Logger log = LoggerFactory.getLogger(UtpWritingRunnable.class);
 	

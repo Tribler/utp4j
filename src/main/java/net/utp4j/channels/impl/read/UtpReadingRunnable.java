@@ -40,9 +40,9 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	
 	private static final int PACKET_DIFF_WARP = 50000;
 	private IOException exp;
-	private ByteBuffer buffer;
-	private UtpSocketChannelImpl channel;
-	private SkippedPacketBuffer skippedBuffer = new SkippedPacketBuffer();
+	private final ByteBuffer buffer;
+	private final UtpSocketChannelImpl channel;
+	private final SkippedPacketBuffer skippedBuffer = new SkippedPacketBuffer();
 	private boolean exceptionOccured = false;
 	private boolean graceFullInterrupt;
 	private boolean isRunning;
@@ -50,10 +50,10 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	private long totalPayloadLength = 0;
 	private long lastPacketTimestamp;
 	private int lastPayloadLength;
-	private UtpReadFutureImpl readFuture;
+	private final UtpReadFutureImpl readFuture;
 	private long nowtimeStamp;
 	private long lastPackedRecieved;
-	private long startReadingTimeStamp;
+	private final long startReadingTimeStamp;
 	private boolean gotLastPacket = false;
 	// in case we ack every x-th packet, this is the counter. 
 	private int currentPackedAck = 0;
@@ -212,18 +212,15 @@ public class UtpReadingRunnable extends Thread implements Runnable {
 	}
 	
 	private boolean ackThisPacket() {
-		if (currentPackedAck >= UtpAlgConfiguration.SKIP_PACKETS_UNTIL_ACK) {
-			return true;
-		} 
-		return false;
-	}
+        return currentPackedAck >= UtpAlgConfiguration.SKIP_PACKETS_UNTIL_ACK;
+    }
 
 	/**
 	 * Returns the average space available in the buffer in Bytes.
 	 * @return bytes
 	 */
 	public long getLeftSpaceInBuffer() throws IOException {
-		return (skippedBuffer.getFreeSize()) * lastPayloadLength;
+		return (long) (skippedBuffer.getFreeSize()) * lastPayloadLength;
 	}
 
 	private int getTimestampDifference(UtpTimestampedPacketDTO timestampedPair) {

@@ -36,8 +36,8 @@ import net.utp4j.data.UtpPacketUtils;
 public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implements UtpPacketRecievable {
 	
 	private UtpRecieveRunnable listenRunnable;
-	private Queue<UtpAcceptFutureImpl> acceptQueue = new LinkedList<UtpAcceptFutureImpl>();
-	private Map<Integer, ConnectionIdTriplet> connectionIds = new HashMap<Integer, ConnectionIdTriplet>();
+	private final Queue<UtpAcceptFutureImpl> acceptQueue = new LinkedList<UtpAcceptFutureImpl>();
+	private final Map<Integer, ConnectionIdTriplet> connectionIds = new HashMap<Integer, ConnectionIdTriplet>();
 	private boolean listenRunnerStarted = false;
 	
 	

@@ -18,8 +18,8 @@ import java.net.DatagramPacket;
 
 public class UtpPassPacket extends Thread implements Runnable {
 
-	private UtpPacketRecievable reciever;
-	private DatagramPacket packet;
+	private final UtpPacketRecievable reciever;
+	private final DatagramPacket packet;
 	
 	public UtpPassPacket(DatagramPacket packet, UtpPacketRecievable reciever) {
 		this.packet = packet;

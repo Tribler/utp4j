@@ -30,7 +30,7 @@ public class MinimumDelay {
 
 	private long theirTimeStamp = 0;
 	private long theirMinDelay = 0;
-	private Queue<Long> ourLastDelays = new LinkedList<Long>();
+	private final Queue<Long> ourLastDelays = new LinkedList<Long>();
 
 	public long getCorrectedMinDelay() {
 		return minDelay;
