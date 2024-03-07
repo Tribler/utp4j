@@ -25,18 +25,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 public class TestWrite {
-
-    /**
-     * @param args
-     * @throws IOException
-     * @throws InterruptedException
-     */
     public static void main(String[] args) throws IOException, InterruptedException {
 
         ByteBuffer buffer = ByteBuffer.allocate(150000000);
         RandomAccessFile file = new RandomAccessFile("testData/sc S01E01.avi", "rw");
         FileChannel fileChannel = file.getChannel();
-        int bytesRead = 0;
+        int bytesRead;
         System.out.println("start reading from file");
         do {
             bytesRead = fileChannel.read(buffer);

@@ -162,7 +162,7 @@ public abstract class UtpSocketChannel {
     /**
      * Reads the incomming data to the channel.
      *
-     * @param src the buffer.
+     * @param dst the buffer.
      * @return {@link UtpWriteFuture} which will be updated by the channel
      */
     public abstract UtpReadFuture read(ByteBuffer dst);

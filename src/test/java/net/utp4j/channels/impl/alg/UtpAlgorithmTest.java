@@ -347,15 +347,14 @@ public class UtpAlgorithmTest {
         assertEquals(0L, waitingTime);
     }
 
-    private UtpTimestampedPacketDTO createPacket(int sequenceNumber, int packetLength) throws SocketException {
+    private UtpTimestampedPacketDTO createPacket(int sequenceNumber, int packetLength) {
         UtpPacket pkt = new UtpPacket();
         pkt.setSequenceNumber(longToUshort(sequenceNumber));
         pkt.setPayload(new byte[packetLength]);
         SocketAddress addr = new InetSocketAddress(111);
         DatagramPacket mockDgPkt = new DatagramPacket(pkt.toByteArray(), 1, addr);
-        UtpTimestampedPacketDTO toReturn = new UtpTimestampedPacketDTO(mockDgPkt, pkt, 1L, 0);
 
-        return toReturn;
+        return new UtpTimestampedPacketDTO(mockDgPkt, pkt, 1L, 0);
     }
 
 

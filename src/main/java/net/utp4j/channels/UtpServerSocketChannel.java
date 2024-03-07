@@ -39,8 +39,7 @@ public abstract class UtpServerSocketChannel {
      * @return server {@link UtpServerSocketChannel}
      */
     public static UtpServerSocketChannel open() {
-        UtpServerSocketChannelImpl sChannel = new UtpServerSocketChannelImpl();
-        return sChannel;
+        return new UtpServerSocketChannelImpl();
     }
 
     /*Subclasses implement this methods*/
@@ -59,7 +58,7 @@ public abstract class UtpServerSocketChannel {
     /**
      * Binds the server to an {@link DatagramSocket} and binds {@link InetSocketAddress}
      *
-     * @param address
+     * @param addr
      * @throws IOException see {@link DatagramSocket} Constructor Details
      */
     public void bind(InetSocketAddress addr) throws IOException {

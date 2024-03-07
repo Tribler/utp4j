@@ -128,9 +128,8 @@ public class OutPacketBufferTest {
         byte[] array = {(byte) 1};
         SocketAddress addr = new InetSocketAddress(111);
         DatagramPacket mockDgPkt = new DatagramPacket(array, 1, addr);
-        UtpTimestampedPacketDTO toReturn = new UtpTimestampedPacketDTO(mockDgPkt, pkt, 1L, 0);
 
-        return toReturn;
+        return new UtpTimestampedPacketDTO(mockDgPkt, pkt, 1L, 0);
     }
 
 }

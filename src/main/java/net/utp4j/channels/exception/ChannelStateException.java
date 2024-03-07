@@ -16,6 +16,7 @@ package net.utp4j.channels.exception;
 
 import net.utp4j.channels.UtpSocketState;
 
+import java.io.Serial;
 import java.net.SocketAddress;
 
 /**
@@ -26,6 +27,7 @@ import java.net.SocketAddress;
 public class ChannelStateException extends RuntimeException {
 
 
+    @Serial
     private static final long serialVersionUID = -6506270718267816636L;
 
     private UtpSocketState state;

@@ -24,8 +24,8 @@ public class UtpAlgConfiguration {
     public static int SKIP_PACKETS_UNTIL_ACK = 2;
 
 
-    /**
-     * TWEAKING SECTION
+    /*
+      TWEAKING SECTION
      */
 
     /**

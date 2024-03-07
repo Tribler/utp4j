@@ -25,11 +25,6 @@ import java.nio.ByteBuffer;
 
 public class TestRead {
 
-    /**
-     * @param args
-     * @throws IOException
-     * @throws InterruptedException
-     */
     public static void main(String[] args) throws IOException, InterruptedException {
         ByteBuffer buffer = ByteBuffer.allocate(150000000);
         UtpServerSocketChannel server = UtpServerSocketChannel.open();
@@ -46,5 +41,6 @@ public class TestRead {
 
 
     }
+
 
 }

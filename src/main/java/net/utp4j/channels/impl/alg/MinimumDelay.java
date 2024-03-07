@@ -30,7 +30,7 @@ public class MinimumDelay {
 
     private long theirTimeStamp = 0;
     private long theirMinDelay = 0;
-    private final Queue<Long> ourLastDelays = new LinkedList<Long>();
+    private final Queue<Long> ourLastDelays = new LinkedList<>();
 
     public long getCorrectedMinDelay() {
         return minDelay;
@@ -60,8 +60,8 @@ public class MinimumDelay {
     /**
      * Updates the reciever-to-sender delays
      *
-     * @param difference delay
-     * @param timestamp  now.
+     * @param theirDifference - difference delay
+     * @param timeStampNow - timestamp  now.
      */
     public void updateTheirDelay(long theirDifference, long timeStampNow) {
         if ((timeStampNow - this.theirTimeStamp >= UtpAlgConfiguration.MINIMUM_DIFFERENCE_TIMESTAMP_MICROSEC)

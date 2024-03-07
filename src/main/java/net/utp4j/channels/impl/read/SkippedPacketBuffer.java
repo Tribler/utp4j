@@ -149,7 +149,7 @@ public class SkippedPacketBuffer {
     }
 
     public void reindex(int lastSeqNumber) throws IOException {
-        int expectedSequenceNumber = 0;
+        int expectedSequenceNumber;
         if (lastSeqNumber == MAX_USHORT) {
             expectedSequenceNumber = 1;
         } else {

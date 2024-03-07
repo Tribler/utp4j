@@ -447,8 +447,6 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
         //TODO: dispatch:
         if (!isWriting()) {
             this.state = UtpSocketState.CONNECTED;
-        } else {
-
         }
     }
 
@@ -476,7 +474,7 @@ public class UtpSocketChannelImpl extends UtpSocketChannel implements
     /**
      * Called by the time out counter {@see ConnectionTimeOutRunnable}
      *
-     * @param exception, is optional.
+     * @param exp - is optional.
      */
     public void connectionFailed(IOException exp) {
         log.debug("got failing message");

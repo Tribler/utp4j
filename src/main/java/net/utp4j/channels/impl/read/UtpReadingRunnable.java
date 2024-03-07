@@ -224,8 +224,7 @@ public class UtpReadingRunnable extends Thread implements Runnable {
     }
 
     private int getTimestampDifference(UtpTimestampedPacketDTO timestampedPair) {
-        int difference = timeStamper.utpDifference(timestampedPair.utpTimeStamp(), timestampedPair.utpPacket().getTimestamp());
-        return difference;
+        return timeStamper.utpDifference(timestampedPair.utpTimeStamp(), timestampedPair.utpPacket().getTimestamp());
     }
 
     private void handleUnexpectedPacket(UtpTimestampedPacketDTO timestampedPair) throws IOException {
@@ -262,7 +261,6 @@ public class UtpReadingRunnable extends Thread implements Runnable {
      * True if this packet is expected.
      *
      * @param utpPacket packet
-     * @return
      */
     public boolean isPacketExpected(UtpPacket utpPacket) {
         int seqNumberFromPacket = utpPacket.getSequenceNumber() & 0xFFFF;

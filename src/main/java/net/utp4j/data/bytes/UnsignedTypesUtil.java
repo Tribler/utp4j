@@ -54,8 +54,7 @@ public final class UnsignedTypesUtil {
     }
 
     public static short bytesToUshort(byte first, byte second) {
-        short value = (short) (((first & 0xFF) << 8) | (second & 0xFF));
-        return value;
+        return (short) (((first & 0xFF) << 8) | (second & 0xFF));
     }
 
     public static int bytesToUint(byte first, byte second, byte third, byte fourth) {

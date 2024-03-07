@@ -24,7 +24,7 @@ public class UtpPacketUtilsTest {
     /**
      * Testing with type 0,1,2,3,4 which correspondents to: ST_DATA, ST_FIN, ST_STATE, ST_RESET, ST_SYN
      * and provoking exceptions for arguments out of range.
-     * see http://bittorrent.org/beps/bep_0029.html
+     * see <a href="http://bittorrent.org/beps/bep_0029.html">protocol</a>
      */
     @Test
     public void testTypeAndVersionByte() {

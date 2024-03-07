@@ -137,10 +137,10 @@ public class UtpPacket {
 
         System.arraycopy(extensionlessArray, 0, header, 0, extensionlessArray.length);
 
-        for (int i = 0; i < extensions.length; i++) {
-            byte[] extenionBytes = extensions[i].toByteArray();
-            for (int j = 0; j < extenionBytes.length; j++) {
-                header[offset++] = extenionBytes[j];
+        for (UtpHeaderExtension extension : extensions) {
+            byte[] extenionBytes = extension.toByteArray();
+            for (byte extenionByte : extenionBytes) {
+                header[offset++] = extenionByte;
             }
         }
         return joinByteArray(header, getPayload());
@@ -148,12 +148,11 @@ public class UtpPacket {
     }
 
     private byte[] getExtensionlessByteArray() {
-        byte[] array = {typeVersion, firstExtension, (byte) (connectionId >> 8), (byte) (connectionId),
+        return new byte[]{typeVersion, firstExtension, (byte) (connectionId >> 8), (byte) (connectionId),
                 (byte) (timestamp >> 24), (byte) (timestamp >> 16), (byte) (timestamp >> 8), (byte) (timestamp),
                 (byte) (timestampDifference >> 24), (byte) (timestampDifference >> 16), (byte) (timestampDifference >> 8), (byte) (timestampDifference),
                 (byte) (windowSize >> 24), (byte) (windowSize >> 16), (byte) (windowSize >> 8), (byte) (windowSize),
                 (byte) (sequenceNumber >> 8), (byte) (sequenceNumber), (byte) (ackNumber >> 8), (byte) (ackNumber),};
-        return array;
     }
 
     private boolean hasExtensions() {
@@ -165,8 +164,10 @@ public class UtpPacket {
             return 0;
         }
         int length = 0;
-        for (int i = 0; i < extensions.length; i++) {
-            length += 2 + extensions[i].getBitMask().length;
+        if (extensions != null) {
+            for (UtpHeaderExtension extension : extensions) {
+                length += 2 + extension.getBitMask().length;
+            }
         }
         return length;
     }
@@ -277,19 +278,19 @@ public class UtpPacket {
 
     @Override
     public String toString() {
-        String ret = "[Type: " + (typeVersion & 0xFF) + "] " +
+        StringBuilder ret = new StringBuilder("[Type: " + (typeVersion & 0xFF) + "] " +
                 "[FirstExt: " + (firstExtension & 0xFF) + "] " +
                 "[ConnId: " + (connectionId & 0xFFFF) + "] " +
                 "[Wnd: " + (windowSize & 0xFFFFFFFF) + " " +
                 "[Seq: " + (sequenceNumber & 0xFFFF) + "] " +
-                "[Ack: " + (ackNumber & 0xFFFF) + "] ";
+                "[Ack: " + (ackNumber & 0xFFFF) + "] ");
 
         if (extensions != null) {
             for (int i = 0; i < extensions.length; i++) {
-                ret += "[Ext_" + i + ": " + (extensions[i].getNextExtension() & 0xFF) + " " + extensions[i].getLength() + "] ";
+                ret.append("[Ext_").append(i).append(": ").append(extensions[i].getNextExtension() & 0xFF).append(" ").append(extensions[i].getLength()).append("] ");
             }
         }
-        return ret;
+        return ret.toString();
 
 
     }
@@ -297,7 +298,7 @@ public class UtpPacket {
 
     @Override
     public int hashCode() {
-        int code = 0;
+        int code;
         //TB: multiply with prime and xor
         //TODO: check if hashCode is needed
         code = typeVersion + 10 * firstExtension + 100 * connectionId

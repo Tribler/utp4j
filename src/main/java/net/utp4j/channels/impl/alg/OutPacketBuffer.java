@@ -36,7 +36,7 @@ import java.util.Queue;
 public class OutPacketBuffer {
 
     private static final int size = 3000;
-    private final ArrayList<UtpTimestampedPacketDTO> buffer = new ArrayList<UtpTimestampedPacketDTO>(
+    private final ArrayList<UtpTimestampedPacketDTO> buffer = new ArrayList<>(
             size);
     private int bytesOnFly = 0;
     private long resendTimeOutMicros;
@@ -130,8 +130,7 @@ public class OutPacketBuffer {
                 return buffer.get(index);
             } else {
                 // bug -> search sequentially until fixed
-                for (int i = 0; i < buffer.size(); i++) {
-                    UtpTimestampedPacketDTO pkt = buffer.get(i);
+                for (UtpTimestampedPacketDTO pkt : buffer) {
                     if ((pkt.utpPacket().getSequenceNumber() & 0xFFFF) == seqNrToAck) {
                         return pkt;
                     }
@@ -252,11 +251,11 @@ public class OutPacketBuffer {
 
     // helper method
     public String getSequenceOfLeft() {
-        String returnString = "";
+        StringBuilder returnString = new StringBuilder();
         for (UtpTimestampedPacketDTO el : buffer) {
-            returnString += " " + (el.utpPacket().getSequenceNumber() & 0xFFFF);
+            returnString.append(" ").append(el.utpPacket().getSequenceNumber() & 0xFFFF);
         }
-        return returnString.trim();
+        return returnString.toString().trim();
     }
 
     /**

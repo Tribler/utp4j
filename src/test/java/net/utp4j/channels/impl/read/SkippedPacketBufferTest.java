@@ -32,8 +32,7 @@ public class SkippedPacketBufferTest {
     private UtpTimestampedPacketDTO createPacket(int seqNr) {
         UtpPacket u = new UtpPacket();
         u.setSequenceNumber(longToUshort(seqNr));
-        UtpTimestampedPacketDTO pkt = new UtpTimestampedPacketDTO(null, u, 0L, 0);
-        return pkt;
+        return new UtpTimestampedPacketDTO(null, u, 0L, 0);
     }
 
     /**

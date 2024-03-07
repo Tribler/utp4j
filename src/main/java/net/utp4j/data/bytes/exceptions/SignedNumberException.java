@@ -1,5 +1,7 @@
 package net.utp4j.data.bytes.exceptions;
 
+import java.io.Serial;
+
 /**
  * Exception for the Case a signed number was given.
  *
@@ -8,6 +10,7 @@ package net.utp4j.data.bytes.exceptions;
 
 public class SignedNumberException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 1339267381376290545L;
 
     public SignedNumberException(String message) {

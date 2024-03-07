@@ -42,8 +42,7 @@ public class SelectiveAckHeaderExtension extends UtpHeaderExtension {
         if (number < 2 || number > 9) {
             return false;
         } else {
-            boolean returnvalue = (BITMAP[number - 2] & bitmask) == BITMAP[number - 2];
-            return returnvalue;
+            return (BITMAP[number - 2] & bitmask) == BITMAP[number - 2];
         }
     }
 

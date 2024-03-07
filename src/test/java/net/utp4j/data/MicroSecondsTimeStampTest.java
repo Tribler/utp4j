@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class MicroSecondsTimeStampTest {
 
     @Test
-    public void test() throws InterruptedException {
+    public void test() {
 
         MicroSecondsTimeStamp stamp1 = new MicroSecondsTimeStamp();
         MicroSecondsTimeStamp stamp2 = new MicroSecondsTimeStamp();

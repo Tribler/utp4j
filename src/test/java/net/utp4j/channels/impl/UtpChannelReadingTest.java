@@ -196,8 +196,7 @@ public class UtpChannelReadingTest {
         utpPacket.setPayload(getPayload(seqNumber));
         utpPacket.setWindowSize(1);
         byte[] array = utpPacket.toByteArray();
-        DatagramPacket dgPkt = new DatagramPacket(array, array.length);
-        return dgPkt;
+        return new DatagramPacket(array, array.length);
     }
 
     private byte[] getPayload(int seqNumber) {

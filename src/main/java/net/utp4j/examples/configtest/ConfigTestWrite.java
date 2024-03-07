@@ -42,11 +42,6 @@ public class ConfigTestWrite {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigTestWrite.class);
 
-    /**
-     * @param args
-     * @throws IOException
-     * @throws InterruptedException
-     */
     public static void main(String[] args) throws IOException, InterruptedException {
 
         String testPlan = "testPlan/testplan2.csv";
@@ -69,7 +64,7 @@ public class ConfigTestWrite {
             String testRunLogEntry = plan.next();
             RandomAccessFile file = new RandomAccessFile(testDataFile, "rw");
             FileChannel fileChannel = file.getChannel();
-            int bytesRead = 0;
+            int bytesRead;
             log.debug("start reading from file");
             do {
                 bytesRead = fileChannel.read(buffer);

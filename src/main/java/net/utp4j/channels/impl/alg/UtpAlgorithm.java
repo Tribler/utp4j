@@ -130,7 +130,7 @@ public class UtpAlgorithm {
                         int sackSeqNr = i * 8 + j + seqNrToAck;
                         // sackSeqNr can overflow too !!
                         if (sackSeqNr > UnsignedTypesUtil.MAX_USHORT) {
-                            sackSeqNr -= UnsignedTypesUtil.MAX_USHORT;
+                            sackSeqNr -= (int) UnsignedTypesUtil.MAX_USHORT;
                         }
                         statisticLogger.sAck(sackSeqNr);
                         // dont ack smaller seq numbers in case of Selective ack !!!!!
@@ -282,7 +282,7 @@ public class UtpAlgorithm {
             if (utpTimestampedPacketDTO.reduceWindow()) {
                 if (reduceWindowNecessary()) {
                     lastTimeWindowReduced = timeStampNow;
-                    maxWindow *= 0.5;
+                    maxWindow /= 2;
                 }
                 utpTimestampedPacketDTO.setReduceWindow(false);
             }
@@ -309,9 +309,9 @@ public class UtpAlgorithm {
         if (extensions == null) {
             return null;
         }
-        for (int i = 0; i < extensions.length; i++) {
-            if (extensions[i] instanceof SelectiveAckHeaderExtension) {
-                return (SelectiveAckHeaderExtension) extensions[i];
+        for (UtpHeaderExtension extension : extensions) {
+            if (extension instanceof SelectiveAckHeaderExtension) {
+                return (SelectiveAckHeaderExtension) extension;
             }
         }
         return null;

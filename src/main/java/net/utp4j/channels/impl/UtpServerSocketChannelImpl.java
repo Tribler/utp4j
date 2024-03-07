@@ -45,7 +45,7 @@ public class UtpServerSocketChannelImpl extends UtpServerSocketChannel implement
      * implements accept.
      */
     @Override
-    protected UtpAcceptFuture acceptImpl() throws IOException {
+    protected UtpAcceptFuture acceptImpl() {
 
         if (!listenRunnerStarted) {
             Thread listenRunner = new Thread(getListenRunnable(),

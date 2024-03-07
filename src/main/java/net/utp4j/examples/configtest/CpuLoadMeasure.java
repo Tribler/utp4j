@@ -72,7 +72,7 @@ public class CpuLoadMeasure implements Runnable {
     private double average() {
         double total = 0;
         double length = measurements.size();
-        if (measurements.size() == 0) {
+        if (measurements.isEmpty()) {
             return -1;
         }
         for (Double sample : measurements) {
