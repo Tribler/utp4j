@@ -15,7 +15,6 @@
 package net.utp4j.channels.impl.alg;
 
 import static net.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -26,8 +25,9 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 import net.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import net.utp4j.channels.impl.alg.MinimumDelay;
@@ -40,8 +40,10 @@ import net.utp4j.data.SelectiveAckHeaderExtension;
 import net.utp4j.data.UtpHeaderExtension;
 import net.utp4j.data.UtpPacket;
 import net.utp4j.data.UtpPacketUtils;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(org.mockito.runners.MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class UtpAlgorithmTest {
 
 	/**
@@ -309,7 +311,7 @@ public class UtpAlgorithmTest {
 		
 		OutPacketBuffer outBuffer = mock(OutPacketBuffer.class);
 		when(outBuffer.getOldestUnackedTimestamp()).thenReturn(600000L);
-		when(outBuffer.getBytesOnfly()).thenReturn(20000); // 20 kB onfly
+//		when(outBuffer.getBytesOnfly()).thenReturn(20000); // 20 kB onfly
 		algorithm.setCurrentWindow(20000);
 		algorithm.setOutPacketBuffer(outBuffer);
 		
@@ -323,7 +325,7 @@ public class UtpAlgorithmTest {
 		assertEquals(100000, waitingTime);
 		
 		// now current window is below 20k. 
-		when(outBuffer.getBytesOnfly()).thenReturn(10000); // 20 kB onfly
+//		when(outBuffer.getBytesOnfly()).thenReturn(10000); // 20 kB onfly
 		algorithm.setCurrentWindow(10000);
 		
 		waitingTime = algorithm.getWaitingTimeMicroSeconds();

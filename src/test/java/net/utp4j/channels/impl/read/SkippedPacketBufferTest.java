@@ -17,17 +17,18 @@ package net.utp4j.channels.impl.read;
 import static net.utp4j.data.bytes.UnsignedTypesUtil.MAX_USHORT;
 import static net.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
 import static net.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Queue;
 
-import org.junit.Test;
 
 import net.utp4j.channels.impl.UtpTimestampedPacketDTO;
 import net.utp4j.channels.impl.read.SkippedPacketBuffer;
 import net.utp4j.data.SelectiveAckHeaderExtension;
 import net.utp4j.data.UtpPacket;
+import org.junit.jupiter.api.Test;
 
 public class SkippedPacketBufferTest {
 	
@@ -64,8 +65,8 @@ public class SkippedPacketBufferTest {
 		assertEquals(7, seven.utpPacket().getSequenceNumber() & 0xFFFF);
 		assertEquals(8, eight.utpPacket().getSequenceNumber() & 0xFFFF);
 		assertEquals(9, nine.utpPacket().getSequenceNumber() & 0xFFFF);
-		
-		assertEquals(true, buffer.isEmpty());
+
+        assertTrue(buffer.isEmpty());
 
 
 	}

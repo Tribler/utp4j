@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>utp4j</groupId>
   <artifactId>utp4j</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.2-SNAPSHOT</version>
   <name>Utp4J</name>
   <description>Micro Transport Protocol for Java</description>
   <build>
@@ -11,8 +11,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.1</version>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>17</source>
+          <target>17</target>
         </configuration>
       </plugin>
     </plugins>
@@ -20,25 +20,32 @@
   <dependencies>
   	<dependency>
   		<groupId>org.mockito</groupId>
-  		<artifactId>mockito-all</artifactId>
-  		<version>1.8.4</version>
+  		<artifactId>mockito-core</artifactId>
+  		<version>5.11.0</version>
   		<scope>test</scope>
   	</dependency>
+	<dependency>
+	  <groupId>org.mockito</groupId>
+	  <artifactId>mockito-junit-jupiter</artifactId>
+	  <version>5.3.1</version>
+	  <scope>test</scope>
+	</dependency>
   	<dependency>
-  		<groupId>junit</groupId>
-  		<artifactId>junit</artifactId>
-  		<version>4.11</version>
-  		<scope>test</scope>
+		<groupId>org.junit.jupiter</groupId>
+		<artifactId>junit-jupiter-api</artifactId>
+		<version>5.10.2</version>
+		<scope>test</scope>
   	</dependency>
   	<dependency>
-  		<groupId>org.slf4j</groupId>
-  		<artifactId>slf4j-api</artifactId>
-  		<version>1.7.5</version>
+		<groupId>org.slf4j</groupId>
+		<artifactId>slf4j-api</artifactId>
+		<version>2.0.12</version>
   	</dependency>
   	<dependency>
-  		<groupId>org.slf4j</groupId>
-  		<artifactId>slf4j-log4j12</artifactId>
-  		<version>1.7.5</version>
+		<groupId>org.slf4j</groupId>
+		<artifactId>slf4j-reload4j</artifactId>
+		<version>2.0.12</version>
+		<scope>test</scope>
   	</dependency>
   </dependencies>
   <!--  exclude the package net.utp4j.channels.impl.log from the final build -->

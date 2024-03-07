@@ -14,11 +14,9 @@
 */
 package net.utp4j.data;
 
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
-
-import net.utp4j.data.MicroSecondsTimeStamp;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MicroSecondsTimeStampTest {
 
@@ -33,15 +31,15 @@ public class MicroSecondsTimeStampTest {
 		long stampedMilli = stamp1Ms/1000;
 		long currentMilli = System.currentTimeMillis();
 			
-		assertTrue("Expecting timestamp()/1000 and System.currentTimeMillis() " +
-				"to have less than 100 milliseconds difference", (currentMilli - stampedMilli) < 100);		
+		assertTrue((currentMilli - stampedMilli) < 100, "Expecting timestamp()/1000 and System.currentTimeMillis() " +
+						"to have less than 100 milliseconds difference");
 		
-		assertTrue("Expecting timestamp()/1000 and System.currentTimeMillis() " +
-				"to have non negative difference", (currentMilli - stampedMilli) >= 0);
+		assertTrue((currentMilli - stampedMilli) >= 0, "Expecting timestamp()/1000 and System.currentTimeMillis() " +
+						"to have non negative difference");
 		
 		long stamp2Ms = stamp2.timeStamp();
 
-		assertTrue("Expecting stamp1 to be older than stamp2 and not equal", stamp2Ms - stamp1Ms > 0);
+		assertTrue(stamp2Ms - stamp1Ms > 0, "Expecting stamp1 to be older than stamp2 and not equal");
 		
 	}
 }

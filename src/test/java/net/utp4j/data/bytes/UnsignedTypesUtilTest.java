@@ -23,12 +23,9 @@ import static net.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
 import static net.utp4j.data.bytes.UnsignedTypesUtil.longToUint;
 import static net.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
 import static net.utp4j.data.bytes.BinaryToStringTestHelper.toBinaryString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
-
-import net.utp4j.data.bytes.UnsignedTypesUtil;
+import static org.junit.jupiter.api.Assertions.*;
 import net.utp4j.data.bytes.exceptions.ByteOverflowException;
 import net.utp4j.data.bytes.exceptions.SignedNumberException;
 

@@ -17,10 +17,7 @@ package net.utp4j.channels.impl;
 import static net.utp4j.data.bytes.UnsignedTypesUtil.longToUbyte;
 import static net.utp4j.data.bytes.UnsignedTypesUtil.longToUshort;
 import static net.utp4j.data.bytes.BinaryToStringTestHelper.toBinaryString;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -33,9 +30,12 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.List;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import static org.junit.jupiter.api.Assertions.*;
+
+
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import net.utp4j.channels.UtpSocketState;
@@ -45,9 +45,10 @@ import net.utp4j.data.MicroSecondsTimeStamp;
 import net.utp4j.data.UtpHeaderExtension;
 import net.utp4j.data.UtpPacket;
 import net.utp4j.data.UtpPacketUtils;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 
-@RunWith(org.mockito.runners.MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class UtpChannelReadingTest {
 
 	@Test
