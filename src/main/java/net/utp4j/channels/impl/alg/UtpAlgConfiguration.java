@@ -53,51 +53,51 @@ public class UtpAlgConfiguration {
      * implemented.
      */
 
-    public volatile static int MAX_PACKET_SIZE = 1472;
+    public static volatile int MAX_PACKET_SIZE = 1472;
 
     /**
      * minimum packet size.
      */
-    public volatile static int MIN_PACKET_SIZE = 150;
+    public static volatile int MIN_PACKET_SIZE = 150;
 
     /**
      * Minimum path MTU
      */
-    public volatile static int MINIMUM_MTU = 576;
+    public static volatile int MINIMUM_MTU = 576;
 
     /**
      * Maximal window increase per RTT - increase to allow uTP throttle up
      * faster.
      */
-    public volatile static int MAX_CWND_INCREASE_PACKETS_PER_RTT = 3000;
+    public static volatile int MAX_CWND_INCREASE_PACKETS_PER_RTT = 3000;
 
     /**
      * maximal buffering delay
      */
-    public volatile static int C_CONTROL_TARGET_MICROS = 100000;
+    public static volatile int C_CONTROL_TARGET_MICROS = 100000;
 
     /**
      * activate burst sending
      */
-    public volatile static boolean SEND_IN_BURST = true;
+    public static volatile boolean SEND_IN_BURST = true;
 
     /**
      * Reduce burst sending artificially
      */
-    public volatile static int MAX_BURST_SEND = 5;
+    public static volatile int MAX_BURST_SEND = 5;
 
     /**
      * Minimum number of acks past seqNr=x to trigger a resend of seqNr=x;
      */
-    public volatile static int MIN_SKIP_PACKET_BEFORE_RESEND = 3;
+    public static volatile int MIN_SKIP_PACKET_BEFORE_RESEND = 3;
 
-    public volatile static long MICROSECOND_WAIT_BETWEEN_BURSTS = 28000;
+    public static volatile long MICROSECOND_WAIT_BETWEEN_BURSTS = 28000;
 
-    public volatile static long TIME_WAIT_AFTER_LAST_PACKET = 3000000;
+    public static volatile long TIME_WAIT_AFTER_LAST_PACKET = 3000000;
 
-    public volatile static boolean ONLY_POSITIVE_GAIN = false;
+    public static volatile boolean ONLY_POSITIVE_GAIN = false;
 
-    public volatile static boolean DEBUG = false;
+    public static volatile boolean DEBUG = false;
 
 
     /**
