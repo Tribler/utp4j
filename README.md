@@ -4,6 +4,8 @@
 standard and build on top of UDP, as such, it implements its own mechanisms for reliable ordered 
 delivery. utp4J is (still :( ) an experimental uTP implementation in Java, currently only suited for scientific purposes. I wrote this library as a part of my Bsc thesis at the University of Zurich and i'd like to continue developing it with the intention of releasing a stable version some day. 
 
+_update_ The great work from Zurch is now being worked on at Delft University of Technology. After 11 years we hope to conitnue this work and are attempting to bring it to production-grade quality with [various student teams](https://github.com/Tribler/tribler/issues/7691).  
+
 ## Interface
 utp4j follows the same approach as java.nio. If you ever have worked with nio, you will be familiar with utp4j soon. Developers only need to know about a few classes in order to use utp4j efficiently. 
 A set of semantically clear methods is provided. utp4j is aims to be asynchronous and most operations return handy future objects. 
