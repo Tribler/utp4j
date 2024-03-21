@@ -76,7 +76,7 @@ public class UtpAlgorithm {
 	private long timeStampNow;
 	private long lastAckRecieved;
 	
-	private int resendedPackets = 0;
+	private int resentPackets = 0;
 	private int totalPackets = 0;
 	private long lastMaxedOutWindow;
 	
@@ -193,7 +193,7 @@ public class UtpAlgorithm {
 		statisticLogger.microSecTimeStamp(timeStampNow);
 		currentWindow = buffer.getBytesOnfly();
 		
-		if (isWondowFull()) {
+		if (isWindowFull()) {
 			lastMaxedOutWindow = timeStampNow;
 		}
 		
@@ -240,7 +240,7 @@ public class UtpAlgorithm {
 		if (maxWindow == 0) {
 			lastZeroWindow = timeStampNow;
 		}
-		// get bytes successfully transmitted: 
+		// get bytes successfuly transmitted: 
 		// this is the position of the bytebuffer (comes from programmer)
 		// substracted by the amount of bytes on fly (these are not yet acked)
 		int bytesSend = bBuffer.position() - buffer.getBytesOnfly();
@@ -302,7 +302,7 @@ public class UtpAlgorithm {
 				utpTimestampedPacketDTO.setReduceWindow(false);
 			}
 		}
-		resendedPackets += queue.size();
+		resentPackets += queue.size();
 		return queue;
 	}
 
@@ -341,7 +341,7 @@ public class UtpAlgorithm {
 			log.debug("setting window to one packet size. current window is:" + currentWindow);
 			maxWindow = MAX_PACKET_SIZE;
 		}
-		boolean windowNotFull = !isWondowFull();
+		boolean windowNotFull = !isWindowFull();
 		boolean burstFull = false;
 		
 		if (windowNotFull) {
@@ -363,7 +363,7 @@ public class UtpAlgorithm {
 	}
 	
 
-	private boolean isWondowFull() {
+	private boolean isWindowFull() {
 		int maximumWindow = (advertisedWindowSize < maxWindow 
 				&& advertisedWindowSizeSet) ? advertisedWindowSize : maxWindow;
 		return currentWindow >= maximumWindow;
@@ -512,17 +512,17 @@ public class UtpAlgorithm {
 		long nextTimeOut = oldestTimeStamp + getTimeOutMicros();
 		timeStampNow = timeStamper.timeStamp();
 		long timeOutInMicroSeconds = nextTimeOut - timeStampNow;
-		if (continueImmidiately(timeOutInMicroSeconds, oldestTimeStamp)) {
+		if (continueImmediately(timeOutInMicroSeconds, oldestTimeStamp)) {
 			return 0L;
 		}
-		if (!isWondowFull() || maxWindow == 0) {
+		if (!isWindowFull() || maxWindow == 0) {
 			return MICROSECOND_WAIT_BETWEEN_BURSTS;
 		}
 		return timeOutInMicroSeconds;
 	}
 
 
-	private boolean continueImmidiately(
+	private boolean continueImmediately(
 			long timeOutInMicroSeconds, long oldestTimeStamp) {
 		return timeOutInMicroSeconds < 0 && (oldestTimeStamp != 0);
 	}
@@ -530,12 +530,12 @@ public class UtpAlgorithm {
 	/**
 	 * terminates. 
 	 * @param bytesSend
-	 * @param successfull
+	 * @param successful
 	 */
-	public void end(int bytesSend, boolean successfull) {
-		if (successfull) {
+	public void end(int bytesSend, boolean successful) {
+		if (successful) {
 			statisticLogger.end(bytesSend);
-			log.debug("Total packets send: " + totalPackets + ", Total Packets Resend: " + resendedPackets);
+			log.debug("Total packets send: " + totalPackets + ", Total Packets Resend: " + resentPackets);
 		}
 	}
 	
